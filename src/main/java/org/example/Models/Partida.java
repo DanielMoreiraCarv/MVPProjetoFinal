@@ -18,6 +18,8 @@ public class Partida {
 
     private int resultadoMandante;
 
+    private boolean realizada;
+
     private EnumFasePartida enumFasePartida;
 
     public Partida(Long id, Long idTimeMandante, Long idTimeVisitante, Long idCampeonato,
@@ -95,5 +97,13 @@ public class Partida {
 
     public void setResultadoMandante(int resultadoMandante) {
         this.resultadoMandante = resultadoMandante;
+    }
+
+    public boolean isRealizada() {
+        return realizada;
+    }
+
+    public void setRealizada(boolean realizada) {
+        this.realizada = realizada;
     }
 }
