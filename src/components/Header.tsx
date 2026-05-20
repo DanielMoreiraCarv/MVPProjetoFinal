@@ -2,21 +2,18 @@ import Link from "next/link"
 
 const Header = () => {
     return (
-        <header className="flex items-center w-full bg-green-950">
+        <header className="flex items-center w-full bg-green-950 text-white px-5 py-3 shadow-md">
             <div className="flex items-center flex-1">
-                <Link href="/">
-                    <span className="ml-3">
-                        Início
-                    </span>
+                <Link href="/" className="font-bold text-lg tracking-tight text-white hover:text-green-200 transition-colors">
+                    Meu Torneio
                 </Link>
             </div>
-            <nav className="ml-3 mr-3 flex items-center gap-6">
-                <Link href="/administracoes">
+            <nav className="flex items-center gap-6 text-sm">
+                <Link href="/administracoes" className="text-green-200 hover:text-white transition-colors">
                     Administrações
                 </Link>
             </nav>
-            <div className="flex-1">
-            </div>
+            <div className="flex-1" />
         </header>
     )
 };

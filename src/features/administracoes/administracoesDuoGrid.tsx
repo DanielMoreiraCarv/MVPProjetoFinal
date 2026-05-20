@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DuoGrid } from "@/src/components/DuoGrid";
 import { AdministrationsList } from "@/src/features/administracoes/administatrionsList";
 import { CompetitionsList } from "@/src/features/administracoes/competitionsList";
+import { AddAdministrationDialog } from "@/src/features/administracoes/addAdministrationDialog";
 import { Tournaments } from "@/src/lib/types/tournaments";
 import { Competition } from "@/src/lib/types/competition";
 import { mockTournaments } from "@/src/features/administracoes/mocks/tournaments";
@@ -37,8 +38,16 @@ export const AdministracoesDuoGrid = () => {
 
     return (
         <DuoGrid
-            left={<AdministrationsList tournaments={tournaments} callback={getCompetitions}/>}
-            right={<CompetitionsList competitions={competitions}/>}
+            left={{
+                title: "Minhas Administrações",
+                content: (
+                    <div className="flex flex-col gap-3 flex-1">
+                        <AddAdministrationDialog />
+                        <AdministrationsList tournaments={tournaments} callback={getCompetitions} />
+                    </div>
+                )
+            }}
+            right={{ title: "Campeonatos", content: <CompetitionsList competitions={competitions} /> }}
         />
     )
 }

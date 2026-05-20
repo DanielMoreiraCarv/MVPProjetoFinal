@@ -6,7 +6,7 @@ import {
     CardTitle,
     CardDescription
 } from "@/components/ui/card";
-import { useState } from "react"
+import Link from "next/link";
 import { Competition, competitionSchema } from "@/src/lib/types/competition";
 import { z } from "zod";
 
@@ -31,21 +31,23 @@ export const CompetitionsList =({ competitions = [] }: CompetitionsListProps) =>
 
     if (validCompetitions.length === 0) {
         return (
-            <div className="border border-gray-300 p-4 rounded-md flex-1">
+            <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
                 Nenhuma competição encontrada
             </div>
         );
     }
 
     return(
-        <div className="border border-gray-300 p-4 rounded-md flex-1">
+        <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
                 {
                     validCompetitions.map((competition) => (
                         <Card key={competition.id}>
                             <CardHeader>
                                 <CardTitle>
-                                    {competition.name}
+                                    <Link href={`/campeonatos/${competition.id}`}>
+                                        {competition.name}
+                                    </Link>
                                 </CardTitle>
                                 <CardDescription className="whitespace-pre-wrap">
                                     {competition.description}

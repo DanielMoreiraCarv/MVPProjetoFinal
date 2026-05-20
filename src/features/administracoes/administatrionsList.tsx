@@ -31,14 +31,14 @@ export const AdministrationsList =({ tournaments = [], callback }: Administratio
 
     if (validTournaments.length === 0) {
         return (
-            <div className="border border-gray-300 p-4 rounded-md flex-1">
+            <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
                 Nenhuma administração encontrada
             </div>
         );
     }
 
     return(
-        <div className="border border-gray-300 p-4 rounded-md flex-1">
+        <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
                 {
                     validTournaments.map((tournament) => (
