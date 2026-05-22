@@ -106,9 +106,9 @@ public class TabelaCampeonato {
 
     public void definirResultado(Long idPartida, int golsMandante, int golsVisitante) {
         Partida atual = todasAsPartidas.stream()
-                .filter(p -> p.getId().equals(idPartida))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Partida " + idPartida + " não encontrada no chaveamento."));
+                                       .filter(p -> p.getId().equals(idPartida))
+                                       .findFirst()
+                                       .orElseThrow(() -> new IllegalArgumentException("Partida " + idPartida + " não encontrada no chaveamento."));
 
         atual.setResultadoMandante(golsMandante);
         atual.setResultadoVisitante(golsVisitante);
@@ -127,9 +127,9 @@ public class TabelaCampeonato {
         Long idProxima = vinculoSucessor.get(idPartida);
         if (idProxima != null) {
             Partida proxima = todasAsPartidas.stream()
-                    .filter(p -> p.getId().equals(idProxima))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Partida sucessora " + idProxima + " não encontrada."));
+                                             .filter(p -> p.getId().equals(idProxima))
+                                             .findFirst()
+                                             .orElseThrow(() -> new IllegalStateException("Partida sucessora " + idProxima + " não encontrada."));
             List<Long> origens = origensPartida.get(idProxima);
 
             if (origens.get(0).equals(idPartida)) {
@@ -174,7 +174,7 @@ public class TabelaCampeonato {
         System.out.println("                  TODAS AS PARTIDAS                    ");
         System.out.println("========================================================");
         todasAsPartidas.stream()
-                .forEach(this::imprimirPartidaDetalhada);
+                       .forEach(this::imprimirPartidaDetalhada);
         System.out.println("========================================================\n");
     }
 
@@ -183,8 +183,8 @@ public class TabelaCampeonato {
         System.out.println("               PARTIDAS AINDA ACONTECER                  ");
         System.out.println("========================================================");
         todasAsPartidas.stream()
-                .filter(p -> !p.isRealizada())
-                .forEach(this::imprimirPartidaDetalhada);
+                       .filter(p -> !p.isRealizada())
+                       .forEach(this::imprimirPartidaDetalhada);
         System.out.println("========================================================\n");
     }
 
@@ -202,12 +202,12 @@ public class TabelaCampeonato {
         System.out.printf("%-25s %5s %5s %5s %5s %5s %5s %5s\n", "Time", "P", "J", "V", "E", "D", "GP", "GC");
 
         pontosCorridos.values().stream()
-                .sorted(Comparator.comparingInt(Pontuacao::getPontos).reversed()
-                        .thenComparingInt(Pontuacao::getSaldoGols).reversed()
-                        .thenComparing(Pontuacao::getNome))
-                .forEach(entry -> System.out.printf("%-25s %5d %5d %5d %5d %5d %5d %5d\n",
-                        entry.getNome(), entry.getPontos(), entry.getJogos(), entry.getVitorias(),
-                        entry.getEmpates(), entry.getDerrotas(), entry.getGolsPro(), entry.getGolsContra()));
+                      .sorted(Comparator.comparingInt(Pontuacao::getPontos).reversed()
+                                        .thenComparingInt(Pontuacao::getSaldoGols).reversed()
+                                        .thenComparing(Pontuacao::getNome))
+                      .forEach(entry -> System.out.printf("%-25s %5d %5d %5d %5d %5d %5d %5d\n",
+                              entry.getNome(), entry.getPontos(), entry.getJogos(), entry.getVitorias(),
+                              entry.getEmpates(), entry.getDerrotas(), entry.getGolsPro(), entry.getGolsContra()));
 
         System.out.println("========================================================\n");
     }

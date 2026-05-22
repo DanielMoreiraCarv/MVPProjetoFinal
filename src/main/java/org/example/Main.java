@@ -9,7 +9,7 @@ import java.util.List;
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-    static void main () {
+    public static void main(String[] args) {
 
         Jogadores jogador1A = new Jogadores( 1L, "Diego", 12, false );
 
