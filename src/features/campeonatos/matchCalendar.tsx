@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link";
 import {
     Card,
     CardHeader,
@@ -46,22 +47,24 @@ export const MatchCalendar = ({ matches = [] }: MatchCalendarProps) => {
                         : "vs";
 
                     return (
-                        <Card key={match.id}>
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    {match.homeTeam} {scoreDisplay} {match.awayTeam}
-                                    <Badge variant={match.finished ? "secondary" : "outline"}>
-                                        {match.finished ? "Encerrado" : "Agendado"}
-                                    </Badge>
-                                </CardTitle>
-                                <CardDescription className="whitespace-pre-wrap">
-                                    {match.date}
-                                    {"\n"}
-                                    {match.stageName}
-                                    {match.finished && match.winner ? `\nVencedor: ${match.winner}` : ""}
-                                </CardDescription>
-                            </CardHeader>
-                        </Card>
+                        <Link key={match.id} href={`/partidas/${match.id}`}>
+                            <Card className="cursor-pointer hover:border-gray-400 transition-colors">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center justify-between">
+                                        {match.homeTeam} {scoreDisplay} {match.awayTeam}
+                                        <Badge variant={match.finished ? "secondary" : "outline"}>
+                                            {match.finished ? "Encerrado" : "Agendado"}
+                                        </Badge>
+                                    </CardTitle>
+                                    <CardDescription className="whitespace-pre-wrap">
+                                        {match.date}
+                                        {"\n"}
+                                        {match.stageName}
+                                        {match.finished && match.winner ? `\nVencedor: ${match.winner}` : ""}
+                                    </CardDescription>
+                                </CardHeader>
+                            </Card>
+                        </Link>
                     );
                 })}
             </div>

@@ -5,6 +5,7 @@ import { DuoGrid } from "@/src/components/DuoGrid";
 import { AdministrationsList } from "@/src/features/administracoes/administatrionsList";
 import { CompetitionsList } from "@/src/features/administracoes/competitionsList";
 import { AddAdministrationDialog } from "@/src/features/administracoes/addAdministrationDialog";
+import { AddCompetitionDialog } from "@/src/features/administracoes/addCompetitionDialog";
 import { Tournaments } from "@/src/lib/types/tournaments";
 import { Competition } from "@/src/lib/types/competition";
 import { mockTournaments } from "@/src/features/administracoes/mocks/tournaments";
@@ -47,7 +48,15 @@ export const AdministracoesDuoGrid = () => {
                     </div>
                 )
             }}
-            right={{ title: "Campeonatos", content: <CompetitionsList competitions={competitions} /> }}
+            right={{
+                title: "Campeonatos",
+                content: (
+                    <div className="flex flex-col gap-3 flex-1">
+                        <AddCompetitionDialog />
+                        <CompetitionsList competitions={competitions} />
+                    </div>
+                )
+            }}
         />
     )
 }
