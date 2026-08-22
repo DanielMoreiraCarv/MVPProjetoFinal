@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sumulas")
+@RequestMapping("/api/v1/sumulas")
 @CrossOrigin(origins = "*")
 public class SumulaController {
 

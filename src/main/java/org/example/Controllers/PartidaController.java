@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/partidas")
+@RequestMapping("/api/v1/partidas")
 @CrossOrigin(origins = "*")
 public class PartidaController {
 
