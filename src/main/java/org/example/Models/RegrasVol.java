@@ -17,8 +17,8 @@ public class RegrasVol {
         return new int[]{0, 0};
     }
 
-    public boolean validarSubstituicao(int substituiçõesRealizadas) {
-        return substituiçõesRealizadas < MAX_SUBSTITUICOES_POR_SET;
+    public boolean validarSubstituicao(int substituicoesRealizadas) {
+        return substituicoesRealizadas < MAX_SUBSTITUICOES_POR_SET;
     }
 
     public boolean verificarVitoriaSet(int pontosA, int pontosB, boolean ehTieBreak) {

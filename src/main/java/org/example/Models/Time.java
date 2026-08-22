@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 import java.util.List;
 
 @Entity
-@Table(name = "TEAMS")
+@Table(name = "TIME")
 public class Time {
     @Id
     private Long id;
