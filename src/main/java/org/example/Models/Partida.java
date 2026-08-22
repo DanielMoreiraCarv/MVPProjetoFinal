@@ -22,14 +22,17 @@ public class Partida {
     @Id
     private Long id;
 
-    @Column(name = "ID_TIME_MANDANTE")
-    private Long idTimeMandante;
+    @ManyToOne
+    @JoinColumn(name = "ID_TIME_MANDANTE")
+    private Time timeMandante;
 
-    @Column(name = "ID_TIME_VISITANTE")
-    private Long idTimeVisitante;
+    @ManyToOne
+    @JoinColumn(name = "ID_TIME_VISITANTE")
+    private Time timeVisitante;
 
-    @Column(name = "ID_CAMPEONATO")
-    private Long idCampeonato;
+    @ManyToOne
+    @JoinColumn(name = "ID_CAMPEONATO")
+    private Campeonato campeonato;
 
     @Column(name = "ID_TABELA")
     private Long idTabela;
@@ -74,109 +77,19 @@ public class Partida {
     {
 
         this.id = id;
-        this.idTimeMandante = idTimeMandante;
-        this.idTimeVisitante = idTimeVisitante;
-        this.idCampeonato = idCampeonato;
+        Time mandante = new Time();
+        mandante.setId( idTimeMandante );
+        this.timeMandante = mandante;
+        Time visitante = new Time();
+        visitante.setId( idTimeVisitante );
+        this.timeVisitante = visitante;
+        Campeonato campeonato = new Campeonato();
+        campeonato.setId( idCampeonato );
+        this.campeonato = campeonato;
         this.idTabela = idTabela;
         this.idVencedor = idVencedor;
         this.resultadoVisitante = resultadoVisitante;
         this.resultadoMandante = resultadoMandante;
         this.realizada = false;
-    }
-
-    public Long getId () {
-        return id;
-    }
-
-    public void setId ( Long id ) {
-        this.id = id;
-    }
-
-    public Long getIdTimeMandante () {
-        return idTimeMandante;
-    }
-
-    public void setIdTimeMandante ( Long idTimeMandante ) {
-        this.idTimeMandante = idTimeMandante;
-    }
-
-    public Long getIdTimeVisitante () {
-        return idTimeVisitante;
-    }
-
-    public void setIdTimeVisitante ( Long idTimeVisitante ) {
-        this.idTimeVisitante = idTimeVisitante;
-    }
-
-    public Long getIdCampeonato () {
-        return idCampeonato;
-    }
-
-    public void setIdCampeonato ( Long idCampeonato ) {
-        this.idCampeonato = idCampeonato;
-    }
-
-    public Long getIdTabela () {
-        return idTabela;
-    }
-
-    public void setIdTabela ( Long idTabela ) {
-        this.idTabela = idTabela;
-    }
-
-    public Long getIdVencedor () {
-        return idVencedor;
-    }
-
-    public void setIdVencedor ( Long idVencedor ) {
-        this.idVencedor = idVencedor;
-    }
-
-    public int getResultadoVisitante () {
-        return resultadoVisitante;
-    }
-
-    public void setResultadoVisitante ( int resultadoVisitante ) {
-        this.resultadoVisitante = resultadoVisitante;
-    }
-
-    public int getResultadoMandante () {
-        return resultadoMandante;
-    }
-
-    public void setResultadoMandante ( int resultadoMandante ) {
-        this.resultadoMandante = resultadoMandante;
-    }
-
-    public boolean isRealizada () {
-        return realizada;
-    }
-
-    public void setRealizada ( boolean realizada ) {
-        this.realizada = realizada;
-    }
-
-    public EnumFasePartida getEnumFasePartida () {
-        return enumFasePartida;
-    }
-
-    public void setEnumFasePartida ( EnumFasePartida enumFasePartida ) {
-        this.enumFasePartida = enumFasePartida;
-    }
-
-    public Arbitro getArbitro () {
-        return arbitro;
-    }
-
-    public void setArbitro ( Arbitro arbitro ) {
-        this.arbitro = arbitro;
-    }
-
-    public Sumula getSumula () {
-        return sumula;
-    }
-
-    public void setSumula ( Sumula sumula ) {
-        this.sumula = sumula;
     }
 }
