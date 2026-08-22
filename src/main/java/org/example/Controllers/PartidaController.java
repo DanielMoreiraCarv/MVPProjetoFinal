@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import jakarta.websocket.server.PathParam;
 import org.example.Models.Arbitro;
 import org.example.Models.Partida;
 import org.example.Services.ArbitroService;
@@ -51,16 +52,19 @@ public class PartidaController {
         return ResponseEntity.ok(partidas);
     }
 
-    @GetMapping("/status/pendentes")
-    public ResponseEntity<List<Partida>> listarPendentes() {
-        List<Partida> partidas = partidaService.listarPendentes();
-        return ResponseEntity.ok(partidas);
-    }
+    @GetMapping("/acompanhamento/{status}")
+    public ResponseEntity<List<Partida>> listarPendentes(@PathParam ( "status" ) String status) {
+        if(status.equals("PENDENTE")) {
+            List<Partida> partidas = partidaService.listarPendentes();
+            return ResponseEntity.ok(partidas);
+        } else if ( status.equals( "realizadas" ) ){
+            List<Partida> partidas = partidaService.listarPendentes();
+            return ResponseEntity.ok(partidas);
+        }else
+        {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
 
-    @GetMapping("/status/realizadas")
-    public ResponseEntity<List<Partida>> listarRealizadas() {
-        List<Partida> partidas = partidaService.listarRealizadas();
-        return ResponseEntity.ok(partidas);
     }
 
     @GetMapping("/campeonato/{idCampeonato}")
@@ -72,12 +76,6 @@ public class PartidaController {
     @GetMapping("/time/{idTime}")
     public ResponseEntity<List<Partida>> listarPartidasDoTime(@PathVariable Long idTime) {
         List<Partida> partidas = partidaService.listarPartidasDoTime(idTime);
-        return ResponseEntity.ok(partidas);
-    }
-
-    @GetMapping("/vitoria/{idTime}")
-    public ResponseEntity<List<Partida>> listarVitorias(@PathVariable Long idTime) {
-        List<Partida> partidas = partidaService.listarVitoriasDo(idTime);
         return ResponseEntity.ok(partidas);
     }
 
