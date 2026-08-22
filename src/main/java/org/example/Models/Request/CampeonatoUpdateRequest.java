@@ -1,6 +1,7 @@
-package org.example.Models;
+package org.example.Models.Request;
 
 import jakarta.validation.constraints.NotNull;
+import org.example.Models.EnumTipoEsporte;
 
 import java.util.List;
 
