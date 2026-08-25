@@ -64,17 +64,71 @@ alcança o banco em `localhost:5432`.
 
 ## 4. Deploy
 
-A aplicação é distribuída como imagem de container (`Dockerfile`, build em dois
-estágios: Maven para compilar, JRE para rodar).
+A aplicação é distribuída como imagem de container (build em dois estágios:
+Maven para compilar, JRE para rodar). Há dois destinos possíveis.
 
-**Atenção ao destino.** O Vercel hospeda o front-end Next.js; ele não roda um
-processo Java de longa duração. A API precisa de um PaaS de container
-(Railway, Render ou Fly.io). A topologia de produção é:
+### 4.1 Vercel (container image)
 
+O Vercel Functions executa imagens OCI. Um `Dockerfile.vercel` na raiz é
+detectado automaticamente e todo o tráfego é roteado para o container, que
+precisa abrir um servidor HTTP na porta indicada por `PORT`. É o que
+`Dockerfile.vercel` e `server.port=${PORT:8080}` fazem.
+
+O limite de 250 MB é de bundle de código e não se aplica a imagem: o registro
+do Vercel aceita até 15 GB por imagem, então a base JRE cabe sem esforço.
+
+Não existe runtime Java no Vercel — nem oficial nem comunitário. Qualquer
+`vercel.json` com `@vercel/java` falha; esse pacote não existe. O caminho é a
+imagem de container.
+
+Configurar no projeto do Vercel: `DB_URL`, `DB_USER`, `DB_PASSWORD`,
+`FLYWAY_DB_URL` e `DB_POOL_SIZE`. Memória e duração máxima ficam nas
+configurações do projeto.
+
+O que muda em relação a um servidor sempre ligado:
+
+- **Escala a zero.** Sem tráfego por 5 minutos em produção (30 segundos em
+  preview), a instância é desligada. A requisição seguinte paga a subida da
+  JVM mais o Flyway — medido em 3,2 s no container. Para uma apresentação de
+  banca, vale aquecer a API antes.
+- **Encerramento.** O container recebe `SIGTERM` com 30 s de carência, por
+  isso `server.shutdown=graceful`.
+- **Conexões.** Várias instâncias sobem em paralelo. O pool do Hikari fica
+  pequeno por instância (`DB_POOL_SIZE`, default 5) e a aplicação deve usar o
+  *pooler de transação* do Supabase (porta 6543), não a conexão direta.
+- **Flyway.** O pooler de transação não suporta o advisory lock que o Flyway
+  usa. Por isso `FLYWAY_DB_URL` aponta para a **conexão direta** (porta 5432),
+  enquanto `DB_URL` aponta para o pooler.
+- **Corpo da requisição.** Teto de 4,5 MB por requisição e por resposta.
+  Suficiente para este domínio, mas limita upload de foto de atleta.
+- **Sem IP fixo.** Static IP e Secure Compute ainda não valem para imagem de
+  container. Irrelevante aqui, já que o Supabase é acessado por TLS público.
+
+Verificar antes de decidir: o recurso de imagem de container exige permissão
+habilitada na conta, o que precisa ser confirmado no plano de vocês.
+
+### 4.2 PaaS de container (Railway, Render, Fly.io)
+
+Mesma imagem, sem escala a zero e sem os tetos acima. É a opção conservadora
+caso a permissão de imagem de container não esteja disponível, ou caso a
+latência do primeiro acesso incomode na banca.
+
+### 4.3 Front e back no mesmo projeto
+
+Se os dois repositórios forem unificados, o Vercel roteia por serviço:
+
+```json
+{
+  "services": {
+    "frontend": { "root": "tcc-front/", "entrypoint": "Dockerfile.vercel" },
+    "backend":  { "root": "MVPProjetoFinal/", "entrypoint": "Dockerfile.vercel" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)",     "destination": { "service": "frontend" } }
+  ]
+}
 ```
-Vercel (Next.js)  ->  PaaS de container (Spring Boot)  ->  Supabase (Postgres)
-```
 
-Para apontar a API ao Supabase, basta preencher `DB_URL`, `DB_USER` e
-`DB_PASSWORD` com os dados de *Connection string* do projeto Supabase. O Flyway
-aplica as migrações no primeiro start.
+Isso eliminaria o CORS entre front e API, já que passariam a compartilhar
+origem. Enquanto os repositórios forem separados, são dois projetos no Vercel.
