@@ -61,6 +61,21 @@ public class Partida {
     @JoinColumn(name = "SUMULA_ID")
     private Sumula sumula;
 
+    public Long getIdTimeMandante ()
+    {
+        return timeMandante == null ? null : timeMandante.getId();
+    }
+
+    public Long getIdTimeVisitante ()
+    {
+        return timeVisitante == null ? null : timeVisitante.getId();
+    }
+
+    public Long getIdCampeonato ()
+    {
+        return campeonato == null ? null : campeonato.getId();
+    }
+
     // CONSTRUTOR VAZIO
     public Partida () {
     }

@@ -6,6 +6,7 @@ import org.example.Repositories.PartidaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class PartidaService {
     }
     
     public List<Partida> listarPorCampeonato(Long idCampeonato) {
-        return partidaRepository.findByIdCampeonato(idCampeonato);
+        return partidaRepository.findByCampeonatoId(idCampeonato);
     }
     
     public List<Partida> listarPendentes() {
@@ -40,8 +41,8 @@ public class PartidaService {
     }
     
     public List<Partida> listarPartidasDoTime(Long idTime) {
-        List<Partida> partidas = partidaRepository.findByIdTimeMandante(idTime);
-        partidas.addAll(partidaRepository.findByIdTimeVisitante(idTime));
+        List<Partida> partidas = new ArrayList<>(partidaRepository.findByTimeMandanteId(idTime));
+        partidas.addAll(partidaRepository.findByTimeVisitanteId(idTime));
         return partidas;
     }
     

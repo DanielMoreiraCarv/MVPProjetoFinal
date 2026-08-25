@@ -32,7 +32,7 @@ public class Time
     @Column(name = "ENUM_TIPO_ESPORTE")
     private EnumTipoEsporte enumTipoEsporte;
 
-    @OneToMany
+    @ManyToOne
     @JoinColumn(name = "ID_FEDERACAO")
     private Federacao federacao;
 

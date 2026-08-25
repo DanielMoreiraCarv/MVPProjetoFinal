@@ -133,9 +133,9 @@ public class TabelaCampeonato {
             List<Long> origens = origensPartida.get(idProxima);
 
             if (origens.get(0).equals(idPartida)) {
-                proxima.setIdTimeMandante(vencedorId);
+                proxima.setTimeMandante(timesMap.get(vencedorId));
             } else {
-                proxima.setIdTimeVisitante(vencedorId);
+                proxima.setTimeVisitante(timesMap.get(vencedorId));
             }
         }
     }
