@@ -16,6 +16,7 @@ public class TabelaService {
     private TabelaRepository tabelaRepository;
     
     public Tabela criarTabela(Tabela tabela) {
+        tabela.setId(null);
         return tabelaRepository.save(tabela);
     }
     

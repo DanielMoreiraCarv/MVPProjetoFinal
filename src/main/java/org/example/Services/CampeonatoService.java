@@ -16,6 +16,7 @@ public class CampeonatoService {
     private CampeonatoRepository campeonatoRepository;
     
     public Campeonato criarCampeonato(Campeonato campeonato) {
+        campeonato.setId(null);
         return campeonatoRepository.save(campeonato);
     }
     

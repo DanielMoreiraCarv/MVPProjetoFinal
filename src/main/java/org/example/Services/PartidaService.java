@@ -17,6 +17,7 @@ public class PartidaService {
     private PartidaRepository partidaRepository;
     
     public Partida criarPartida(Partida partida) {
+        partida.setId(null);
         return partidaRepository.save(partida);
     }
     

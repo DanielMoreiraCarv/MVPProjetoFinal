@@ -11,6 +11,7 @@ import java.util.List;
 public class Sumula {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     @OneToOne(mappedBy = "sumula", cascade = CascadeType.ALL)

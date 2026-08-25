@@ -15,6 +15,7 @@ public class ArbitroService {
     private ArbitroRepository arbitroRepository;
     
     public Arbitro criarArbitro(Arbitro arbitro) {
+        arbitro.setId(null);
         return arbitroRepository.save(arbitro);
     }
     

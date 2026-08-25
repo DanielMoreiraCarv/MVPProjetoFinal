@@ -16,6 +16,7 @@ public class JogadoresService {
     private JogadoresRepository jogadoresRepository;
     
     public Jogadores criarJogador(Jogadores jogador) {
+        jogador.setId(null);
         return jogadoresRepository.save(jogador);
     }
     

@@ -17,6 +17,7 @@ public class TimeService {
     private TimeRepository timeRepository;
     
     public Time criarTime(Time time) {
+        time.setId(null);
         return timeRepository.save(time);
     }
     

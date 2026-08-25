@@ -15,6 +15,7 @@ public class SumulaService {
     private SumulaRepository sumulaRepository;
     
     public Sumula criarSumula(Sumula sumula) {
+        sumula.setId(null);
         return sumulaRepository.save(sumula);
     }
     
