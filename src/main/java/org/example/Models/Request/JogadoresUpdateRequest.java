@@ -1,7 +1,6 @@
 package org.example.Models.Request;
 
 import jakarta.validation.constraints.NotNull;
-import org.example.Models.EnumTipoEsporte;
 import org.hibernate.validator.constraints.br.CPF;
 
 public record JogadoresUpdateRequest(
@@ -15,7 +14,7 @@ public record JogadoresUpdateRequest(
 
         String cpf,
 
-        EnumTipoEsporte tipoEsporte,
+        Long idModalidade,
 
         Integer pontos,
 

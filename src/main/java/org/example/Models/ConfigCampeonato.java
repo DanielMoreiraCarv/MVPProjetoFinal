@@ -5,14 +5,14 @@ import java.util.List;
 
 public class ConfigCampeonato {
 
-    public TabelaCampeonato criarNovoCampeonato(Long id, String nome, EnumTipoEsporte esporte, List<Time> times, boolean ehMataMata) {
-        List<EnumTipoEsporte> esportesPermitidos = new ArrayList<>();
-        esportesPermitidos.add(esporte);
+    public TabelaCampeonato criarNovoCampeonato(Long id, String nome, Modalidade modalidade, List<Time> times, boolean ehMataMata) {
+        List<Modalidade> modalidadesPermitidas = new ArrayList<>();
+        modalidadesPermitidas.add(modalidade);
 
         Campeonato novoCampeonato = new Campeonato(
             id, 
             nome, 
-            esportesPermitidos, 
+            modalidadesPermitidas, 
             new ArrayList<>(),
             ehMataMata
         );
@@ -32,9 +32,9 @@ public class ConfigCampeonato {
         }
     }
 
-    public void editarEsportes(Campeonato campeonato, List<EnumTipoEsporte> novosEsportes) {
+    public void editarModalidades(Campeonato campeonato, List<Modalidade> novasModalidades) {
         if (campeonato != null) {
-            campeonato.setEnumTipoEsporte(novosEsportes);
+            campeonato.setLstModalidades(novasModalidades);
         }
     }
 

@@ -1,8 +1,6 @@
 package org.example.Models.Request;
 
 import jakarta.validation.constraints.NotNull;
-import org.example.Models.EnumTipoEsporte;
-
 import java.util.List;
 
 public record CampeonatoUpdateRequest(
@@ -11,7 +9,7 @@ public record CampeonatoUpdateRequest(
 
         String nome,
 
-        List<EnumTipoEsporte> esportes,
+        List<Long> modalidadesIds,
 
         List<Long> timesIds,
 

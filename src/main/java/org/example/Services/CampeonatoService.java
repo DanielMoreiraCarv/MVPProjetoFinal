@@ -46,7 +46,7 @@ public class CampeonatoService {
             Campeonato campeonato = campeonatoExistente.get();
             campeonato.setNome(campeonatoAtualizado.getNome());
             campeonato.setMataMata(campeonatoAtualizado.isMataMata());
-            campeonato.setEnumTipoEsporte(campeonatoAtualizado.getEnumTipoEsporte());
+            campeonato.setLstModalidades(campeonatoAtualizado.getLstModalidades());
             return campeonatoRepository.save(campeonato);
         }
         return null;

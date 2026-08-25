@@ -28,11 +28,13 @@ public class Campeonato {
     @Column(name = "NOME")
     private String nome;
 
-    @ElementCollection(targetClass = EnumTipoEsporte.class)
-    @CollectionTable(name = "CAMPEONATO_ESPORTES", joinColumns = @JoinColumn(name = "CAMPEONATO_ID"))
-    @Enumerated(EnumType.STRING)
-    @Column(name = "ESPORTE")
-    private List<EnumTipoEsporte> lstEnumTipoEsporte;
+    @ManyToMany
+    @JoinTable(
+            name = "CAMPEONATO_MODALIDADES",
+            joinColumns = @JoinColumn(name = "CAMPEONATO_ID"),
+            inverseJoinColumns = @JoinColumn(name = "MODALIDADE_ID")
+    )
+    private List<Modalidade> lstModalidades;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
@@ -52,10 +54,10 @@ public class Campeonato {
         this.mataMata = mataMata;
     }
 
-    public Campeonato(Long id, String nome, List<EnumTipoEsporte> lstEnumTipoEsporte, List<Time> lstTimes, boolean mataMata) {
+    public Campeonato(Long id, String nome, List<Modalidade> lstModalidades, List<Time> lstTimes, boolean mataMata) {
         this.id = id;
         this.nome = nome;
-        this.lstEnumTipoEsporte = lstEnumTipoEsporte;
+        this.lstModalidades = lstModalidades;
         this.lstTimes = lstTimes;
         this.mataMata = mataMata;
     }
@@ -76,12 +78,12 @@ public class Campeonato {
         this.nome = nome;
     }
 
-    public List<EnumTipoEsporte> getEnumTipoEsporte() {
-        return lstEnumTipoEsporte;
+    public List<Modalidade> getLstModalidades() {
+        return lstModalidades;
     }
 
-    public void setEnumTipoEsporte(List<EnumTipoEsporte> lstEnumTipoEsporte) {
-        this.lstEnumTipoEsporte = lstEnumTipoEsporte;
+    public void setLstModalidades(List<Modalidade> lstModalidades) {
+        this.lstModalidades = lstModalidades;
     }
 
     public List<Time> getLstTimes() {
@@ -105,7 +107,7 @@ public class Campeonato {
             this.lstTimes = new ArrayList<>();
         }
 
-        if (this.lstEnumTipoEsporte != null && this.lstEnumTipoEsporte.contains(time.getEnumTipoEsporte())) {
+        if (aceitaModalidade(time.getModalidade())) {
             this.lstTimes.add(time);
         } else {
             System.out.println("Esse time não pode participar desse campeonato!");
@@ -118,9 +120,19 @@ public class Campeonato {
         }
     }
 
-    public List<Time> listarTimesPorEsporte(EnumTipoEsporte enumTipoEsporte){
-        List<Time> lstTimeEspote = new ArrayList<>();
-        lstTimeEspote.addAll(this.lstTimes.stream().filter(p -> p.getEnumTipoEsporte()==enumTipoEsporte).toList());
-        return lstTimeEspote;
+    public boolean aceitaModalidade(Modalidade modalidade) {
+        if (modalidade == null || this.lstModalidades == null) {
+            return false;
+        }
+        return this.lstModalidades.stream().anyMatch(m -> m.getId().equals(modalidade.getId()));
+    }
+
+    public List<Time> listarTimesPorModalidade(Long idModalidade) {
+        if (this.lstTimes == null) {
+            return new ArrayList<>();
+        }
+        return this.lstTimes.stream()
+                            .filter(t -> idModalidade.equals(t.getIdModalidade()))
+                            .toList();
     }
 }

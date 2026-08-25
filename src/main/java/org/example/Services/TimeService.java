@@ -1,6 +1,5 @@
 package org.example.Services;
 
-import org.example.Models.EnumTipoEsporte;
 import org.example.Models.Jogadores;
 import org.example.Models.Time;
 import org.example.Repositories.TimeRepository;
@@ -33,8 +32,8 @@ public class TimeService {
         return timeRepository.findAll();
     }
     
-    public List<Time> listarPorEsporte(EnumTipoEsporte esporte) {
-        return timeRepository.findByEnumTipoEsporte(esporte);
+    public List<Time> listarPorModalidade(Long idModalidade) {
+        return timeRepository.findByModalidadeId(idModalidade);
     }
     
     public Time atualizarTime(Long id, Time timeAtualizado) {
@@ -42,7 +41,7 @@ public class TimeService {
         if (timeExistente.isPresent()) {
             Time time = timeExistente.get();
             time.setNome(timeAtualizado.getNome());
-            time.setEnumTipoEsporte(timeAtualizado.getEnumTipoEsporte());
+            time.setModalidade(timeAtualizado.getModalidade());
             time.setLstJogadores(timeAtualizado.getLstJogadores());
             return timeRepository.save(time);
         }

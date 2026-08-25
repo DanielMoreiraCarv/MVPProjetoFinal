@@ -1,6 +1,5 @@
 package org.example.Services;
 
-import org.example.Models.EnumTipoEsporte;
 import org.example.Models.Jogadores;
 import org.example.Repositories.JogadoresRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,16 +35,16 @@ public class JogadoresService {
         return jogadoresRepository.findAll();
     }
     
-    public List<Jogadores> listarPorEsporte(EnumTipoEsporte tipoEsporte) {
-        return jogadoresRepository.findByTipoEsporte(tipoEsporte);
+    public List<Jogadores> listarPorModalidade(Long idModalidade) {
+        return jogadoresRepository.findByModalidadeId(idModalidade);
     }
     
     public List<Jogadores> listarExpulsos() {
         return jogadoresRepository.findByExpulsoTrue();
     }
     
-    public List<Jogadores> listarAtivosPorEsporte(EnumTipoEsporte tipoEsporte) {
-        return jogadoresRepository.findByTipoEsporteAndExpulsoFalse(tipoEsporte);
+    public List<Jogadores> listarAtivosPorModalidade(Long idModalidade) {
+        return jogadoresRepository.findByModalidadeIdAndExpulsoFalse(idModalidade);
     }
     
     public Jogadores atualizarJogador(Long id, Jogadores jogadorAtualizado) {
@@ -56,7 +55,7 @@ public class JogadoresService {
             jogador.setIdade(jogadorAtualizado.getIdade());
             jogador.setNumCamisa(jogadorAtualizado.getNumCamisa());
             jogador.setPosicao(jogadorAtualizado.getPosicao());
-            jogador.setTipoEsporte(jogadorAtualizado.getTipoEsporte());
+            jogador.setModalidade(jogadorAtualizado.getModalidade());
             return jogadoresRepository.save(jogador);
         }
         return null;

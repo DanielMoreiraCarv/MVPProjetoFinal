@@ -7,7 +7,7 @@ public record CampeonatoResponse(
 
         String nome,
 
-        List<String> lstTipoEsporte,
+        List<ModalidadeResponse> modalidades,
 
         List<TimeResponse> lstTimes,
 

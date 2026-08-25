@@ -1,7 +1,5 @@
 package org.example.Models.Response;
 
-import org.example.Models.EnumTipoEsporte;
-
 import java.util.List;
 
 public record TimeResponse(
@@ -13,7 +11,7 @@ public record TimeResponse(
 
         List<JogadoresResponse> jogadores,
 
-        EnumTipoEsporte enumTipoEsporte
+        ModalidadeResponse modalidade
 
 )
 {

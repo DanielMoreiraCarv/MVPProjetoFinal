@@ -1,6 +1,5 @@
 package org.example.Repositories;
 
-import org.example.Models.EnumTipoEsporte;
 import org.example.Models.Jogadores;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,9 +14,9 @@ public interface JogadoresRepository extends JpaRepository<Jogadores, Long> {
     
     Optional<Jogadores> findByCpf(String cpf);
     
-    List<Jogadores> findByTipoEsporte(EnumTipoEsporte tipoEsporte);
+    List<Jogadores> findByModalidadeId(Long idModalidade);
     
     List<Jogadores> findByExpulsoTrue();
     
-    List<Jogadores> findByTipoEsporteAndExpulsoFalse(EnumTipoEsporte tipoEsporte);
+    List<Jogadores> findByModalidadeIdAndExpulsoFalse(Long idModalidade);
 }

@@ -28,9 +28,9 @@ public class Time
     )
     private List<Jogadores> lstJogadores;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "ENUM_TIPO_ESPORTE")
-    private EnumTipoEsporte enumTipoEsporte;
+    @ManyToOne
+    @JoinColumn(name = "ID_MODALIDADE")
+    private Modalidade modalidade;
 
     @ManyToOne
     @JoinColumn(name = "ID_FEDERACAO")
@@ -40,12 +40,16 @@ public class Time
     {
     }
 
-    public Time ( Long id, String nome, List<Jogadores> lstJogadores,
-            EnumTipoEsporte enumTipoEsporte )
+    public Time ( Long id, String nome, List<Jogadores> lstJogadores, Modalidade modalidade )
     {
         this.id = id;
         this.nome = nome;
         this.lstJogadores = lstJogadores;
-        this.enumTipoEsporte = enumTipoEsporte;
+        this.modalidade = modalidade;
+    }
+
+    public Long getIdModalidade ()
+    {
+        return modalidade == null ? null : modalidade.getId();
     }
 }
