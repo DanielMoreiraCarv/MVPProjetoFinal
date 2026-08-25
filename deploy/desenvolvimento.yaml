@@ -1,0 +1,55 @@
+# Ambiente local de desenvolvimento: Postgres + API no mesmo pod.
+#
+#   podman play kube deploy/desenvolvimento.yaml
+#   podman play kube --down deploy/desenvolvimento.yaml
+#
+# A senha aqui é de desenvolvimento e não vale em nenhum outro ambiente.
+# Em produção o banco é o Supabase e as credenciais vêm do ambiente do PaaS.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tcc-api
+  labels:
+    app: tcc-api
+spec:
+  containers:
+    - name: postgres
+      image: docker.io/library/postgres:16-alpine
+      env:
+        - name: POSTGRES_DB
+          value: tcc
+        - name: POSTGRES_USER
+          value: tcc
+        - name: POSTGRES_PASSWORD
+          value: tcc
+      ports:
+        - containerPort: 5432
+          hostPort: 5433
+      volumeMounts:
+        - name: dados-postgres
+          mountPath: /var/lib/postgresql/data
+      readinessProbe:
+        exec:
+          command: ["pg_isready", "-U", "tcc", "-d", "tcc"]
+        initialDelaySeconds: 3
+        periodSeconds: 3
+
+    - name: api
+      image: localhost/tcc-api:dev
+      env:
+        - name: DB_URL
+          value: jdbc:postgresql://localhost:5432/tcc
+        - name: DB_USER
+          value: tcc
+        - name: DB_PASSWORD
+          value: tcc
+        - name: JPA_SHOW_SQL
+          value: "true"
+      ports:
+        - containerPort: 8080
+          hostPort: 8080
+
+  volumes:
+    - name: dados-postgres
+      persistentVolumeClaim:
+        claimName: tcc-postgres
