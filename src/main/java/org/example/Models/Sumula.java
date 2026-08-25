@@ -1,142 +1,83 @@
 package org.example.Models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "SUMULA")
 public class Sumula {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @OneToOne(mappedBy = "sumula", cascade = CascadeType.ALL)
+
+    @JsonIgnore
+    @OneToOne
+    @JoinColumn(name = "PARTIDA_ID", unique = true)
     private Partida partida;
-    
-    @ManyToOne(cascade = CascadeType.ALL)
+
+    @ManyToOne
     @JoinColumn(name = "ARBITRO_ID")
     private Arbitro arbitro;
-    
+
     @Column(name = "GOLS_MANDANTE")
     private int golsMandante;
-    
+
     @Column(name = "GOLS_VISITANTE")
     private int golsVisitante;
-    
+
     @ElementCollection
     @CollectionTable(name = "SUMULA_OCORRENCIAS", joinColumns = @JoinColumn(name = "SUMULA_ID"))
     @Column(name = "OCORRENCIA")
-    private List<String> ocorrencias; 
-    
+    private List<String> ocorrencias = new ArrayList<>();
+
     @Column(name = "OBSERVACOES_RELATAS")
     private String observacoesRelatadas;
-    
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "DATA_FECHAMENTO")
     private Date dataFechamento;
-    
+
     @Column(name = "ASSINADA")
     private boolean assinada;
 
-    public Sumula() {
-    }
-
-    public Sumula(Long id, Partida partida, Arbitro arbitro) {
-        this.id = id;
+    public Sumula ( Partida partida, Arbitro arbitro )
+    {
         this.partida = partida;
         this.arbitro = arbitro;
-        this.ocorrencias = new ArrayList<>();
-        this.golsMandante = 0;
-        this.golsVisitante = 0;
-        this.assinada = false;
-        this.dataFechamento = new Date();
     }
 
-    public void adicionarOcorrencia(String evento) {
-        this.ocorrencias.add(evento);
+    public Long getIdPartida ()
+    {
+        return partida == null ? null : partida.getId();
     }
 
-    public void finalizarSumula(int golsM, int golsV, String relato) {
-        this.golsMandante = golsM;
-        this.golsVisitante = golsV;
+    public Long getIdArbitro ()
+    {
+        return arbitro == null ? null : arbitro.getId();
+    }
+
+    public void adicionarOcorrencia ( String ocorrencia )
+    {
+        this.ocorrencias.add( ocorrencia );
+    }
+
+    public void finalizarSumula ( int golsMandante, int golsVisitante, String relato )
+    {
+        this.golsMandante = golsMandante;
+        this.golsVisitante = golsVisitante;
         this.observacoesRelatadas = relato;
         this.assinada = true;
         this.dataFechamento = new Date();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Partida getPartida() {
-        return partida;
-    }
-
-    public void setPartida(Partida partida) {
-        this.partida = partida;
-    }
-
-    public Arbitro getArbitro() {
-        return arbitro;
-    }
-
-    public void setArbitro(Arbitro arbitro) {
-        this.arbitro = arbitro;
-    }
-
-    public int getGolsMandante() {
-        return golsMandante;
-    }
-
-    public void setGolsMandante(int golsMandante) {
-        this.golsMandante = golsMandante;
-    }
-
-    public int getGolsVisitante() {
-        return golsVisitante;
-    }
-
-    public void setGolsVisitante(int golsVisitante) {
-        this.golsVisitante = golsVisitante;
-    }
-
-    public List<String> getOcorrencias() {
-        return ocorrencias;
-    }
-
-    public void setOcorrencias(List<String> ocorrencias) {
-        this.ocorrencias = ocorrencias;
-    }
-
-    public String getObservacoesRelatadas() {
-        return observacoesRelatadas;
-    }
-
-    public void setObservacoesRelatadas(String observacoesRelatadas) {
-        this.observacoesRelatadas = observacoesRelatadas;
-    }
-
-    public Date getDataFechamento() {
-        return dataFechamento;
-    }
-
-    public void setDataFechamento(Date dataFechamento) {
-        this.dataFechamento = dataFechamento;
-    }
-
-    public boolean isAssinada() {
-        return assinada;
-    }
-
-    public void setAssinada(boolean assinada) {
-        this.assinada = assinada;
     }
 }

@@ -22,9 +22,9 @@ public class SumulaController {
     private PartidaService partidaService;
 
     @PostMapping
-    public ResponseEntity<Sumula> criar(@RequestBody Sumula sumula) {
+    public ResponseEntity<Sumula> criar(@RequestParam Long idPartida, @RequestBody Sumula sumula) {
         try {
-            Sumula nova = sumulaService.criarSumula(sumula);
+            Sumula nova = sumulaService.criarSumula(idPartida, sumula);
             return ResponseEntity.status(HttpStatus.CREATED).body(nova);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();

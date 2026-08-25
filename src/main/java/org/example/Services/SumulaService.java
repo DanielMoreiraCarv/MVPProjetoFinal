@@ -1,6 +1,8 @@
 package org.example.Services;
 
+import org.example.Models.Partida;
 import org.example.Models.Sumula;
+import org.example.Repositories.PartidaRepository;
 import org.example.Repositories.SumulaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,18 @@ public class SumulaService {
     
     @Autowired
     private SumulaRepository sumulaRepository;
-    
-    public Sumula criarSumula(Sumula sumula) {
+
+    @Autowired
+    private PartidaRepository partidaRepository;
+
+    public Sumula criarSumula(Long idPartida, Sumula sumula) {
+        Partida partida = partidaRepository.findById(idPartida)
+                .orElseThrow(() -> new IllegalArgumentException("Partida " + idPartida + " não encontrada."));
+        if (partida.getSumula() != null) {
+            throw new IllegalStateException("Partida " + idPartida + " já possui súmula.");
+        }
         sumula.setId(null);
+        partida.vincularSumula(sumula);
         return sumulaRepository.save(sumula);
     }
     

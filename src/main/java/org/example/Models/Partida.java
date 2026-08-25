@@ -1,5 +1,6 @@
 package org.example.Models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -56,12 +57,12 @@ public class Partida {
     @Column(name = "ENUM_FASE_PARTIDA")
     private EnumFasePartida enumFasePartida;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "ARBITRO_ID")
     private Arbitro arbitro;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "SUMULA_ID")
+    @JsonIgnore
+    @OneToOne(mappedBy = "partida", cascade = CascadeType.ALL, orphanRemoval = true)
     private Sumula sumula;
 
     public Long getIdTimeMandante ()
@@ -77,6 +78,20 @@ public class Partida {
     public Long getIdCampeonato ()
     {
         return campeonato == null ? null : campeonato.getId();
+    }
+
+    public Long getIdSumula ()
+    {
+        return sumula == null ? null : sumula.getId();
+    }
+
+    public void vincularSumula ( Sumula sumula )
+    {
+        this.sumula = sumula;
+        if ( sumula != null )
+        {
+            sumula.setPartida( this );
+        }
     }
 
     // CONSTRUTOR VAZIO
