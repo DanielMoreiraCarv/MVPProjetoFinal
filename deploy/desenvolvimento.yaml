@@ -45,6 +45,10 @@ spec:
           value: tcc
         - name: JPA_SHOW_SQL
           value: "true"
+          # Só em desenvolvimento: poupa rodar mvn flyway:migrate à mão.
+          # Em produção quem migra é o pipeline de deploy.
+        - name: FLYWAY_MIGRAR_NO_BOOT
+          value: "true"
       ports:
         - containerPort: 8080
           hostPort: 8080

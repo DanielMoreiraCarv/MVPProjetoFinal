@@ -11,13 +11,16 @@ O H2 em memória foi removido. Todo dado se perdia no restart e o dialeto
 divergia do Postgres, o que escondia problemas até o deploy.
 
 O esquema pertence ao **Flyway**: as migrações versionadas em
-`src/main/resources/db/migration` são a única fonte de verdade. O Hibernate roda
-com `ddl-auto=validate` — ele confere se o mapeamento corresponde ao que as
-migrações criaram e **recusa subir** se divergirem, em vez de alterar tabelas
-por conta própria.
+`src/main/resources/db/migration` são a única fonte de verdade.
 
-Toda mudança de modelo exige uma migração nova (`V2__...`, `V3__...`).
-Migração já aplicada nunca é editada.
+As migrações são aplicadas **pelo pipeline de deploy**, antes da nova versão
+receber tráfego — não no boot da aplicação. No arranque o Hibernate apenas
+confere, com `ddl-auto=validate`: se faltar migração, a aplicação **recusa
+subir** em vez de servir requisição contra um esquema errado.
+
+Migrar no boot traria dois problemas em serverless: várias instâncias subindo
+em paralelo disputariam a mesma migração, e um erro de migração só apareceria
+com o tráfego já batendo.
 
 ## 2. Configuração
 
@@ -28,7 +31,11 @@ Nenhuma credencial no repositório. A aplicação lê três variáveis:
 | `DB_URL` | `jdbc:postgresql://localhost:5433/tcc` | connection string do Supabase |
 | `DB_USER` | `tcc` | usuário do Supabase |
 | `DB_PASSWORD` | `tcc` | senha do Supabase |
+| `DB_POOL_SIZE` | `5` | `5` |
 | `JPA_SHOW_SQL` | `false` | `false` |
+| `FLYWAY_MIGRAR_NO_BOOT` | `false` | `false` — quem migra é o pipeline |
+
+O pipeline de deploy usa uma conexão à parte, em `DB_MIGRACAO_URL`. Ver §5.
 
 Os defaults existem só para que `mvn spring-boot:run` funcione contra o pod
 local. Em produção as três são obrigatórias e vêm do ambiente do PaaS.
@@ -41,8 +48,12 @@ A porta 5433 no host evita colisão com um Postgres já instalado na máquina.
 
 ```bash
 podman play kube deploy/postgres-local.yaml
+mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5433/tcc -Dflyway.user=tcc -Dflyway.password=tcc
 mvn spring-boot:run
 ```
+
+Rode `flyway:migrate` de novo sempre que aparecer uma migração nova. Se
+esquecer, a aplicação recusa subir dizendo qual tabela falta.
 
 **Banco + API**, tudo em container:
 
@@ -61,6 +72,13 @@ podman play kube --down deploy/desenvolvimento.yaml
 Os manifestos são Pod do Kubernetes, lidos pelo `podman play kube`. Os dois
 containers do `desenvolvimento.yaml` compartilham a rede do pod, por isso a API
 alcança o banco em `localhost:5432`.
+
+Os dois manifestos publicam a porta 5433 no host: rode **um de cada vez**, ou o
+segundo fica preso em `Created` por conflito de porta.
+
+No `desenvolvimento.yaml` a API sobe com `FLYWAY_MIGRAR_NO_BOOT=true`, para não
+exigir o comando de migração à mão. É conveniência local; em produção o valor
+é `false`.
 
 ## 4. Deploy
 
@@ -81,24 +99,21 @@ Não existe runtime Java no Vercel — nem oficial nem comunitário. Qualquer
 `vercel.json` com `@vercel/java` falha; esse pacote não existe. O caminho é a
 imagem de container.
 
-Configurar no projeto do Vercel: `DB_URL`, `DB_USER`, `DB_PASSWORD`,
-`FLYWAY_DB_URL` e `DB_POOL_SIZE`. Memória e duração máxima ficam nas
-configurações do projeto.
+Configurar no projeto do Vercel: `DB_URL` (transaction pooler), `DB_USER`,
+`DB_PASSWORD` e `DB_POOL_SIZE`. Memória e duração máxima ficam nas
+configurações do projeto. As migrações não passam por aqui — ver §5.
 
 O que muda em relação a um servidor sempre ligado:
 
 - **Escala a zero.** Sem tráfego por 5 minutos em produção (30 segundos em
   preview), a instância é desligada. A requisição seguinte paga a subida da
-  JVM mais o Flyway — medido em 3,2 s no container. Para uma apresentação de
-  banca, vale aquecer a API antes.
+  JVM — medida em 3,2 s no container. Para uma apresentação de banca, vale
+  aquecer a API antes.
 - **Encerramento.** O container recebe `SIGTERM` com 30 s de carência, por
   isso `server.shutdown=graceful`.
 - **Conexões.** Várias instâncias sobem em paralelo. O pool do Hikari fica
   pequeno por instância (`DB_POOL_SIZE`, default 5) e a aplicação deve usar o
   *pooler de transação* do Supabase (porta 6543), não a conexão direta.
-- **Flyway.** O pooler de transação não suporta o advisory lock que o Flyway
-  usa. Por isso `FLYWAY_DB_URL` aponta para a **conexão direta** (porta 5432),
-  enquanto `DB_URL` aponta para o pooler.
 - **Corpo da requisição.** Teto de 4,5 MB por requisição e por resposta.
   Suficiente para este domínio, mas limita upload de foto de atleta.
 - **Sem IP fixo.** Static IP e Secure Compute ainda não valem para imagem de
@@ -132,3 +147,48 @@ Se os dois repositórios forem unificados, o Vercel roteia por serviço:
 
 Isso eliminaria o CORS entre front e API, já que passariam a compartilhar
 origem. Enquanto os repositórios forem separados, são dois projetos no Vercel.
+
+---
+
+## 5. O pipeline de deploy
+
+`.github/workflows/deploy.yml` roda a cada push na `main`, em ordem:
+
+1. `mvn flyway:migrate` contra o Supabase
+2. `vercel deploy --prod`
+
+**Para a ordem valer, o deploy automático do Git precisa estar desligado nas
+configurações do projeto no Vercel.** Se ficar ligado, o Vercel publica em
+paralelo com o job e a nova versão pode chegar antes da migração.
+
+### Qual conexão do Supabase usar
+
+O Supabase expõe o mesmo banco por três endereços, e a escolha não é indiferente:
+
+| Endereço | Porta | IP | Sessão | Uso aqui |
+|---|---|---|---|---|
+| Conexão direta `db.<ref>.supabase.co` | 5432 | **IPv6 apenas** | completa | não usamos |
+| Session pooler `aws-<regiao>.pooler.supabase.com` | 5432 | IPv4 | completa | **migrações** |
+| Transaction pooler `aws-<regiao>.pooler.supabase.com` | 6543 | IPv4 | limitada | **aplicação** |
+
+A aplicação usa o *transaction pooler*: em serverless sobem muitas instâncias
+efêmeras, e é para isso que ele existe.
+
+O Flyway **não** pode usar o transaction pooler. Ele toma um advisory lock do
+Postgres, que vive na sessão, e no modo de transação a conexão volta para o
+bolo a cada comando — o cadeado se perde. O *session pooler* mantém a sessão e
+ainda é IPv4, então serve às migrações sem depender de IPv6.
+
+### Segredos do repositório
+
+`DB_MIGRACAO_URL` (session pooler), `DB_USER`, `DB_PASSWORD`, `VERCEL_TOKEN`,
+`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Nenhum valor vai para o repositório.
+
+### Regras das migrações
+
+- Toda mudança de modelo exige uma migração nova (`V2__...`, `V3__...`).
+- Migração já aplicada **nunca** é editada: o Flyway guarda o checksum e
+  recusa a diferença.
+- A migração precisa ser compatível com a versão anterior da aplicação, que
+  ainda está no ar quando ela roda. Renomear ou remover coluna se faz em dois
+  deploys: primeiro adiciona, depois remove.

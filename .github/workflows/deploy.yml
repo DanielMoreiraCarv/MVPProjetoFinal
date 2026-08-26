@@ -1,0 +1,49 @@
+# As migrações precisam terminar antes da nova versão receber tráfego, por isso
+# o pipeline é dono da ordem: migra e só então publica.
+#
+# Para isso valer, o deploy automático do Git precisa estar DESLIGADO nas
+# configurações do projeto no Vercel. Se ficar ligado, o Vercel publica em
+# paralelo com este job e a ordem se perde.
+#
+# Segredos necessários no repositório:
+#   DB_MIGRACAO_URL  jdbc:postgresql://aws-<regiao>.pooler.supabase.com:5432/postgres
+#                    (session pooler: IPv4 e com suporte a advisory lock)
+#   DB_USER, DB_PASSWORD
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-producao
+  cancel-in-progress: false
+
+jobs:
+  migrar-e-publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Aplicar migrações
+        run: >
+          mvn -B flyway:migrate
+          -Dflyway.url=${{ secrets.DB_MIGRACAO_URL }}
+          -Dflyway.user=${{ secrets.DB_USER }}
+          -Dflyway.password=${{ secrets.DB_PASSWORD }}
+
+      - name: Publicar no Vercel
+        run: |
+          npm install --global vercel@latest
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
