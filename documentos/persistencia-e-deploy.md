@@ -44,10 +44,11 @@ A porta 5433 no host evita colisão com um Postgres já instalado na máquina.
 
 ## 3. Rodando localmente
 
-**Só o banco** (API pela IDE ou por `mvn spring-boot:run`):
+**Só o banco** (API pela IDE, front por `yarn dev`):
 
 ```bash
 podman play kube deploy/postgres-local.yaml
+cd backend
 mvn flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5433/tcc -Dflyway.user=tcc -Dflyway.password=tcc
 mvn spring-boot:run
 ```
@@ -55,13 +56,19 @@ mvn spring-boot:run
 Rode `flyway:migrate` de novo sempre que aparecer uma migração nova. Se
 esquecer, a aplicação recusa subir dizendo qual tabela falta.
 
-**Banco + API**, tudo em container:
+**Sistema completo** — banco, API e front em container:
 
 ```bash
-podman build -t tcc-api:dev .
+podman build -t tcc-api:dev   -f backend/Dockerfile.vercel  backend
+podman build -t tcc-front:dev -f frontend/Dockerfile.vercel frontend
 podman play kube deploy/desenvolvimento.yaml
-curl localhost:8080/api/v1/modalidade
 ```
+
+| Serviço | Endereço |
+|---|---|
+| Front | http://localhost:3000 |
+| API | http://localhost:8080/api/v1/modalidade |
+| Banco | `localhost:5433`, usuário e senha `tcc` |
 
 Derrubar:
 
@@ -79,6 +86,15 @@ segundo fica preso em `Created` por conflito de porta.
 No `desenvolvimento.yaml` a API sobe com `FLYWAY_MIGRAR_NO_BOOT=true`, para não
 exigir o comando de migração à mão. É conveniência local; em produção o valor
 é `false`.
+
+O volume do Postgres **sobrevive** ao `--down`. Se uma migração ainda não
+mergeada for editada depois de aplicada, o Flyway recusa subir com
+*checksum mismatch*. Para zerar o ambiente local:
+
+```bash
+podman play kube --down deploy/desenvolvimento.yaml
+podman volume rm tcc-postgres
+```
 
 ## 4. Deploy
 
@@ -130,23 +146,11 @@ latência do primeiro acesso incomode na banca.
 
 ### 4.3 Front e back no mesmo projeto
 
-Se os dois repositórios forem unificados, o Vercel roteia por serviço:
-
-```json
-{
-  "services": {
-    "frontend": { "root": "tcc-front/", "entrypoint": "Dockerfile.vercel" },
-    "backend":  { "root": "MVPProjetoFinal/", "entrypoint": "Dockerfile.vercel" }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "backend" } },
-    { "source": "/(.*)",     "destination": { "service": "frontend" } }
-  ]
-}
-```
-
-Isso eliminaria o CORS entre front e API, já que passariam a compartilhar
-origem. Enquanto os repositórios forem separados, são dois projetos no Vercel.
+Com o monorepo, o `vercel.json` na raiz declara os dois serviços e roteia por
+caminho: `/api/*` vai para o backend, o resto para o front. Os dois passam a
+compartilhar origem, o que **elimina o CORS** entre eles — o
+`@CrossOrigin("*")` dos controllers deixa de ser necessário e pode sair junto
+com a tarefa de configuração central de CORS.
 
 ---
 
@@ -192,3 +196,21 @@ ainda é IPv4, então serve às migrações sem depender de IPv6.
 - A migração precisa ser compatível com a versão anterior da aplicação, que
   ainda está no ar quando ela roda. Renomear ou remover coluna se faz em dois
   deploys: primeiro adiciona, depois remove.
+
+---
+
+## 6. Organização do repositório
+
+```
+backend/    API Spring Boot (pom.xml, src/, Dockerfile.vercel)
+frontend/   Next.js (package.json, app/, Dockerfile.vercel)
+deploy/     manifestos de Pod para podman play kube
+documentos/ glossário, padrão de API, MER/DER, este documento
+vercel.json roteamento entre os dois serviços
+```
+
+O front veio de `filipe-ts/tcc-frontend` por `git subtree`, então os commits
+originais estão preservados no histórico. O repositório antigo foi arquivado.
+
+Comandos passam a precisar do diretório: `mvn -f backend/pom.xml ...` ou
+`cd backend`, e `cd frontend` para `yarn`.

@@ -34,7 +34,7 @@ jobs:
 
       - name: Aplicar migrações
         run: >
-          mvn -B flyway:migrate
+          mvn -B -f backend/pom.xml flyway:migrate
           -Dflyway.url=${{ secrets.DB_MIGRACAO_URL }}
           -Dflyway.user=${{ secrets.DB_USER }}
           -Dflyway.password=${{ secrets.DB_PASSWORD }}
