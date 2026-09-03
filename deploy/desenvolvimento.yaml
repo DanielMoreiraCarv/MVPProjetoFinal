@@ -1,16 +1,23 @@
-# Ambiente local de desenvolvimento: Postgres + API no mesmo pod.
+# Sistema completo em um pod: Postgres, API e front.
 #
+#   podman build -t tcc-api:dev   -f backend/Dockerfile.vercel  backend
+#   podman build -t tcc-front:dev -f frontend/Dockerfile.vercel frontend
 #   podman play kube deploy/desenvolvimento.yaml
+#
+#   front  http://localhost:3000
+#   api    http://localhost:8080/api/v1/modalidade
+#   banco  localhost:5433
+#
 #   podman play kube --down deploy/desenvolvimento.yaml
 #
-# A senha aqui é de desenvolvimento e não vale em nenhum outro ambiente.
-# Em produção o banco é o Supabase e as credenciais vêm do ambiente do PaaS.
+# Os três containers compartilham a rede do pod, então falam entre si por
+# localhost. A senha aqui é de desenvolvimento e não vale em outro ambiente.
 apiVersion: v1
 kind: Pod
 metadata:
-  name: tcc-api
+  name: tcc
   labels:
-    app: tcc-api
+    app: tcc
 spec:
   containers:
     - name: postgres
@@ -45,9 +52,26 @@ spec:
           value: tcc
         - name: JPA_SHOW_SQL
           value: "true"
+          # Só em desenvolvimento: poupa rodar mvn flyway:migrate à mão.
+          # Em produção quem migra é o pipeline de deploy.
+        - name: FLYWAY_MIGRAR_NO_BOOT
+          value: "true"
       ports:
         - containerPort: 8080
           hostPort: 8080
+
+    - name: front
+      image: localhost/tcc-front:dev
+      env:
+        - name: PORT
+          value: "3000"
+          # Lido pelo navegador, que roda no host: precisa da porta publicada,
+          # não do endereço interno do pod.
+        - name: NEXT_PUBLIC_API_URL
+          value: http://localhost:8080/api/v1
+      ports:
+        - containerPort: 3000
+          hostPort: 3000
 
   volumes:
     - name: dados-postgres
