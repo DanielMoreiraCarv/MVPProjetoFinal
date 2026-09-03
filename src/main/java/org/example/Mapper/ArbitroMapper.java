@@ -37,6 +37,11 @@ public class ArbitroMapper
 
     public static ArbitroResponse toResponse ( Arbitro arbitro )
     {
+        if ( arbitro == null )
+        {
+            return null;
+        }
+
         return new ArbitroResponse( arbitro.getId(), arbitro.getNome(),
                 arbitro.getFederacao(), arbitro.getPartidasApitadas() );
     }
