@@ -1,4 +1,5 @@
-# Só o banco, para rodar a API pela IDE ou por mvn spring-boot:run.
+# Só o banco, para rodar a API pela IDE (ou mvn spring-boot:run em backend/)
+# e o front por yarn dev em frontend/.
 #
 #   podman play kube deploy/postgres-local.yaml
 #
