@@ -45,6 +45,10 @@ public class Jogadores {
     @JoinColumn(name = "ID_MODALIDADE")
     private Modalidade modalidade;
 
+    @ManyToOne
+    @JoinColumn(name = "ID_TIME")
+    private Time time;
+
     @Column(name = "GOLS")
     private int gols;
 

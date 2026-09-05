@@ -7,6 +7,8 @@ import org.example.Models.Request.JogadoresCreateRequest;
 import org.example.Models.Request.JogadoresUpdateRequest;
 import org.example.Models.Response.JogadoresResponse;
 
+import java.util.List;
+
 public class JogadoresMapper
 {
     private JogadoresMapper ()
@@ -19,7 +21,8 @@ public class JogadoresMapper
         Jogadores jogador = new Jogadores();
         jogador.setNome( jogadoresRequest.nome() );
         jogador.setIdade( jogadoresRequest.idade() == null ? 0 : jogadoresRequest.idade() );
-        jogador.setNumCamisa( jogadoresRequest.numCamisa() == null ? 0 : jogadoresRequest.numCamisa() );
+        jogador.setNumCamisa(
+                jogadoresRequest.numCamisa() == null ? 0 : jogadoresRequest.numCamisa() );
         jogador.setCpf( jogadoresRequest.cpf() );
         jogador.setExpulso( false );
         jogador.setGols( 0 );
@@ -69,5 +72,15 @@ public class JogadoresMapper
         return new JogadoresResponse( jogador.getId(), jogador.getNome(), jogador.getIdade(),
                 jogador.getNumCamisa(), jogador.getCpf(), jogador.getPontos(), jogador.getGols(),
                 jogador.getAssistencias() );
+    }
+
+    public static List<JogadoresResponse> toResponse ( List<Jogadores> lstJogadores )
+    {
+        if ( lstJogadores == null )
+        {
+            return null;
+        }
+
+        return lstJogadores.stream().map( JogadoresMapper::toResponse ).toList();
     }
 }

@@ -14,7 +14,9 @@ public record JogadoresCreateRequest(
         @CPF
         String cpf,
 
-        Long idModalidade
+        Long idModalidade,
+
+        Long idTime
 )
 {
 }

@@ -1,6 +1,9 @@
 package org.example.Services;
 
+import org.example.Models.Federacao;
 import org.example.Models.Jogadores;
+import org.example.Models.Modalidade;
+import org.example.Models.Request.TimeUpdateRequest;
 import org.example.Models.Time;
 import org.example.Repositories.TimeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,12 @@ public class TimeService {
     
     @Autowired
     private TimeRepository timeRepository;
+
+    @Autowired
+    private FederacaoService federacaoService;
+
+    @Autowired
+    private ModalidadeService modalidadeService;
     
     public Time criarTime(Time time) {
         time.setId(null);
@@ -36,13 +45,23 @@ public class TimeService {
         return timeRepository.findByModalidadeId(idModalidade);
     }
     
-    public Time atualizarTime(Long id, Time timeAtualizado) {
+    public Time atualizarTime(Long id, TimeUpdateRequest request) {
         Optional<Time> timeExistente = timeRepository.findById(id);
+        Federacao federacao = new Federacao();
+        Modalidade modalidade = new Modalidade();
         if (timeExistente.isPresent()) {
+            if(request.idFederacao()!=null){
+                federacaoService.buscarPorId(request.idFederacao());
+            }
+
+            if(request.idModalidade()!=null){
+                modalidade = modalidadeService.buscarPorId(request.idModalidade());
+            }
+
             Time time = timeExistente.get();
-            time.setNome(timeAtualizado.getNome());
-            time.setModalidade(timeAtualizado.getModalidade());
-            time.setLstJogadores(timeAtualizado.getLstJogadores());
+            time.setNome(request.nome());
+            time.setModalidade(modalidade);
+            time.setFederacao( federacao );
             return timeRepository.save(time);
         }
         return null;
