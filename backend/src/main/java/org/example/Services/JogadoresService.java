@@ -1,6 +1,10 @@
 package org.example.Services;
 
 import org.example.Models.Jogadores;
+import org.example.Models.Modalidade;
+import org.example.Models.Request.JogadoresCreateRequest;
+import org.example.Models.Request.JogadoresUpdateRequest;
+import org.example.Models.Time;
 import org.example.Repositories.JogadoresRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,10 +17,21 @@ public class JogadoresService {
     
     @Autowired
     private JogadoresRepository jogadoresRepository;
+
+    @Autowired
+    private ModalidadeService modalidadeService;
     
-    public Jogadores criarJogador(Jogadores jogador) {
-        jogador.setId(null);
-        return jogadoresRepository.save(jogador);
+    public Jogadores criarJogador( JogadoresCreateRequest request, Time time ) {
+        Jogadores jogador = new Jogadores();
+
+        jogador.setNome( request.nome() );
+        jogador.setIdade(  request.idade() );
+        jogador.setCpf(  request.cpf() );
+        jogador.setModalidade( modalidadeService.buscarPorId( request.idModalidade() ));
+        jogador.setTime(  time );
+
+        jogadoresRepository.save( jogador );
+        return jogador;
     }
     
     public Jogadores buscarPorId(Long id) {
@@ -47,15 +62,18 @@ public class JogadoresService {
         return jogadoresRepository.findByModalidadeIdAndExpulsoFalse(idModalidade);
     }
     
-    public Jogadores atualizarJogador(Long id, Jogadores jogadorAtualizado) {
+    public Jogadores atualizarJogador(Long id, JogadoresUpdateRequest jogadorAtualizado) {
         Optional<Jogadores> jogadorExistente = jogadoresRepository.findById(id);
         if (jogadorExistente.isPresent()) {
             Jogadores jogador = jogadorExistente.get();
-            jogador.setNome(jogadorAtualizado.getNome());
-            jogador.setIdade(jogadorAtualizado.getIdade());
-            jogador.setNumCamisa(jogadorAtualizado.getNumCamisa());
-            jogador.setPosicao(jogadorAtualizado.getPosicao());
-            jogador.setModalidade(jogadorAtualizado.getModalidade());
+            jogador.setNome(jogadorAtualizado.nome());
+            jogador.setIdade(jogadorAtualizado.idade());
+            jogador.setNumCamisa(jogadorAtualizado.numCamisa());
+            jogador.setCpf(jogadorAtualizado.cpf());
+
+            Modalidade modalidade =
+                    modalidadeService.buscarPorId( jogadorAtualizado.idModalidade() );
+            jogador.setModalidade(modalidade);
             return jogadoresRepository.save(jogador);
         }
         return null;

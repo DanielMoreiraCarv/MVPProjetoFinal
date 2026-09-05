@@ -33,4 +33,14 @@ public class TabelaMapper
         return new TabelaResponse( tabela.getId(), CampeonatoMapper.toResponse( campeonato ),
                 partidas );
     }
+
+    public static List<TabelaResponse> toResponse ( List<Tabela> tabelas )
+    {
+        if( tabelas == null || tabelas.isEmpty() )
+        {
+            return Collections.emptyList();
+        }
+
+        return tabelas.stream().map( TabelaMapper::toResponse ).toList();
+    }
 }

@@ -23,7 +23,6 @@ public class TimeMapper
     {
         Time time = new Time();
         time.setNome( timeRequest.nome() );
-        time.setEnumTipoEsporte( timeRequest.enumTipoEsporte() );
         time.setFederacao( toFederacao( timeRequest.idFederacao() ) );
 
         return time;
@@ -33,7 +32,6 @@ public class TimeMapper
             throws TimeUpdateException
     {
         time.setNome( updateRequest.nome() );
-        time.setEnumTipoEsporte( updateRequest.enumTipoEsporte() );
         time.setFederacao( toFederacao( updateRequest.idFederacao() ) );
 
         return time;
@@ -52,7 +50,7 @@ public class TimeMapper
 
         return new TimeResponse( time.getId(), time.getNome(),
                 FederacaoMapper.toResponse( time.getFederacao() ), jogadores,
-                time.getEnumTipoEsporte() );
+                null );
     }
 
     private static Federacao toFederacao ( Long idFederacao )
@@ -65,5 +63,17 @@ public class TimeMapper
         Federacao federacao = new Federacao();
         federacao.setId( idFederacao );
         return federacao;
+    }
+
+    public static List<TimeResponse> toResponse(List<Time> times)
+    {
+        if (times == null || times.isEmpty())
+        {
+            return Collections.emptyList();
+        }
+
+        return times.stream()
+                    .map(TimeMapper::toResponse)
+                    .toList();
     }
 }

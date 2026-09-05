@@ -7,7 +7,7 @@ public record ArbitroCreateRequest(
         String nome,
 
         @NotNull(message = "É preciso informar a federação do árbitro")
-        String federacao,
+        Long federacao,
 
         @NotNull(message = "É preciso informar a categoria do árbitro")
         String categoria
