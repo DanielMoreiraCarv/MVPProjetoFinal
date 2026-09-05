@@ -6,10 +6,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "ARBITRO")
-public class Arbitro {
+public class Arbitro
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,10 +32,12 @@ public class Arbitro {
     @Column(name = "PARTIDAS_APITADAS")
     private int partidasApitadas;
 
-    public Arbitro() {
+    public Arbitro ()
+    {
     }
 
-    public Arbitro(Long id, String nome, String federacao, String categoria) {
+    public Arbitro ( Long id, String nome, String federacao, String categoria )
+    {
         this.id = id;
         this.nome = nome;
         this.federacao = federacao;
@@ -38,47 +45,9 @@ public class Arbitro {
         this.partidasApitadas = 0;
     }
 
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getFederacao() {
-        return federacao;
-    }
-
-    public void setFederacao(String federacao) {
-        this.federacao = federacao;
-    }
-
-    public String getCategoria() {
-        return categoria;
-    }
-
-    public void setCategoria(String categoria) {
-        this.categoria = categoria;
-    }
-
-    public int getPartidasApitadas() {
-        return partidasApitadas;
-    }
-
-    public void setPartidasApitadas(int partidasApitadas) {
-        this.partidasApitadas = partidasApitadas;
-    }
-
-    public void registrarTrabalho() {
+    public void registrarTrabalho ()
+    {
         this.partidasApitadas++;
     }
 }

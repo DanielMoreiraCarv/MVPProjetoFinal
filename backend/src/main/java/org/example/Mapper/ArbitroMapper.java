@@ -3,9 +3,12 @@ package org.example.Mapper;
 import org.example.Exception.ArbitroCreateException;
 import org.example.Exception.ArbitroUpdateRequest;
 import org.example.Models.Arbitro;
+import org.example.Models.Federacao;
 import org.example.Models.Request.ArbitroCreateRequest;
 import org.example.Models.Request.ArbitroUpdateResquest;
 import org.example.Models.Response.ArbitroResponse;
+
+import java.util.List;
 
 public class ArbitroMapper
 {
@@ -19,7 +22,7 @@ public class ArbitroMapper
         Arbitro arbitro = new Arbitro();
         arbitro.setNome( arbitroRequest.nome() );
         arbitro.setCategoria( arbitroRequest.categoria() );
-        arbitro.setFederacao( arbitroRequest.federacao() );
+        arbitro.setFederacao( arbitro.getFederacao() );
 
         return arbitro;
     }
@@ -44,5 +47,16 @@ public class ArbitroMapper
 
         return new ArbitroResponse( arbitro.getId(), arbitro.getNome(),
                 arbitro.getFederacao(), arbitro.getPartidasApitadas() );
+    }
+
+    public static List<ArbitroResponse> toResponse ( List<Arbitro> arbitros )
+    {
+        if ( arbitros == null || arbitros.isEmpty() )
+        {
+            return null;
+        }
+
+        return arbitros.stream().map( ArbitroMapper::toResponse ).toList();
+
     }
 }
