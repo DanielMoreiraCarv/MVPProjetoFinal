@@ -38,6 +38,9 @@ public class SancaoJogador
     @Column(name = "ATIVA")
     private Boolean ativo;
 
+    @Column(name = "JUSTIFICATIVA")
+    private String justificativa;
+
 
     public SancaoJogador ( Long id, Sancao sancao, Boolean excao, Integer partidasExcecao,
             Jogadores jogador, Partida partidaInicioSancao )
@@ -58,5 +61,10 @@ public class SancaoJogador
         }
 
         this.ativo = true;
+    }
+
+    public SancaoJogador ()
+    {
+
     }
 }

@@ -1,10 +1,8 @@
 package org.example.Mapper;
 
-import org.example.Models.Arbitro;
 import org.example.Models.Campeonato;
 import org.example.Models.EnumTipoEsporte;
 import org.example.Models.Request.SancaoRequest;
-import org.example.Models.Response.ArbitroResponse;
 import org.example.Models.Response.SancaoResponse;
 import org.example.Models.Sancao;
 
