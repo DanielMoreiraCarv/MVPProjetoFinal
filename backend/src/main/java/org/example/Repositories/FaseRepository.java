@@ -15,7 +15,7 @@ public interface FaseRepository extends JpaRepository<Fase, Long>
     @Query("""
         SELECT f
         FROM Fase f
-        WHERE f.idCampeonato = :campeonatoId
+        WHERE f.campeonato.id = :campeonatoId
     """)
     Optional<List<Fase>> findFaseByCampeonatoId(@Param("campeonatoId") Long campeonatoId);
 }

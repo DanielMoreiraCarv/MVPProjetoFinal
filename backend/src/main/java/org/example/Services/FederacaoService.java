@@ -12,6 +12,6 @@ public class FederacaoService
     private FederacaoRepository federacaoRepository;
 
     public Federacao buscarPorId(Long id){
-        return federacaoRepository.buscarPorId(id).orElse(null);
+        return federacaoRepository.findById(id).orElse(null);
     }
 }

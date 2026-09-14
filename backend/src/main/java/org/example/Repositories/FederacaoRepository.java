@@ -1,12 +1,10 @@
 package org.example.Repositories;
 
 import org.example.Models.Federacao;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-
 @Repository
-public interface FederacaoRepository
+public interface FederacaoRepository extends JpaRepository<Federacao, Long>
 {
-    Optional<Federacao> buscarPorId ( Long id );
 }
