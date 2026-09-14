@@ -3,8 +3,10 @@ package org.example.Mapper;
 import org.example.Models.Modalidade;
 import org.example.Models.Response.ModalidadeResponse;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ModalidadeMapper
 {
@@ -46,13 +48,15 @@ public class ModalidadeMapper
         return modalidade;
     }
 
+    /** Mutável de propósito: o Hibernate limpa a coleção ao mesclar na entidade. */
     public static List<Modalidade> toReferencias ( List<Long> idsModalidade )
     {
         if ( idsModalidade == null || idsModalidade.isEmpty() )
         {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
-        return idsModalidade.stream().map( ModalidadeMapper::toReferencia ).toList();
+        return idsModalidade.stream().map( ModalidadeMapper::toReferencia )
+                            .collect( Collectors.toCollection( ArrayList::new ) );
     }
 }

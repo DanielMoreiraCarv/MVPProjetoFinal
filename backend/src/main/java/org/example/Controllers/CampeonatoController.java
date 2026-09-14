@@ -1,97 +1,142 @@
 package org.example.Controllers;
 
-import jakarta.websocket.server.PathParam;
+import jakarta.validation.Valid;
+import org.example.Exception.CampeonatoCreateException;
+import org.example.Exception.CampeonatoUpdateException;
+import org.example.Mapper.CampeonatoMapper;
 import org.example.Models.Campeonato;
+import org.example.Models.Request.CampeonatoCreateRequest;
+import org.example.Models.Request.CampeonatoUpdateRequest;
+import org.example.Models.Response.CampeonatoResponse;
 import org.example.Services.CampeonatoService;
-import org.example.Services.TimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/campeonatos")
+@RequestMapping("/api/v1/campeonato")
 @CrossOrigin(origins = "*")
 public class CampeonatoController
 {
-
     @Autowired
     private CampeonatoService campeonatoService;
 
-    @Autowired
-    private TimeService timeService;
-
     @PostMapping
-    public ResponseEntity<Campeonato> criar ( @RequestBody Campeonato campeonato )
+    public ResponseEntity<CampeonatoResponse> criar (
+            @Valid @RequestBody CampeonatoCreateRequest request
+    )
     {
         try
         {
-            Campeonato novo = campeonatoService.criarCampeonato( campeonato );
-            return ResponseEntity.status( HttpStatus.CREATED ).body( novo );
-        } catch ( Exception e )
+            Campeonato campeonato = campeonatoService.criar(
+                    CampeonatoMapper.toEntity( request )
+            );
+
+            return ResponseEntity
+                    .status( HttpStatus.CREATED )
+                    .body( CampeonatoMapper.toResponse( campeonato ) );
+        }
+        catch ( CampeonatoCreateException e )
         {
             return ResponseEntity.status( HttpStatus.BAD_REQUEST ).build();
         }
     }
 
+    @GetMapping
+    public ResponseEntity<List<CampeonatoResponse>> listar (
+            @RequestParam(required = false) Long idAdministracao
+    )
+    {
+        List<CampeonatoResponse> campeonatos;
+
+        if ( idAdministracao != null )
+        {
+            campeonatos = CampeonatoMapper.toResponse(
+                    campeonatoService.listarPorAdministracao( idAdministracao )
+            );
+        }
+        else
+        {
+            campeonatos = CampeonatoMapper.toResponse(
+                    campeonatoService.listarTodos()
+            );
+        }
+
+        return ResponseEntity
+                .status( HttpStatus.OK )
+                .body( campeonatos );
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<Campeonato> buscarPorId ( @PathVariable Long id )
+    public ResponseEntity<CampeonatoResponse> buscarPorId (
+            @PathVariable Long id
+    )
     {
         Campeonato campeonato = campeonatoService.buscarPorId( id );
-        if ( campeonato != null )
-        {
-            return ResponseEntity.ok( campeonato );
-        }
-        return ResponseEntity.notFound().build();
-    }
 
-    @GetMapping
-    public ResponseEntity<List<Campeonato>> listarTodos ()
-    {
-        List<Campeonato> campeonatos = campeonatoService.listarTodos();
-        return ResponseEntity.ok( campeonatos );
-    }
-
-    @GetMapping("/tipo/{tipo}")
-    public ResponseEntity<?> listarMataMata ( @PathParam("tipo") String tipo )
-    {
-        if ( tipo.equals( "matamata" ) )
+        if ( campeonato == null )
         {
-            List<Campeonato> campeonatos = campeonatoService.listarMataMata();
-            return ResponseEntity.ok( campeonatos );
-        } else if ( tipo.equals( "pontosCorridos" ) )
-        {
-            List<Campeonato> campeonatoes = campeonatoService.listarPontosCorridos();
-            return ResponseEntity.ok( campeonatoes );
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.status( HttpStatus.BAD_REQUEST )
-                             .body( "tipo " + "de " + "campeonato não encontrado" );
+        return ResponseEntity
+                .status( HttpStatus.OK )
+                .body( CampeonatoMapper.toResponse( campeonato ) );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Campeonato> atualizar ( @PathVariable Long id,
-            @RequestBody Campeonato campeonatoAtualizado )
+    public ResponseEntity<CampeonatoResponse> atualizar (
+            @PathVariable Long id,
+            @Valid @RequestBody CampeonatoUpdateRequest request
+    )
     {
-        Campeonato atualizado = campeonatoService.atualizarCampeonato( id, campeonatoAtualizado );
-        if ( atualizado != null )
+        Campeonato campeonato = campeonatoService.buscarPorId( id );
+
+        if ( campeonato == null )
         {
-            return ResponseEntity.ok( atualizado );
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        try
+        {
+            Campeonato campeonatoAtualizado = campeonatoService.atualizar( request );
+
+            return ResponseEntity
+                    .status( HttpStatus.OK )
+                    .body( CampeonatoMapper.toResponse( campeonatoAtualizado ) );
+        }
+        catch ( CampeonatoUpdateException e )
+        {
+            return ResponseEntity.status( HttpStatus.BAD_REQUEST ).build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar ( @PathVariable Long id )
+    public ResponseEntity<?> deletar (
+            @PathVariable Long id
+    )
     {
         Campeonato campeonato = campeonatoService.buscarPorId( id );
-        if ( campeonato != null )
+
+        if ( campeonato == null )
         {
-            campeonatoService.deletarCampeonato( id );
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        campeonatoService.deletarCampeonato( id );
+
+        return ResponseEntity.noContent().build();
     }
 }

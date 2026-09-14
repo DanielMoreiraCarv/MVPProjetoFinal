@@ -11,7 +11,13 @@ public record CampeonatoResponse(
 
         List<TimeResponse> lstTimes,
 
-        Boolean isMataMata
+        Boolean isMataMata,
+
+        String descricao,
+
+        String categoria,
+
+        Long idAdministracao
 )
 {
 }

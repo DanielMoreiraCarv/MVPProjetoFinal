@@ -1,16 +1,18 @@
 import {z} from "zod"
 import { teamSchema } from "./team"
-import { sportSchema } from "./sport"
 import { competitionStageNamesSchema } from "./competitionStage"
 
 
-// mirrors Campeonato type in the backend
+// espelha Campeonato no backend
 export const competitionSchema = z.object({
     id: z.number(),
     name: z.string(),
     description: z.string(),
-    sport: sportSchema.shape.name,
-    modality: z.enum(['Masculino', 'Feminino']),
+    // nome da modalidade, vindo do catálogo do servidor
+    sport: z.string(),
+    modalidadeId: z.number().optional(),
+    modality: z.string(),
+    administracaoId: z.number().optional(),
     teams: z.array(teamSchema),
     currentStage: competitionStageNamesSchema.optional(),
 })

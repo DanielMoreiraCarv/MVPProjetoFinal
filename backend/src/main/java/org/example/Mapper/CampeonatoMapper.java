@@ -9,8 +9,10 @@ import org.example.Models.Response.CampeonatoResponse;
 import org.example.Models.Response.TimeResponse;
 import org.example.Models.Time;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CampeonatoMapper
 {
@@ -30,6 +32,9 @@ public class CampeonatoMapper
         campeonato.setNome( campeonatoRequest.nome() );
         campeonato.setLstModalidades( ModalidadeMapper.toReferencias( campeonatoRequest.modalidadesIds() ) );
         campeonato.setMataMata( Boolean.TRUE.equals( campeonatoRequest.isMataMata() ) );
+        campeonato.setDescricao( campeonatoRequest.descricao() );
+        campeonato.setCategoria( campeonatoRequest.categoria() );
+        campeonato.setAdministracao( AdministracaoMapper.toReferencia( campeonatoRequest.idAdministracao() ) );
 
         return campeonato;
     }
@@ -40,7 +45,10 @@ public class CampeonatoMapper
         campeonato.setNome( updateRequest.nome() );
         campeonato.setLstModalidades( ModalidadeMapper.toReferencias( updateRequest.modalidadesIds() ) );
         campeonato.setLstTimes( toTimes( updateRequest.timesIds() ) );
-        campeonato.setMataMata( updateRequest.mataMata() );
+        campeonato.setMataMata( Boolean.TRUE.equals( updateRequest.isMataMata() ) );
+        campeonato.setDescricao( updateRequest.descricao() );
+        campeonato.setCategoria( updateRequest.categoria() );
+        campeonato.setAdministracao( AdministracaoMapper.toReferencia( updateRequest.idAdministracao() ) );
 
         return campeonato;
     }
@@ -56,22 +64,37 @@ public class CampeonatoMapper
                 ? Collections.emptyList()
                 : campeonato.getLstTimes().stream().map( TimeMapper::toResponse ).toList();
 
+        Long idAdministracao = campeonato.getAdministracao() == null
+                ? null
+                : campeonato.getAdministracao().getId();
+
         return new CampeonatoResponse( campeonato.getId(), campeonato.getNome(),
                 ModalidadeMapper.toResponse( campeonato.getLstModalidades() ), times,
-                campeonato.isMataMata() );
+                campeonato.isMataMata(), campeonato.getDescricao(), campeonato.getCategoria(),
+                idAdministracao );
+    }
+
+    public static List<CampeonatoResponse> toResponse ( List<Campeonato> campeonatos )
+    {
+        if ( campeonatos == null || campeonatos.isEmpty() )
+        {
+            return Collections.emptyList();
+        }
+
+        return campeonatos.stream().map( CampeonatoMapper::toResponse ).toList();
     }
 
     private static List<Time> toTimes ( List<Long> timesIds )
     {
         if ( timesIds == null )
         {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
 
         return timesIds.stream().map( id -> {
             Time time = new Time();
             time.setId( id );
             return time;
-        } ).toList();
+        } ).collect( Collectors.toCollection( ArrayList::new ) );
     }
 }
