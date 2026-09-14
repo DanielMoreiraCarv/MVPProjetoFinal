@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Impede commit que não compila. Roda só o lado que mudou: um commit apenas de
+# backend não paga o build do Next, e vice-versa.
+#
+# Ativar (uma vez por clone):  git config core.hooksPath .githooks
+# Pular em um commit:          git commit --no-verify
+set -uo pipefail
+
+RAIZ="$(git rev-parse --show-toplevel)"
+ALTERADOS="$(git diff --cached --name-only --diff-filter=ACMR)"
+FALHAS=0
+
+mudou () { echo "$ALTERADOS" | grep -q "^$1/"; }
+
+if mudou backend; then
+    echo "→ backend: compilando e rodando testes"
+    if ! ( cd "$RAIZ/backend" && mvn -B -q test ); then
+        echo "✗ backend falhou"
+        FALHAS=1
+    fi
+fi
+
+if mudou frontend; then
+    if [ ! -d "$RAIZ/frontend/node_modules" ]; then
+        echo "✗ frontend: node_modules ausente — rode 'yarn install' em frontend/"
+        FALHAS=1
+    else
+        echo "→ frontend: build do Next (inclui checagem de tipos)"
+        if ! ( cd "$RAIZ/frontend" && yarn --silent build ); then
+            echo "✗ frontend falhou"
+            FALHAS=1
+        fi
+    fi
+fi
+
+if [ "$FALHAS" -ne 0 ]; then
+    echo
+    echo "Commit interrompido. Corrija os erros acima ou use --no-verify se souber o que está fazendo."
+    exit 1
+fi
+
+exit 0
