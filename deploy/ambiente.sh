@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# Sobe o sistema completo — Postgres, API e front — em um pod do podman.
+#
+#   ./deploy/ambiente.sh subir      constrói as imagens e sobe tudo
+#   ./deploy/ambiente.sh derrubar   para o pod (os dados do banco ficam)
+#   ./deploy/ambiente.sh reiniciar  derruba e sobe de novo
+#   ./deploy/ambiente.sh status     mostra o que está no ar
+#   ./deploy/ambiente.sh logs [api|front|postgres]
+#   ./deploy/ambiente.sh dados      recarrega o conjunto de dados de teste
+#   ./deploy/ambiente.sh limpar     derruba e APAGA o volume do banco
+#
+# subir aceita:
+#   --sem-build    reaproveita as imagens já construídas
+#   --sem-dados    não carrega o conjunto de teste
+set -euo pipefail
+
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+POD="tcc"
+MANIFESTO="$RAIZ/deploy/desenvolvimento.yaml"
+PORTA_BANCO=5433
+PORTA_API=8080
+PORTA_FRONT=3000
+
+verde () { printf '\033[32m%s\033[0m\n' "$*"; }
+aviso () { printf '\033[33m%s\033[0m\n' "$*"; }
+erro  () { printf '\033[31m%s\033[0m\n' "$*" >&2; }
+
+garantir_podman () {
+    if ! command -v podman >/dev/null; then
+        erro "podman não encontrado. Instale com: brew install podman"
+        exit 1
+    fi
+
+    if ! podman info >/dev/null 2>&1; then
+        aviso "→ máquina do podman parada, iniciando"
+        podman machine start >/dev/null 2>&1 || {
+            erro "não foi possível iniciar a máquina do podman"
+            erro "tente: podman machine init && podman machine start"
+            exit 1
+        }
+    fi
+}
+
+# Containers deste ambiente. O pod só-de-banco (deploy/postgres-local.yaml)
+# publica a mesma porta e NÃO está aqui de propósito: rodar os dois ao mesmo
+# tempo é justamente o conflito a detectar.
+NOSSOS_CONTAINERS="$POD-postgres $POD-api $POD-front"
+
+dono_da_porta () {
+    # Procura tanto containers quanto processos do host: o caso comum é um
+    # 'mvn spring-boot:run' ou 'yarn start' esquecido rodando fora do pod.
+    local porta="$1"
+
+    podman ps --format '{{.Names}} {{.Ports}}' 2>/dev/null \
+        | grep ":$porta->" \
+        | awk '{print $1}' \
+        | grep -v -- '-infra$' \
+        | while read -r nome; do
+              case " $NOSSOS_CONTAINERS " in
+                  *" $nome "*) ;;
+                  *) echo "container $nome" ;;
+              esac
+          done || true
+
+    # gvproxy é o processo que publica as portas dos containers do podman;
+    # ele já foi coberto acima.
+    lsof -nP -iTCP:"$porta" -sTCP:LISTEN 2>/dev/null \
+        | awk 'NR > 1 && $1 != "gvproxy" { print "processo " $1 " (pid " $2 ")" }' \
+        | sort -u || true
+}
+
+verificar_portas () {
+    local problema=0
+
+    for par in "$PORTA_BANCO:banco" "$PORTA_API:API" "$PORTA_FRONT:front"; do
+        local porta="${par%%:*}" rotulo="${par##*:}"
+        local dono
+        dono="$(dono_da_porta "$porta" || true)"
+
+        if [ -n "$dono" ]; then
+            erro "porta $porta ($rotulo) ocupada por: $(echo "$dono" | tr '\n' ',' | sed 's/,$//')"
+            problema=1
+        fi
+    done
+
+    if [ "$problema" -eq 1 ]; then
+        erro ""
+        erro "Libere as portas antes de subir. Causas comuns:"
+        erro "  - pod só-de-banco:  podman play kube --down deploy/postgres-local.yaml"
+        erro "  - API pela IDE ou mvn spring-boot:run"
+        erro "  - front por yarn dev/start"
+        exit 1
+    fi
+}
+
+construir () {
+    verde "→ construindo imagem da API"
+    podman build -q -t tcc-api:dev -f "$RAIZ/backend/Dockerfile.vercel" "$RAIZ/backend" >/dev/null
+
+    verde "→ construindo imagem do front"
+    podman build -q -t tcc-front:dev -f "$RAIZ/frontend/Dockerfile.vercel" "$RAIZ/frontend" >/dev/null
+}
+
+esperar () {
+    local nome="$1" url="$2" tentativas="${3:-60}"
+    printf '→ aguardando %s' "$nome"
+
+    for _ in $(seq 1 "$tentativas"); do
+        if curl -sf -o /dev/null "$url"; then
+            printf ' pronto\n'
+            return 0
+        fi
+        printf '.'
+        sleep 2
+    done
+
+    printf '\n'
+    erro "$nome não respondeu em $((tentativas * 2))s. Veja: ./deploy/ambiente.sh logs"
+    return 1
+}
+
+subir () {
+    local build=1 dados=1
+    for argumento in "$@"; do
+        case "$argumento" in
+            --sem-build) build=0 ;;
+            --sem-dados) dados=0 ;;
+            *) erro "opção desconhecida: $argumento"; exit 1 ;;
+        esac
+    done
+
+    garantir_podman
+
+    # Derruba o nosso pod ANTES de conferir as portas: um ambiente já no ar
+    # ocupa legitimamente as três e não deve ser tratado como conflito.
+    podman play kube --down "$MANIFESTO" >/dev/null 2>&1 || true
+    verificar_portas
+    [ "$build" -eq 1 ] && construir
+
+    verde "→ subindo o pod"
+    podman play kube "$MANIFESTO" >/dev/null
+
+    esperar "API" "http://localhost:8080/api/v1/modalidade"
+    esperar "front" "http://localhost:3000/administracoes" 40
+
+    if [ "$dados" -eq 1 ]; then
+        verde "→ carregando dados de teste"
+        "$RAIZ/deploy/carregar-dados-de-teste.sh"
+    fi
+
+    echo
+    verde "ambiente no ar"
+    echo "  front  http://localhost:3000"
+    echo "  API    http://localhost:8080/api/v1/modalidade"
+    echo "  banco  localhost:$PORTA_BANCO  (usuário e senha: tcc)"
+}
+
+derrubar () {
+    garantir_podman
+    podman play kube --down "$MANIFESTO" >/dev/null 2>&1 || true
+    verde "pod derrubado. O volume do banco foi mantido."
+}
+
+status () {
+    garantir_podman
+    podman ps --filter "name=^$POD-" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+}
+
+logs () {
+    garantir_podman
+    local alvo="${1:-api}"
+    podman logs -f "$POD-$alvo"
+}
+
+dados () {
+    garantir_podman
+    "$RAIZ/deploy/carregar-dados-de-teste.sh"
+}
+
+limpar () {
+    derrubar
+    podman volume rm tcc-postgres >/dev/null 2>&1 || true
+    verde "volume do banco removido. O próximo 'subir' começa do zero."
+}
+
+case "${1:-}" in
+    subir)      shift; subir "$@" ;;
+    derrubar)   derrubar ;;
+    reiniciar)  derrubar; shift || true; subir "$@" ;;
+    status)     status ;;
+    logs)       shift || true; logs "$@" ;;
+    dados)      dados ;;
+    limpar)     limpar ;;
+    *)
+        awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"
+        exit 1
+        ;;
+esac

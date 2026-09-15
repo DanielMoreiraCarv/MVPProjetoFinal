@@ -9,11 +9,28 @@ set -euo pipefail
 
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SQL="$RAIZ/backend/src/main/resources/db/seed/dados_de_teste.sql"
-CONTAINER="${PG_CONTAINER:-tcc-postgres-postgres}"
+# O Postgres pode vir do pod completo (tcc-postgres) ou do pod só-de-banco
+# (tcc-postgres-postgres). Usa o que estiver respondendo.
+achar_container () {
+    if [ -n "${PG_CONTAINER:-}" ]; then
+        echo "$PG_CONTAINER"
+        return
+    fi
 
-if ! podman exec "$CONTAINER" pg_isready -U tcc -d tcc >/dev/null 2>&1; then
+    for candidato in tcc-postgres tcc-postgres-postgres; do
+        if podman exec "$candidato" pg_isready -U tcc -d tcc >/dev/null 2>&1; then
+            echo "$candidato"
+            return
+        fi
+    done
+}
+
+CONTAINER="$(achar_container)"
+
+if [ -z "$CONTAINER" ] || ! podman exec "$CONTAINER" pg_isready -U tcc -d tcc >/dev/null 2>&1; then
     echo "Postgres não está no ar. Suba com:"
-    echo "  podman play kube deploy/postgres-local.yaml"
+    echo "  ./deploy/ambiente.sh subir           (sistema completo)"
+    echo "  podman play kube deploy/postgres-local.yaml   (só o banco)"
     exit 1
 fi
 

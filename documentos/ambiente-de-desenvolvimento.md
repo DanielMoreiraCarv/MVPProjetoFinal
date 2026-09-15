@@ -10,6 +10,58 @@ cd frontend && yarn install           # o hook precisa de node_modules
 O `core.hooksPath` **não** é versionado — cada pessoa roda o comando uma vez no
 seu clone. Sem ele o hook simplesmente não dispara, sem aviso.
 
+## Subir o sistema
+
+Um comando para tudo — banco, API e front:
+
+```bash
+./deploy/ambiente.sh subir
+```
+
+Constrói as duas imagens, sobe o pod, espera os serviços responderem e carrega
+o conjunto de dados de teste. Ao final imprime os endereços:
+
+| Serviço | Endereço |
+|---|---|
+| Front | http://localhost:3000 |
+| API | http://localhost:8080/api/v1/modalidade |
+| Banco | `localhost:5433`, usuário e senha `tcc` |
+
+Com as imagens já construídas, o ciclo inteiro leva cerca de 10 segundos.
+
+| Comando | O que faz |
+|---|---|
+| `subir` | constrói, sobe e carrega os dados |
+| `subir --sem-build` | reaproveita as imagens (o caso do dia a dia) |
+| `subir --sem-dados` | sobe sem carregar o conjunto de teste |
+| `derrubar` | para o pod, mantendo os dados do banco |
+| `reiniciar` | derruba e sobe de novo |
+| `status` | mostra o que está no ar |
+| `logs [api\|front\|postgres]` | acompanha os logs |
+| `dados` | recarrega o conjunto de teste |
+| `limpar` | derruba e **apaga** o volume do banco |
+
+O script cuida sozinho de três tropeços comuns: inicia a máquina do podman se
+ela estiver parada, avisa qual container ou processo está segurando cada porta
+antes de tentar subir, e derruba o pod anterior antes de recriar.
+
+Rodar o front ou a API pela IDE ao mesmo tempo que o pod causa conflito de
+porta — o script diz qual processo é e qual porta está ocupada.
+
+## Rodar pela IDE
+
+Para depurar com breakpoint, suba só o banco e rode a aplicação fora do
+container:
+
+```bash
+podman play kube deploy/postgres-local.yaml
+./deploy/carregar-dados-de-teste.sh
+cd backend && mvn spring-boot:run     # em um terminal
+cd frontend && yarn dev               # em outro
+```
+
+Os dois manifestos publicam a porta 5433, então rode **um de cada vez**.
+
 ## O pre-commit
 
 `.githooks/pre-commit` impede commit que não compila. Roda só o lado que mudou:
