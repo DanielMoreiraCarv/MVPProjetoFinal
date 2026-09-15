@@ -32,22 +32,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ContratoDeFaseTest
 {
     /**
-     * Estes testes falam com o Postgres do ambiente local. Sem ele no ar, são
-     * ignorados em vez de falhar: o pre-commit não deve barrar quem ainda não
-     * subiu o ambiente. A troca por Testcontainers, que remove essa condição,
-     * é a tarefa F1.13.
+     * Estes testes falam com o Postgres do ambiente local. Sem ele no ar eles
+     * falham, de propósito: teste que se ignora sozinho passa despercebido
+     * justamente quando deveria acusar algo. A verificação aqui existe só para
+     * a falha dizer o que fazer, em vez de estourar no meio da subida do
+     * contexto do Spring.
+     *
+     * Remover essa dependência do ambiente é a tarefa F1.13, com Testcontainers.
      */
     @BeforeAll
     static void exigirBancoNoAr ()
     {
-        try ( java.net.Socket ignorado = new java.net.Socket() )
+        try ( java.net.Socket sonda = new java.net.Socket() )
         {
-            ignorado.connect( new java.net.InetSocketAddress( "localhost", 5433 ), 500 );
+            sonda.connect( new java.net.InetSocketAddress( "localhost", 5433 ), 500 );
         }
         catch ( java.io.IOException naoAlcancavel )
         {
-            org.junit.jupiter.api.Assumptions.abort(
-                    "Postgres local indisponível em 5433 — rode ./deploy/ambiente.sh subir" );
+            org.junit.jupiter.api.Assertions.fail(
+                    "Postgres local indisponível em localhost:5433. Suba o ambiente antes de rodar os testes:"
+                            + System.lineSeparator() + "  ./deploy/ambiente.sh subir" );
         }
     }
 
