@@ -39,3 +39,50 @@ Para pular num commit específico: `git commit --no-verify`.
   `core.hooksPath`, passa direto. A verificação no servidor continua
   necessária — foi a ausência dela que deixou a `main` sem compilar por nove
   dias.
+
+---
+
+## Dados de teste
+
+O conjunto que as telas usavam como mock vive agora em SQL:
+
+```bash
+podman play kube deploy/postgres-local.yaml
+./deploy/carregar-dados-de-teste.sh
+```
+
+Aplica as migrações e carrega 2 administrações, 6 competições, 96 times,
+1440 atletas e 78 partidas — os mesmos registros, com os mesmos nomes, que
+estavam em `frontend/src/features/administracoes/mocks/`.
+
+O script **apaga os dados existentes** antes de carregar. É idempotente: rode
+quantas vezes quiser para voltar ao estado conhecido.
+
+### De onde o SQL vem
+
+`backend/src/main/resources/db/seed/dados_de_teste.sql` é **gerado**, não
+escrito à mão:
+
+```bash
+python3 backend/tools/gerar_dados_de_teste.py
+```
+
+O gerador lê os arquivos de mock e emite o SQL. Se os mocks mudarem, regere em
+vez de editar o `.sql`.
+
+### Por que não é uma migração
+
+`db/migration/` é esquema e roda em produção. `db/seed/` é dado de teste e só é
+carregado por quem roda o script à mão. Um time chamado "Panteras Negras" não
+pode aparecer no Supabase por acidente.
+
+### O que não veio dos mocks
+
+- **13 das 91 partidas.** São confrontos de fase futura cujos times ainda
+  dependem do vencedor de outra partida — nos mocks vinham como
+  `"Vencedor Partida 11"`. Entram quando a propagação do vencedor existir
+  (RF98).
+- **Data e local das partidas.** A tabela `partida` não tem essas colunas
+  (E13, RF58 continua aberto), então o horário dos mocks se perde.
+- **Súmulas e ocorrências.** Dependem de `Evento` como entidade (F2.1); hoje
+  ocorrência é texto livre e não sustenta cálculo.
