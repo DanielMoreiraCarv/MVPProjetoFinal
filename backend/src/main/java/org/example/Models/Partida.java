@@ -38,6 +38,10 @@ public class Partida {
     @JoinColumn(name = "ID_CAMPEONATO")
     private Campeonato campeonato;
 
+    @ManyToOne
+    @JoinColumn(name = "ID_FASE")
+    private Fase fase;
+
     @Column(name = "ID_TABELA")
     private Long idTabela;
 
@@ -78,6 +82,11 @@ public class Partida {
     public Long getIdCampeonato ()
     {
         return campeonato == null ? null : campeonato.getId();
+    }
+
+    public Long getIdFase ()
+    {
+        return fase == null ? null : fase.getId();
     }
 
     public Long getIdSumula ()
