@@ -25,37 +25,10 @@ verde () { printf '\033[32m%s\033[0m\n' "$*"; }
 aviso () { printf '\033[33m%s\033[0m\n' "$*"; }
 erro  () { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 
-como_instalar_podman () {
-    case "$(uname -s)" in
-        Darwin)
-            echo "  brew install podman"
-            ;;
-        Linux)
-            if command -v apt-get >/dev/null; then
-                echo "  sudo apt-get install podman"
-            elif command -v dnf >/dev/null; then
-                echo "  sudo dnf install podman"
-            elif command -v pacman >/dev/null; then
-                echo "  sudo pacman -S podman"
-            else
-                echo "  use o gerenciador de pacotes da sua distribuição"
-            fi
-            ;;
-        MINGW*|MSYS*|CYGWIN*)
-            echo "  winget install RedHat.Podman-Desktop"
-            echo "  (no Windows, rode este script pelo WSL ou pelo Git Bash)"
-            ;;
-        *)
-            echo "  veja https://podman.io/docs/installation"
-            ;;
-    esac
-}
-
 garantir_podman () {
     if ! command -v podman >/dev/null; then
-        erro "podman não encontrado. Instale com:"
-        como_instalar_podman >&2
-        erro "Documentação: https://podman.io/docs/installation"
+        erro "podman não encontrado no PATH."
+        erro "Instalação: https://podman.io/docs/installation"
         exit 1
     fi
 
@@ -63,21 +36,24 @@ garantir_podman () {
         return
     fi
 
-    # No Linux o podman fala direto com o kernel; a máquina virtual só existe
-    # em macOS e Windows, e é ela que costuma cair sozinha.
-    if [ "$(uname -s)" = "Linux" ]; then
-        erro "não foi possível falar com o podman."
-        erro "Verifique a instalação: podman info"
-        exit 1
+    # Em macOS e Windows o podman roda numa máquina virtual que cai sozinha;
+    # no Linux não existe máquina e este comando falha, sem efeito colateral.
+    podman machine start >/dev/null 2>&1 || true
+
+    if podman info >/dev/null 2>&1; then
+        aviso "→ máquina do podman reiniciada"
+        return
     fi
 
-    aviso "→ máquina do podman parada, iniciando"
-    podman machine start >/dev/null 2>&1 || {
-        erro "não foi possível iniciar a máquina do podman."
-        erro "Se for o primeiro uso nesta máquina:"
-        erro "  podman machine init && podman machine start"
-        exit 1
-    }
+    # Em vez de adivinhar a causa, mostra o que o próprio podman diz.
+    erro "não foi possível falar com o podman:"
+    erro ""
+    # O || true é necessário: podman info sai diferente de zero aqui, e com
+    # pipefail a própria mensagem de erro derrubaria o script antes do exit.
+    podman info 2>&1 | sed 's/^/  /' >&2 || true
+    erro ""
+    erro "Instalação e configuração: https://podman.io/docs/installation"
+    exit 1
 }
 
 # Containers deste ambiente. O pod só-de-banco (deploy/postgres-local.yaml)
@@ -101,17 +77,12 @@ dono_da_porta () {
               esac
           done || true
 
-    # Processos do host. gvproxy publica as portas dos containers do podman em
-    # macOS e já foi coberto acima. lsof costuma existir em macOS; em Linux o
-    # ss é mais comum.
+    # Processos do host, quando há lsof. gvproxy é quem publica as portas dos
+    # containers do podman e já foi coberto acima. Sem lsof a checagem apenas
+    # não encontra nada: quem reclama então é o próprio podman, ao subir.
     if command -v lsof >/dev/null; then
         lsof -nP -iTCP:"$porta" -sTCP:LISTEN 2>/dev/null \
             | awk 'NR > 1 && $1 != "gvproxy" { print "processo " $1 " (pid " $2 ")" }' \
-            | sort -u || true
-    elif command -v ss >/dev/null; then
-        ss -lptnH "sport = :$porta" 2>/dev/null \
-            | grep -oE 'users:\(\("[^"]+",pid=[0-9]+' \
-            | sed 's/users:((\"/processo /; s/\",pid=/ (pid /; s/$/)/' \
             | sort -u || true
     fi
 }
@@ -192,7 +163,13 @@ subir () {
     [ "$build" -eq 1 ] && construir
 
     verde "→ subindo o pod"
-    podman play kube "$MANIFESTO" >/dev/null
+    if ! podman play kube "$MANIFESTO" >/dev/null; then
+        erro ""
+        erro "o pod não subiu. O erro do podman está acima."
+        erro "Causa mais comum: porta $PORTA_BANCO, $PORTA_API ou $PORTA_FRONT ocupada"
+        erro "por um processo que esta checagem não enxerga."
+        exit 1
+    fi
 
     esperar "API" "http://localhost:8080/api/v1/modalidade"
     esperar "front" "http://localhost:3000/administracoes" 40

@@ -50,11 +50,20 @@ porta — o script diz qual processo é e qual porta está ocupada.
 
 ### Sistema operacional
 
-Funciona em macOS, Linux e Windows via WSL ou Git Bash. As diferenças estão
-tratadas no script: o comando de instalação sugerido muda conforme o sistema e
-o gerenciador de pacotes; `podman machine` só é usado em macOS e Windows,
-porque no Linux o podman roda direto no kernel; e a busca por processo ocupando
-porta usa `lsof` ou `ss`, o que existir.
+O script não tenta adivinhar o sistema. Quando algo falha, ele mostra o erro do
+próprio podman e para:
+
+- **podman fora do PATH** → aponta https://podman.io/docs/installation
+- **podman não responde** → tenta `podman machine start` uma vez, o que resolve
+  o caso de macOS e Windows em que a máquina virtual caiu, e é inofensivo onde
+  ela não existe. Se ainda assim não responder, imprime a saída literal de
+  `podman info` e sai.
+- **o pod não sobe** → repassa o erro do `podman play kube`, que já diz qual
+  porta está em uso.
+
+A identificação de qual processo ocupa uma porta depende de `lsof`. Onde ele
+não existir, essa checagem apenas não encontra nada e quem reclama é o podman,
+ao subir — com a porta no texto do erro.
 
 ### Limites de recursos
 
