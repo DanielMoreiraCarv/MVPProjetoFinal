@@ -239,9 +239,18 @@ class ContratoDeFaseTest
     @Test
     void tipoSemEstrategiaRegistradaFalhaComMensagemClara ()
     {
+        // Todos os valores do enum já têm estratégia, então o caso de tipo
+        // desconhecido é exercitado com a ausência de tipo.
         IllegalArgumentException erro = assertThrows( IllegalArgumentException.class,
-                () -> registro.para( EnumFasePartida.ELIMINATORIA ) );
+                () -> registro.para( null ) );
 
-        assertTrue( erro.getMessage().contains( "ELIMINATORIA" ) );
+        assertTrue( erro.getMessage().contains( "não há estratégia registrada" ) );
+    }
+
+    @Test
+    void osTiposImplementadosEstaoRegistrados ()
+    {
+        assertTrue( registro.conhece( EnumFasePartida.GRUPOS ) );
+        assertTrue( registro.conhece( EnumFasePartida.ELIMINATORIA ) );
     }
 }
