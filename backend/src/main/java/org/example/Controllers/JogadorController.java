@@ -1,5 +1,7 @@
 package org.example.Controllers;
 
+import jakarta.validation.Valid;
+
 import org.example.Mapper.JogadoresMapper;
 import org.example.Models.Jogadores;
 import org.example.Models.Request.JogadoresCreateRequest;
@@ -29,7 +31,7 @@ public class JogadorController
 
     @PostMapping
     public ResponseEntity<?> criarJogador (
-            @RequestBody JogadoresCreateRequest request )
+            @Valid @RequestBody JogadoresCreateRequest request )
     {
         Time time = timeService.buscarPorId( request.idTime() );
 
@@ -47,7 +49,7 @@ public class JogadorController
     }
 
     @PutMapping
-    public ResponseEntity<?> atualizarJogador ( @RequestBody JogadoresUpdateRequest request )
+    public ResponseEntity<?> atualizarJogador ( @Valid @RequestBody JogadoresUpdateRequest request )
     {
         Jogadores jogador = jogadoresService.buscarPorId( request.id() );
 
@@ -64,10 +66,13 @@ public class JogadorController
     }
 
     @GetMapping
-    public ResponseEntity<?> listarJogadores ()
+    public ResponseEntity<?> listarJogadores (
+            @RequestParam(required = false) Long idTime )
     {
-        List<JogadoresResponse> lstJogadores =
-                JogadoresMapper.toResponse( jogadoresService.listarTodos() );
+        List<JogadoresResponse> lstJogadores = JogadoresMapper.toResponse(
+                idTime == null
+                        ? jogadoresService.listarTodos()
+                        : jogadoresService.listarPorTime( idTime ) );
 
         return ResponseEntity
                 .status( HttpStatus.OK )
