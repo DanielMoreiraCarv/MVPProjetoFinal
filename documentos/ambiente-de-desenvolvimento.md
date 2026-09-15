@@ -58,6 +58,10 @@ estavam em `frontend/src/features/administracoes/mocks/`.
 O script **apaga os dados existentes** antes de carregar. É idempotente: rode
 quantas vezes quiser para voltar ao estado conhecido.
 
+Os arquivos em `frontend/src/features/administracoes/mocks/` **não alimentam
+mais as telas** — elas leem da API. Eles continuam no repositório por serem a
+fonte do gerador descrito abaixo.
+
 ### De onde o SQL vem
 
 `backend/src/main/resources/db/seed/dados_de_teste.sql` é **gerado**, não

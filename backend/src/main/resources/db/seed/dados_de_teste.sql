@@ -36,6 +36,15 @@ insert into campeonato (id, nome, descricao, categoria, id_administracao, mata_m
     (5, 'Futebol Sênior 50+ - Masculino', 'Campeonato de pontos corridos para atletas veteranos acima de 50 anos.', 'Masculino', 2, false),
     (6, 'Futebol Masculino', 'Copa mata-mata aberta para todos os colaboradores do Banco do Nordeste.', 'Masculino', 2, false);
 
+insert into modalidade (codigo, nome, jogadores_em_quadra, ativo) values
+    ('FUTEBOL_DE_CAMPO', 'Futebol de campo', 11, true),
+    ('FUTSAL', 'Futsal', 5, true),
+    ('SOCIETY', 'Society', 7, true),
+    ('VOLEIBOL', 'Voleibol', 6, true),
+    ('BASQUETE', 'Basquete', 5, true),
+    ('HANDEBOL', 'Handebol', 7, true)
+on conflict (codigo) do nothing;
+
 insert into campeonato_modalidades (campeonato_id, modalidade_id)
 select c.id, m.id from campeonato c
 cross join modalidade m

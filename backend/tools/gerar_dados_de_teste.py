@@ -209,6 +209,18 @@ delete from administracao;
         + lote(linhas, 1) + ";\n"
     )
 
+    # O catálogo normalmente é populado no boot da aplicação. O seed insere por
+    # conta própria para não depender de a aplicação ter subido antes.
+    partes.append("""insert into modalidade (codigo, nome, jogadores_em_quadra, ativo) values
+    ('FUTEBOL_DE_CAMPO', 'Futebol de campo', 11, true),
+    ('FUTSAL', 'Futsal', 5, true),
+    ('SOCIETY', 'Society', 7, true),
+    ('VOLEIBOL', 'Voleibol', 6, true),
+    ('BASQUETE', 'Basquete', 5, true),
+    ('HANDEBOL', 'Handebol', 7, true)
+on conflict (codigo) do nothing;
+""")
+
     partes.append("""insert into campeonato_modalidades (campeonato_id, modalidade_id)
 select c.id, m.id from campeonato c
 cross join modalidade m

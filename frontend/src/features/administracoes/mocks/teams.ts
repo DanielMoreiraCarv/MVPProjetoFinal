@@ -1,3 +1,7 @@
+// ATENÇÃO: estes arquivos não alimentam mais as telas — elas leem da API.
+// Eles continuam aqui por serem a fonte de backend/tools/gerar_dados_de_teste.py,
+// que converte este conjunto no SQL de carga do ambiente local.
+
 import { Team } from "@/src/lib/types/team";
 
 const football = { id: 1, name: "Futebol" as const, description: "Futebol associação" };

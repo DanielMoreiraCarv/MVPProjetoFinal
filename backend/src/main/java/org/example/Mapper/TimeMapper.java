@@ -50,7 +50,7 @@ public class TimeMapper
 
         return new TimeResponse( time.getId(), time.getNome(),
                 FederacaoMapper.toResponse( time.getFederacao() ), jogadores,
-                null );
+                ModalidadeMapper.toResponse( time.getModalidade() ) );
     }
 
     private static Federacao toFederacao ( Long idFederacao )

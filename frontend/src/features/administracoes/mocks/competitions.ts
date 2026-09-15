@@ -1,9 +1,8 @@
 import { Competition } from "@/src/lib/types/competition";
-import { sportSchema } from "@/src/lib/types/sport";
 import { competitionStageNamesSchema } from "@/src/lib/types/competitionStage";
 import { mockTeams } from "@/src/features/administracoes/mocks/teams";
 
-const football = sportSchema.shape.name.enum.Futebol;
+const football = "Futebol";
 
 export const mockCompetitions: Competition[] = [
     // ── Interclasses Colégio São João ──────────────────────────────────

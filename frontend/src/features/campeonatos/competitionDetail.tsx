@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ToggledGrid } from "@/src/components/ToggledGrid";
 import { TeamsList } from "@/src/features/campeonatos/teamsList";
@@ -10,10 +10,11 @@ import { EditCompetitionForm } from "@/src/features/campeonatos/editCompetitionF
 import { AddTeamDialog } from "@/src/features/campeonatos/addTeamDialog";
 import { StandingsTable, StandingEntry } from "@/src/features/campeonatos/StandingsTable";
 import { KnockoutBracket, KnockoutBracketProps, BracketMatchData } from "@/src/features/campeonatos/KnockoutBracket";
-import { mockCompetitions } from "@/src/features/administracoes/mocks/competitions";
-import { mockMatches } from "@/src/features/administracoes/mocks/matches";
+import { buscarCompeticao } from "@/src/lib/api/competicoes";
+import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { Match } from "@/src/lib/types/match";
 import { Team } from "@/src/lib/types/team";
+import { Competition } from "@/src/lib/types/competition";
 
 const BRACKET_STAGE_ORDER = ["16 de finais", "Oitavas", "Quartas", "Semi-finais"] as const;
 
@@ -80,23 +81,47 @@ export const CompetitionDetail = () => {
     const params = useParams<{ id: string }>();
     const competitionId = Number(params?.id);
 
-    const competition = mockCompetitions.find((c) => c.id === competitionId);
+    const [competition, setCompetition] = useState<Competition | null>(null);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [competitionMatches, setCompetitionMatches] = useState<Match[]>([]);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState<string | null>(null);
 
-    const [teams, setTeams] = useState<Team[]>(competition?.teams ?? []);
+    useEffect(() => {
+        if (!Number.isFinite(competitionId)) return;
+
+        setCarregando(true);
+        Promise.all([
+            buscarCompeticao(competitionId),
+            listarPartidasDaCompeticao(competitionId),
+        ])
+            .then(([encontrada, partidas]) => {
+                setCompetition(encontrada);
+                setTeams(encontrada.teams);
+                setCompetitionMatches(partidas);
+            })
+            .catch((causa) =>
+                setErro(causa instanceof Error ? causa.message : "Não foi possível carregar a competição."))
+            .finally(() => setCarregando(false));
+    }, [competitionId]);
+
+    if (carregando) {
+        return (
+            <div className="p-8">
+                <div className="border border-gray-300 p-4 rounded-md">Carregando competição...</div>
+            </div>
+        );
+    }
 
     if (!competition) {
         return (
             <div className="p-8">
                 <div className="border border-gray-300 p-4 rounded-md">
-                    Competição não encontrada.
+                    {erro ?? "Competição não encontrada."}
                 </div>
             </div>
         );
     }
-
-    const competitionMatches = mockMatches.filter(
-        (m) => m.competitionName === competition.name
-    );
 
     const isPontosCorridos = competition.currentStage === "Pontos Corridos";
     const standings = isPontosCorridos ? computeStandings(competitionMatches) : [];

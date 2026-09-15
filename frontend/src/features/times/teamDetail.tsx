@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { mockTeams } from "@/src/features/administracoes/mocks/teams";
 import { Player } from "@/src/lib/types/player";
 import {
     Table,
@@ -29,17 +28,19 @@ import {
 } from "@/components/ui/dialog";
 import { PlayerDialog } from "@/src/features/times/PlayerDialog";
 import { listarAtletasDoTime, removerAtleta } from "@/src/lib/api/atletas";
+import { buscarTime } from "@/src/lib/api/times";
+import { Team } from "@/src/lib/types/team";
 
 export const TeamDetail = () => {
     const params = useParams<{ teamId: string }>();
     const teamId = Number(params?.teamId);
 
-    const team = mockTeams.find((t) => t.id === teamId);
+    const [team, setTeam] = useState<Team | null>(null);
 
     const [players, setPlayers] = useState<Player[]>([]);
     const [carregandoAtletas, setCarregandoAtletas] = useState(true);
     const [erroAtletas, setErroAtletas] = useState<string | null>(null);
-    const [teamName, setTeamName] = useState(team?.name ?? "");
+    const [teamName, setTeamName] = useState("");
 
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameValue, setRenameValue] = useState("");
@@ -51,18 +52,31 @@ export const TeamDetail = () => {
         if (!Number.isFinite(teamId)) return;
 
         setCarregandoAtletas(true);
-        listarAtletasDoTime(teamId)
+        buscarTime(teamId)
+            .then((encontrado) => {
+                setTeam(encontrado);
+                setTeamName(encontrado.name);
+                return listarAtletasDoTime(teamId);
+            })
             .then(setPlayers)
             .catch((causa) =>
                 setErroAtletas(causa instanceof Error ? causa.message : "Não foi possível carregar o elenco."))
             .finally(() => setCarregandoAtletas(false));
     }, [teamId]);
 
+    if (carregandoAtletas && !team) {
+        return (
+            <div className="p-8">
+                <div className="bg-white shadow-sm rounded-lg p-4">Carregando time...</div>
+            </div>
+        );
+    }
+
     if (!team) {
         return (
             <div className="p-8">
                 <div className="bg-white shadow-sm rounded-lg p-4">
-                    Time não encontrado.
+                    {erroAtletas ?? "Time não encontrado."}
                 </div>
             </div>
         );

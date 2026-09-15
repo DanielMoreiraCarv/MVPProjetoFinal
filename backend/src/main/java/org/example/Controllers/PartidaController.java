@@ -2,6 +2,8 @@ package org.example.Controllers;
 
 import jakarta.websocket.server.PathParam;
 import org.example.Models.Arbitro;
+import org.example.Mapper.PartidaMapper;
+import org.example.Models.Response.PartidaResponse;
 import org.example.Models.Partida;
 import org.example.Services.ArbitroService;
 import org.example.Services.PartidaService;
@@ -38,18 +40,20 @@ public class PartidaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Partida> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<PartidaResponse> buscarPorId(@PathVariable Long id) {
         Partida partida = partidaService.buscarPorId(id);
         if (partida != null) {
-            return ResponseEntity.ok(partida);
+            return ResponseEntity.ok(PartidaMapper.toResponse(partida));
         }
         return ResponseEntity.notFound().build();
     }
 
     @GetMapping
-    public ResponseEntity<List<Partida>> listarTodas() {
-        List<Partida> partidas = partidaService.listarTodas();
-        return ResponseEntity.ok(partidas);
+    public ResponseEntity<List<PartidaResponse>> listarTodas() {
+        return ResponseEntity.ok(
+                partidaService.listarTodas().stream()
+                              .map(PartidaMapper::toResponse)
+                              .toList());
     }
 
     @GetMapping("/acompanhamento/{status}")
@@ -68,15 +72,19 @@ public class PartidaController {
     }
 
     @GetMapping("/campeonato/{idCampeonato}")
-    public ResponseEntity<List<Partida>> listarPorCampeonato(@PathVariable Long idCampeonato) {
-        List<Partida> partidas = partidaService.listarPorCampeonato(idCampeonato);
-        return ResponseEntity.ok(partidas);
+    public ResponseEntity<List<PartidaResponse>> listarPorCampeonato(@PathVariable Long idCampeonato) {
+        return ResponseEntity.ok(
+                partidaService.listarPorCampeonato(idCampeonato).stream()
+                              .map(PartidaMapper::toResponse)
+                              .toList());
     }
 
     @GetMapping("/time/{idTime}")
-    public ResponseEntity<List<Partida>> listarPartidasDoTime(@PathVariable Long idTime) {
-        List<Partida> partidas = partidaService.listarPartidasDoTime(idTime);
-        return ResponseEntity.ok(partidas);
+    public ResponseEntity<List<PartidaResponse>> listarPartidasDoTime(@PathVariable Long idTime) {
+        return ResponseEntity.ok(
+                partidaService.listarPartidasDoTime(idTime).stream()
+                              .map(PartidaMapper::toResponse)
+                              .toList());
     }
 
     @PutMapping("/{id}/escalar-arbitro")
