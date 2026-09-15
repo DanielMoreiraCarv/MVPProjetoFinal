@@ -29,6 +29,13 @@ spec:
           value: tcc
         - name: POSTGRES_PASSWORD
           value: tcc
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
       ports:
         - containerPort: 5432
           hostPort: 5433
@@ -56,6 +63,13 @@ spec:
           # Em produção quem migra é o pipeline de deploy.
         - name: FLYWAY_MIGRAR_NO_BOOT
           value: "true"
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+        limits:
+          cpu: "2"
+          memory: "1Gi"
       ports:
         - containerPort: 8080
           hostPort: 8080
@@ -69,6 +83,13 @@ spec:
           # não do endereço interno do pod.
         - name: NEXT_PUBLIC_API_URL
           value: http://localhost:8080/api/v1
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "1"
+          memory: "512Mi"
       ports:
         - containerPort: 3000
           hostPort: 3000

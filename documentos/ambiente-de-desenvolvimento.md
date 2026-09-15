@@ -42,11 +42,37 @@ Com as imagens já construídas, o ciclo inteiro leva cerca de 10 segundos.
 | `limpar` | derruba e **apaga** o volume do banco |
 
 O script cuida sozinho de três tropeços comuns: inicia a máquina do podman se
-ela estiver parada, avisa qual container ou processo está segurando cada porta
-antes de tentar subir, e derruba o pod anterior antes de recriar.
+ela estiver parada, derruba o pod anterior antes de recriar, e avisa qual
+container ou processo está segurando cada porta antes de tentar subir.
 
 Rodar o front ou a API pela IDE ao mesmo tempo que o pod causa conflito de
 porta — o script diz qual processo é e qual porta está ocupada.
+
+### Sistema operacional
+
+Funciona em macOS, Linux e Windows via WSL ou Git Bash. As diferenças estão
+tratadas no script: o comando de instalação sugerido muda conforme o sistema e
+o gerenciador de pacotes; `podman machine` só é usado em macOS e Windows,
+porque no Linux o podman roda direto no kernel; e a busca por processo ocupando
+porta usa `lsof` ou `ss`, o que existir.
+
+### Limites de recursos
+
+Os manifestos declaram `requests` e `limits` de CPU e memória por container:
+
+| Container | requests | limits |
+|---|---|---|
+| postgres | 100m / 256Mi | 1 CPU / 1Gi |
+| api | 250m / 512Mi | 2 CPUs / 1Gi |
+| front | 100m / 256Mi | 1 CPU / 512Mi |
+
+Além de serem boa prática de manifesto, os limites importam para a JVM: ela lê
+o limite do container e dimensiona o heap a partir dele. Com 1Gi, o heap máximo
+fica em 256Mi — sem o limite, a JVM se dimensionaria pela memória da máquina
+inteira, que é bem diferente entre as máquinas da equipe.
+
+Na prática, com os dados de teste carregados, o consumo fica em torno de 250Mi
+na API, 35Mi no banco e 35Mi no front.
 
 ## Rodar pela IDE
 

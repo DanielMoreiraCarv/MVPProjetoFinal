@@ -25,20 +25,59 @@ verde () { printf '\033[32m%s\033[0m\n' "$*"; }
 aviso () { printf '\033[33m%s\033[0m\n' "$*"; }
 erro  () { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 
+como_instalar_podman () {
+    case "$(uname -s)" in
+        Darwin)
+            echo "  brew install podman"
+            ;;
+        Linux)
+            if command -v apt-get >/dev/null; then
+                echo "  sudo apt-get install podman"
+            elif command -v dnf >/dev/null; then
+                echo "  sudo dnf install podman"
+            elif command -v pacman >/dev/null; then
+                echo "  sudo pacman -S podman"
+            else
+                echo "  use o gerenciador de pacotes da sua distribuição"
+            fi
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            echo "  winget install RedHat.Podman-Desktop"
+            echo "  (no Windows, rode este script pelo WSL ou pelo Git Bash)"
+            ;;
+        *)
+            echo "  veja https://podman.io/docs/installation"
+            ;;
+    esac
+}
+
 garantir_podman () {
     if ! command -v podman >/dev/null; then
-        erro "podman não encontrado. Instale com: brew install podman"
+        erro "podman não encontrado. Instale com:"
+        como_instalar_podman >&2
+        erro "Documentação: https://podman.io/docs/installation"
         exit 1
     fi
 
-    if ! podman info >/dev/null 2>&1; then
-        aviso "→ máquina do podman parada, iniciando"
-        podman machine start >/dev/null 2>&1 || {
-            erro "não foi possível iniciar a máquina do podman"
-            erro "tente: podman machine init && podman machine start"
-            exit 1
-        }
+    if podman info >/dev/null 2>&1; then
+        return
     fi
+
+    # No Linux o podman fala direto com o kernel; a máquina virtual só existe
+    # em macOS e Windows, e é ela que costuma cair sozinha.
+    if [ "$(uname -s)" = "Linux" ]; then
+        erro "não foi possível falar com o podman."
+        erro "Verifique a instalação: podman info"
+        exit 1
+    fi
+
+    aviso "→ máquina do podman parada, iniciando"
+    podman machine start >/dev/null 2>&1 || {
+        erro "não foi possível iniciar a máquina do podman."
+        erro "Se for o primeiro uso nesta máquina:"
+        erro "  podman machine init && podman machine start"
+        exit 1
+    }
 }
 
 # Containers deste ambiente. O pod só-de-banco (deploy/postgres-local.yaml)
@@ -62,11 +101,19 @@ dono_da_porta () {
               esac
           done || true
 
-    # gvproxy é o processo que publica as portas dos containers do podman;
-    # ele já foi coberto acima.
-    lsof -nP -iTCP:"$porta" -sTCP:LISTEN 2>/dev/null \
-        | awk 'NR > 1 && $1 != "gvproxy" { print "processo " $1 " (pid " $2 ")" }' \
-        | sort -u || true
+    # Processos do host. gvproxy publica as portas dos containers do podman em
+    # macOS e já foi coberto acima. lsof costuma existir em macOS; em Linux o
+    # ss é mais comum.
+    if command -v lsof >/dev/null; then
+        lsof -nP -iTCP:"$porta" -sTCP:LISTEN 2>/dev/null \
+            | awk 'NR > 1 && $1 != "gvproxy" { print "processo " $1 " (pid " $2 ")" }' \
+            | sort -u || true
+    elif command -v ss >/dev/null; then
+        ss -lptnH "sport = :$porta" 2>/dev/null \
+            | grep -oE 'users:\(\("[^"]+",pid=[0-9]+' \
+            | sed 's/users:((\"/processo /; s/\",pid=/ (pid /; s/$/)/' \
+            | sort -u || true
+    fi
 }
 
 verificar_portas () {
@@ -129,10 +176,17 @@ subir () {
         esac
     done
 
+    # A ordem dos três passos abaixo importa, e cada um depende do anterior:
+    #
+    #   1. garantir_podman  — sem podman no ar, nenhum comando adiante funciona.
+    #   2. --down           — derruba um ambiente anterior. Precisa vir DEPOIS
+    #                         do passo 1 (usa podman) e ANTES do passo 3: um pod
+    #                         nosso já rodando ocupa legitimamente as três
+    #                         portas, e seria acusado de conflito consigo mesmo.
+    #   3. verificar_portas — o que sobrar ocupando uma porta agora é de fato
+    #                         de outra pessoa: outro container, ou a API/front
+    #                         rodando pela IDE.
     garantir_podman
-
-    # Derruba o nosso pod ANTES de conferir as portas: um ambiente já no ar
-    # ocupa legitimamente as três e não deve ser tratado como conflito.
     podman play kube --down "$MANIFESTO" >/dev/null 2>&1 || true
     verificar_portas
     [ "$build" -eq 1 ] && construir
