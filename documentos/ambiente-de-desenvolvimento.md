@@ -135,15 +135,31 @@ O front não tem script de `typecheck` isolado; a checagem acontece dentro do
 
 Para pular num commit específico: `git commit --no-verify`.
 
+### Os testes exigem o ambiente no ar
+
+Os testes de integração falam com o Postgres local. Sem ele, eles **falham** —
+de propósito, porque teste que se ignora sozinho passa despercebido justamente
+quando deveria acusar algo. A mensagem diz o que fazer:
+
+```
+Postgres local indisponível em localhost:5433. Suba o ambiente antes de rodar os testes:
+  ./deploy/ambiente.sh subir
+```
+
+Como o pre-commit roda `mvn test`, isso significa que **commit em backend/ com
+o ambiente derrubado é bloqueado**. Suba o ambiente, ou use `--no-verify` se
+souber que a alteração não precisa de verificação.
+
+Remover essa dependência é a tarefa F1.13, com Testcontainers, que sobe um
+Postgres próprio para os testes.
+
 ### O que ele não cobre
 
 - **Valida a árvore de trabalho, não o índice.** Se houver alteração não
   adicionada ao commit, ela participa da verificação. Em prática isso quase
   sempre coincide; quando não coincidir, o CI é a rede de segurança.
-- **Não roda testes de verdade**, porque ainda não existem — nem no backend
-  (`src/test/` ausente) nem no front. Hoje o hook garante que o projeto
-  compila. Quando os testes chegarem (F1.13, Testcontainers + JUnit), passam a
-  rodar automaticamente, sem mudar o hook.
+- **No front ainda não há testes**, então lá o hook garante apenas que o
+  projeto compila e os tipos batem.
 - **Não substitui CI.** Quem usar `--no-verify`, ou não tiver rodado o
   `core.hooksPath`, passa direto. A verificação no servidor continua
   necessária — foi a ausência dela que deixou a `main` sem compilar por nove
