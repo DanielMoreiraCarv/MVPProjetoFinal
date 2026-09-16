@@ -83,6 +83,28 @@ inteira, que é bem diferente entre as máquinas da equipe.
 Na prática, com os dados de teste carregados, o consumo fica em torno de 250Mi
 na API, 35Mi no banco e 35Mi no front.
 
+### Trocar de branch entre stacks
+
+As stacks têm conjuntos diferentes de migração. Ao voltar de uma para outra, o
+banco fica com versões que a branch atual não conhece, e o Flyway recusa
+aplicar uma versão menor do que a maior já aplicada:
+
+```
+Detected resolved migration not applied to database: 3
+```
+
+O `subir` reconhece esse caso e mostra os dois conjuntos lado a lado. A saída é
+sempre a mesma:
+
+```bash
+./deploy/ambiente.sh limpar && ./deploy/ambiente.sh subir
+```
+
+O volume do Postgres sobrevive ao `derrubar`, de propósito — é o `limpar` que o
+apaga. Ele derruba os dois manifestos antes de remover, porque ambos
+compartilham o volume e um container parado de qualquer um deles impede a
+remoção.
+
 ## Rodar pela IDE
 
 Para depurar com breakpoint, suba só o banco e rode a aplicação fora do
