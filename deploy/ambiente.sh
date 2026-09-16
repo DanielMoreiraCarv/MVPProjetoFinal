@@ -16,6 +16,7 @@ set -euo pipefail
 
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POD="tcc"
+VOLUME="tcc-postgres"
 MANIFESTO="$RAIZ/deploy/desenvolvimento.yaml"
 PORTA_BANCO=5433
 PORTA_API=8080
@@ -133,8 +134,67 @@ esperar () {
     done
 
     printf '\n'
-    erro "$nome não respondeu em $((tentativas * 2))s. Veja: ./deploy/ambiente.sh logs"
+    erro "$nome não respondeu em $((tentativas * 2))s."
+    [ "$nome" = "API" ] && diagnosticar || erro "Veja: ./deploy/ambiente.sh logs"
     return 1
+}
+
+# A causa mais comum de a API não subir é trocar para uma branch com outro
+# conjunto de migrações: o Flyway recusa aplicar uma versão menor do que a que
+# já está no banco, e o erro dele não diz que a saída é apagar o volume.
+#
+# A comparação é feita contra o banco, e não procurando no log da API: um
+# container que reinicia em ciclo às vezes não tem o erro registrado no
+# instante em que seria lido.
+diagnosticar () {
+    local aplicadas nesta_branch pendente_antiga=""
+
+    aplicadas="$(versoes_aplicadas)"
+    nesta_branch="$(versoes_da_branch)"
+
+    if [ -z "$aplicadas" ] || [ -z "$nesta_branch" ]; then
+        erro "Veja: ./deploy/ambiente.sh logs"
+        return
+    fi
+
+    # Versão que esta branch tem, o banco não aplicou, e que é menor do que a
+    # maior já aplicada: exatamente o que o Flyway recusa.
+    local maior_aplicada
+    maior_aplicada="$(echo "$aplicadas" | tr ',' '\n' | sort -n | tail -1)"
+
+    for versao in $(echo "$nesta_branch" | tr ',' ' '); do
+        if ! echo ",$aplicadas," | grep -q ",$versao," && [ "$versao" -lt "$maior_aplicada" ]; then
+            pendente_antiga="$versao"
+            break
+        fi
+    done
+
+    if [ -n "$pendente_antiga" ]; then
+        erro ""
+        erro "O banco tem um conjunto de migrações diferente do que esta branch espera."
+        erro "Normal depois de trocar de stack — o Flyway recusa aplicar a V$pendente_antiga"
+        erro "porque a V$maior_aplicada já está no banco."
+        erro ""
+        erro "  aplicadas no banco: $aplicadas"
+        erro "  nesta branch:       $nesta_branch"
+        erro ""
+        erro "Para recomeçar do zero:"
+        erro "  ./deploy/ambiente.sh limpar && ./deploy/ambiente.sh subir"
+        return
+    fi
+
+    erro "Veja: ./deploy/ambiente.sh logs"
+}
+
+versoes_aplicadas () {
+    podman exec "$POD-postgres" psql -U tcc -d tcc -tAc \
+        "select string_agg(version, ',' order by version::numeric) from flyway_schema_history where success;" \
+        2>/dev/null | tr -d ' \r'
+}
+
+versoes_da_branch () {
+    ls "$RAIZ/backend/src/main/resources/db/migration" 2>/dev/null \
+        | sed -n 's/^V\([0-9]*\)__.*/\1/p' | sort -n | paste -sd, -
 }
 
 subir () {
@@ -209,9 +269,30 @@ dados () {
 }
 
 limpar () {
-    derrubar
-    podman volume rm tcc-postgres >/dev/null 2>&1 || true
-    verde "volume do banco removido. O próximo 'subir' começa do zero."
+    garantir_podman
+
+    # Os dois manifestos compartilham o volume. Um container parado do pod
+    # só-de-banco basta para o volume não sair, então ambos precisam cair.
+    podman play kube --down "$MANIFESTO" >/dev/null 2>&1 || true
+    podman play kube --down "$RAIZ/deploy/postgres-local.yaml" >/dev/null 2>&1 || true
+    sleep 2
+
+    if podman volume rm "$VOLUME" >/dev/null 2>&1; then
+        verde "volume do banco removido. O próximo 'subir' começa do zero."
+        return
+    fi
+
+    if ! podman volume exists "$VOLUME" 2>/dev/null; then
+        verde "volume do banco já não existia."
+        return
+    fi
+
+    erro "não foi possível remover o volume $VOLUME:"
+    podman volume rm "$VOLUME" 2>&1 | sed 's/^/  /' >&2 || true
+    erro ""
+    erro "Containers que ainda o referenciam:"
+    podman ps -a --filter "volume=$VOLUME" --format '  {{.Names}} ({{.Status}})' >&2 || true
+    exit 1
 }
 
 case "${1:-}" in
