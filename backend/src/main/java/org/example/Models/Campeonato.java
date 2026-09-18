@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,10 @@ public class Campeonato {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_ADMINISTRACAO")
+    private Administracao administracao;
 
     @Column(name = "NOME")
     private String nome;
@@ -100,6 +105,14 @@ public class Campeonato {
 
     public void setMataMata(boolean mataMata) {
         this.mataMata = mataMata;
+    }
+
+    public Administracao getAdministracao() {
+        return administracao;
+    }
+
+    public void setAdministracao(Administracao administracao) {
+        this.administracao = administracao;
     }
 
     public void adicionarTime(Time time) {
