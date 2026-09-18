@@ -9,6 +9,7 @@ import { AddCompetitionDialog } from "@/src/features/administracoes/addCompetiti
 import { Tournaments } from "@/src/lib/types/tournaments";
 import { Competition } from "@/src/lib/types/competition";
 import { listarAdministracoes } from "@/src/lib/api/administracoes";
+import { listarCompeticoes } from "@/src/lib/api/competicoes";
 
 export const AdministracoesDuoGrid = () => {
     const [tournaments, setTournaments] = useState<Tournaments[]>([]);
@@ -17,9 +18,17 @@ export const AdministracoesDuoGrid = () => {
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<string | null>(null);
 
+    const carregarCompeticoes = useCallback(async (idAdministracao: number) => {
+        try {
+            setCompetitions(await listarCompeticoes(idAdministracao));
+        } catch (causa) {
+            setErro(causa instanceof Error ? causa.message : "Não foi possível carregar as competições.");
+        }
+    }, []);
+
     const selecionar = (tournament: Tournaments) => {
         setSelecionada(tournament);
-        setCompetitions(tournament.competitions);
+        carregarCompeticoes(tournament.id);
     };
 
     const carregar = useCallback(async () => {
@@ -30,13 +39,18 @@ export const AdministracoesDuoGrid = () => {
             const administracoes = await listarAdministracoes();
             setTournaments(administracoes);
             setSelecionada(administracoes[0] ?? null);
-            setCompetitions(administracoes[0]?.competitions ?? []);
+
+            if (administracoes[0]) {
+                await carregarCompeticoes(administracoes[0].id);
+            } else {
+                setCompetitions([]);
+            }
         } catch (causa) {
             setErro(causa instanceof Error ? causa.message : "Não foi possível carregar as administrações.");
         } finally {
             setCarregando(false);
         }
-    }, []);
+    }, [carregarCompeticoes]);
 
     useEffect(() => {
         carregar();
@@ -48,7 +62,14 @@ export const AdministracoesDuoGrid = () => {
             return jaExiste ? atuais.map((a) => (a.id === salva.id ? salva : a)) : [...atuais, salva];
         });
         setSelecionada(salva);
-        setCompetitions(salva.competitions);
+        carregarCompeticoes(salva.id);
+    };
+
+    const aoSalvarCompeticao = (salva: Competition) => {
+        setCompetitions((atuais) => {
+            const jaExiste = atuais.some((c) => c.id === salva.id);
+            return jaExiste ? atuais.map((c) => (c.id === salva.id ? salva : c)) : [...atuais, salva];
+        });
     };
 
     return (
@@ -86,7 +107,10 @@ export const AdministracoesDuoGrid = () => {
                 title: "Campeonatos",
                 content: (
                     <div className="flex flex-col gap-3 flex-1">
-                        <AddCompetitionDialog />
+                        <AddCompetitionDialog
+                            idAdministracao={selecionada?.id}
+                            onSaved={aoSalvarCompeticao}
+                        />
                         <CompetitionsList competitions={competitions} />
                     </div>
                 )

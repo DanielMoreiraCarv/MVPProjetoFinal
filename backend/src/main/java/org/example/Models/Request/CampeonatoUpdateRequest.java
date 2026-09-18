@@ -13,7 +13,13 @@ public record CampeonatoUpdateRequest(
 
         List<Long> timesIds,
 
-        boolean mataMata
+        Boolean isMataMata,
+
+        String descricao,
+
+        String categoria,
+
+        Long idAdministracao
 )
 {
 }

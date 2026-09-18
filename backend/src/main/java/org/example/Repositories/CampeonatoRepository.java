@@ -9,8 +9,10 @@ import java.util.Optional;
 
 @Repository
 public interface CampeonatoRepository extends JpaRepository<Campeonato, Long> {
-    
+
     Optional<Campeonato> findByNome(String nome);
-    
+
     List<Campeonato> findByMataMata(boolean mataMata);
+
+    List<Campeonato> findByAdministracaoId(Long idAdministracao);
 }

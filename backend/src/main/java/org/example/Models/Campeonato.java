@@ -52,6 +52,12 @@ public class Campeonato {
     @Column(name = "MATA_MATA")
     private boolean mataMata;
 
+    @Column(name = "DESCRICAO", length = 500)
+    private String descricao;
+
+    @Column(name = "CATEGORIA", length = 20)
+    private String categoria;
+
     public Campeonato() {
     }
 
@@ -113,6 +119,22 @@ public class Campeonato {
 
     public void setAdministracao(Administracao administracao) {
         this.administracao = administracao;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
     }
 
     public void adicionarTime(Time time) {

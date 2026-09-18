@@ -15,7 +15,13 @@ public record CampeonatoCreateRequest(
         List<Long> modalidadesIds,
 
         @NotNull(message = "É preciso informar se o tipo do campeonato")
-        Boolean isMataMata
+        Boolean isMataMata,
+
+        String descricao,
+
+        String categoria,
+
+        Long idAdministracao
 )
 {
 }
