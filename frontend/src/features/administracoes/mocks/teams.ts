@@ -1,8 +1,17 @@
+// ATENÇÃO: estes arquivos não alimentam mais as telas — elas leem da API.
+// Eles continuam aqui por serem a fonte de backend/tools/gerar_dados_de_teste.py,
+// que converte este conjunto no SQL de carga do ambiente local.
+
 import { Team } from "@/src/lib/types/team";
 
 const football = { id: 1, name: "Futebol" as const, description: "Futebol associação" };
 
-const p = (id: string, name: string, number: number, age: number, suspended = false) => ({ id, name, number, age, suspended });
+// Os ids destes mocks são derivados de "tNpM" para número, acompanhando o
+// backend, onde a chave do atleta é numérica.
+const p = (id: string, name: string, number: number, age: number, suspended = false) => {
+    const [time, atleta] = id.slice(1).split("p").map(Number);
+    return { id: time * 1000 + atleta, name, number, age, suspended };
+};
 
 // ──────────────────────────────────────────────
 // COMP 1 — Futebol Fundamental II Masculino

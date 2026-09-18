@@ -1,5 +1,6 @@
 package org.example.Services;
 
+import org.example.Mapper.JogadoresMapper;
 import org.example.Models.Jogadores;
 import org.example.Models.Modalidade;
 import org.example.Models.Request.JogadoresCreateRequest;
@@ -22,16 +23,11 @@ public class JogadoresService {
     private ModalidadeService modalidadeService;
     
     public Jogadores criarJogador( JogadoresCreateRequest request, Time time ) {
-        Jogadores jogador = new Jogadores();
+        Jogadores jogador = JogadoresMapper.toEntity( request );
+        jogador.setModalidade( modalidadeService.buscarPorId( request.idModalidade() ) );
+        jogador.setTime( time );
 
-        jogador.setNome( request.nome() );
-        jogador.setIdade(  request.idade() );
-        jogador.setCpf(  request.cpf() );
-        jogador.setModalidade( modalidadeService.buscarPorId( request.idModalidade() ));
-        jogador.setTime(  time );
-
-        jogadoresRepository.save( jogador );
-        return jogador;
+        return jogadoresRepository.save( jogador );
     }
     
     public Jogadores buscarPorId(Long id) {
@@ -50,6 +46,10 @@ public class JogadoresService {
         return jogadoresRepository.findAll();
     }
     
+    public List<Jogadores> listarPorTime(Long idTime) {
+        return jogadoresRepository.findByTimeId(idTime);
+    }
+
     public List<Jogadores> listarPorModalidade(Long idModalidade) {
         return jogadoresRepository.findByModalidadeId(idModalidade);
     }

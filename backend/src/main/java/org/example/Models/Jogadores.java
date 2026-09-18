@@ -1,5 +1,6 @@
 package org.example.Models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -45,6 +46,7 @@ public class Jogadores {
     @JoinColumn(name = "ID_MODALIDADE")
     private Modalidade modalidade;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "ID_TIME")
     private Time time;

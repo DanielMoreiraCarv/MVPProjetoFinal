@@ -14,40 +14,58 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Player } from "@/src/lib/types/player";
+import { criarAtleta, atualizarAtleta } from "@/src/lib/api/atletas";
 
 interface PlayerDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     player?: Player;
+    idTime: number;
     onSubmit: (player: Player) => void;
 }
 
-export const PlayerDialog = ({ open, onOpenChange, player, onSubmit }: PlayerDialogProps) => {
+export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: PlayerDialogProps) => {
     const isEditing = !!player;
 
     const [name, setName] = useState("");
     const [number, setNumber] = useState("");
     const [age, setAge] = useState("");
+    const [salvando, setSalvando] = useState(false);
+    const [erro, setErro] = useState<string | null>(null);
 
     useEffect(() => {
         if (open) {
+            setErro(null);
             setName(player?.name ?? "");
             setNumber(player?.number?.toString() ?? "");
             setAge(player?.age?.toString() ?? "");
         }
     }, [open, player]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const result: Player = {
-            id: player?.id ?? `p-${Date.now()}`,
-            name,
-            number: number ? Number(number) : undefined,
-            age: age ? Number(age) : undefined,
-            suspended: player?.suspended ?? false,
-        };
-        onSubmit(result);
-        onOpenChange(false);
+        setSalvando(true);
+        setErro(null);
+
+        try {
+            const entrada = {
+                nome: name.trim(),
+                numCamisa: number ? Number(number) : undefined,
+                idade: age ? Number(age) : undefined,
+                idTime,
+            };
+
+            const salvo = isEditing
+                ? await atualizarAtleta(player.id, entrada)
+                : await criarAtleta(entrada);
+
+            onSubmit(salvo);
+            onOpenChange(false);
+        } catch (causa) {
+            setErro(causa instanceof Error ? causa.message : "Não foi possível salvar o atleta.");
+        } finally {
+            setSalvando(false);
+        }
     };
 
     return (
@@ -93,11 +111,18 @@ export const PlayerDialog = ({ open, onOpenChange, player, onSubmit }: PlayerDia
                             min={1}
                         />
                     </div>
+                    {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
                     <DialogFooter>
                         <DialogClose render={<Button className="border border-gray-300 bg-white text-gray-800 hover:bg-gray-50" />}>
                             Cancelar
                         </DialogClose>
-                        <Button type="submit" className="bg-green-700 text-white hover:bg-green-600">{isEditing ? "Salvar" : "Adicionar"}</Button>
+                        <Button
+                            type="submit"
+                            disabled={salvando}
+                            className="bg-green-700 text-white hover:bg-green-600 disabled:opacity-60"
+                        >
+                            {salvando ? "Salvando..." : isEditing ? "Salvar" : "Adicionar"}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

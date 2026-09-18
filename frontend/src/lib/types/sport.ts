@@ -1,13 +1,12 @@
 import { z } from 'zod';
 
-
-export const sportNameSchema = z.enum(['Futebol', 'Basquete', 'Vôlei'])
-
-export type SportName = z.infer<typeof sportNameSchema>;
+// O catálogo de modalidades vive no servidor e tem seis entradas, então o nome
+// deixa de ser um enum fechado aqui.
+export type SportName = string;
 
 export const sportSchema = z.object({
     id: z.number(),
-    name: sportNameSchema,
+    name: z.string(),
     description: z.string(),
 });
 

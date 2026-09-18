@@ -7,6 +7,18 @@ const modalidadeAninhadaSchema = z.object({
     nome: z.string().nullable(),
 });
 
+const timeAninhadoSchema = z.object({
+    id: z.number(),
+    nome: z.string(),
+    jogadores: z.array(z.object({
+        id: z.number(),
+        nome: z.string(),
+        numCamisa: z.number().nullable(),
+        idade: z.number().nullable(),
+    })).nullable(),
+    modalidade: z.object({ id: z.number(), nome: z.string() }).nullable(),
+});
+
 const campeonatoResponseSchema = z.object({
     id: z.number(),
     nome: z.string(),
@@ -15,6 +27,7 @@ const campeonatoResponseSchema = z.object({
     idAdministracao: z.number().nullable(),
     modalidades: z.array(modalidadeAninhadaSchema).nullable(),
     isMataMata: z.boolean().nullable(),
+    lstTimes: z.array(timeAninhadoSchema).nullable(),
 });
 
 type CampeonatoResponse = z.infer<typeof campeonatoResponseSchema>;
@@ -39,8 +52,22 @@ const paraCompetition = (resposta: CampeonatoResponse): Competition => {
         modalidadeId: modalidade?.id,
         modality: resposta.categoria ?? "",
         administracaoId: resposta.idAdministracao ?? undefined,
-        // times e fase chegam por rotas próprias; aqui a competição vem sozinha
-        teams: [],
+        teams: (resposta.lstTimes ?? []).map((time) => ({
+            id: time.id,
+            name: time.nome,
+            sport: {
+                id: time.modalidade?.id ?? 0,
+                name: time.modalidade?.nome ?? "",
+                description: "",
+            },
+            players: (time.jogadores ?? []).map((atleta) => ({
+                id: atleta.id,
+                name: atleta.nome,
+                number: atleta.numCamisa ?? undefined,
+                age: atleta.idade ?? undefined,
+                suspended: false,
+            })),
+        })),
         currentStage: resposta.isMataMata ? undefined : "Pontos Corridos",
     };
 };
@@ -50,6 +77,9 @@ export const listarCompeticoes = async (idAdministracao?: number): Promise<Compe
     const resposta = await apiFetch<unknown>(`/campeonato${filtro}`);
     return z.array(campeonatoResponseSchema).parse(resposta).map(paraCompetition);
 };
+
+export const buscarCompeticao = async (id: number): Promise<Competition> =>
+    paraCompetition(campeonatoResponseSchema.parse(await apiFetch<unknown>(`/campeonato/${id}`)));
 
 export const criarCompeticao = async (entrada: CompeticaoInput): Promise<Competition> => {
     const resposta = await apiFetch<unknown>("/campeonato", {

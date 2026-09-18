@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { mockTeams } from "@/src/features/administracoes/mocks/teams";
 import { Player } from "@/src/lib/types/player";
 import {
     Table,
@@ -28,15 +27,20 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { PlayerDialog } from "@/src/features/times/PlayerDialog";
+import { listarAtletasDoTime, removerAtleta } from "@/src/lib/api/atletas";
+import { buscarTime } from "@/src/lib/api/times";
+import { Team } from "@/src/lib/types/team";
 
 export const TeamDetail = () => {
     const params = useParams<{ teamId: string }>();
     const teamId = Number(params?.teamId);
 
-    const team = mockTeams.find((t) => t.id === teamId);
+    const [team, setTeam] = useState<Team | null>(null);
 
-    const [players, setPlayers] = useState<Player[]>(team?.players ?? []);
-    const [teamName, setTeamName] = useState(team?.name ?? "");
+    const [players, setPlayers] = useState<Player[]>([]);
+    const [carregandoAtletas, setCarregandoAtletas] = useState(true);
+    const [erroAtletas, setErroAtletas] = useState<string | null>(null);
+    const [teamName, setTeamName] = useState("");
 
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameValue, setRenameValue] = useState("");
@@ -44,11 +48,35 @@ export const TeamDetail = () => {
     const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<Player | undefined>(undefined);
 
+    useEffect(() => {
+        if (!Number.isFinite(teamId)) return;
+
+        setCarregandoAtletas(true);
+        buscarTime(teamId)
+            .then((encontrado) => {
+                setTeam(encontrado);
+                setTeamName(encontrado.name);
+                return listarAtletasDoTime(teamId);
+            })
+            .then(setPlayers)
+            .catch((causa) =>
+                setErroAtletas(causa instanceof Error ? causa.message : "Não foi possível carregar o elenco."))
+            .finally(() => setCarregandoAtletas(false));
+    }, [teamId]);
+
+    if (carregandoAtletas && !team) {
+        return (
+            <div className="p-8">
+                <div className="bg-white shadow-sm rounded-lg p-4">Carregando time...</div>
+            </div>
+        );
+    }
+
     if (!team) {
         return (
             <div className="p-8">
                 <div className="bg-white shadow-sm rounded-lg p-4">
-                    Time não encontrado.
+                    {erroAtletas ?? "Time não encontrado."}
                 </div>
             </div>
         );
@@ -72,8 +100,13 @@ export const TeamDetail = () => {
         }
     };
 
-    const handleRemovePlayer = (playerId: string) => {
-        setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+    const handleRemovePlayer = async (playerId: number) => {
+        try {
+            await removerAtleta(playerId);
+            setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+        } catch (causa) {
+            setErroAtletas(causa instanceof Error ? causa.message : "Não foi possível remover o atleta.");
+        }
     };
 
     const handleRenameSubmit = (e: React.FormEvent) => {
@@ -196,6 +229,7 @@ export const TeamDetail = () => {
             </div>
 
             <PlayerDialog
+                idTime={teamId}
                 open={playerDialogOpen}
                 onOpenChange={setPlayerDialogOpen}
                 player={editingPlayer}

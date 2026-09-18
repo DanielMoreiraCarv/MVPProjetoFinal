@@ -1,28 +1,54 @@
 "use client"
 
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { mockMatches } from "@/src/features/administracoes/mocks/matches";
-import { mockSumulas } from "@/src/features/administracoes/mocks/sumulas";
+import { buscarPartida } from "@/src/lib/api/partidas";
+import { buscarSumulaDaPartida } from "@/src/lib/api/sumulas";
+import { Match } from "@/src/lib/types/match";
+import { Sumula } from "@/src/lib/types/sumula";
 
 export const SumulaDetail = () => {
     const params = useParams<{ matchId: string }>();
     const matchId = Number(params?.matchId);
 
-    const match = mockMatches.find((m) => m.id === matchId);
+    const [match, setMatch] = useState<Match | null>(null);
+    const [sumula, setSumula] = useState<Sumula | null>(null);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!Number.isFinite(matchId)) return;
+
+        setCarregando(true);
+        Promise.all([buscarPartida(matchId), buscarSumulaDaPartida(matchId)])
+            .then(([partida, sumulaDaPartida]) => {
+                setMatch(partida);
+                setSumula(sumulaDaPartida);
+            })
+            .catch((causa) =>
+                setErro(causa instanceof Error ? causa.message : "Não foi possível carregar a partida."))
+            .finally(() => setCarregando(false));
+    }, [matchId]);
+
+    if (carregando) {
+        return (
+            <div className="p-8">
+                <div className="bg-white shadow-sm rounded-lg p-4">Carregando partida...</div>
+            </div>
+        );
+    }
 
     if (!match) {
         return (
             <div className="p-8">
                 <div className="bg-white shadow-sm rounded-lg p-4">
-                    Partida não encontrada.
+                    {erro ?? "Partida não encontrada."}
                 </div>
             </div>
         );
     }
-
-    const sumula = mockSumulas.find((s) => s.matchId === matchId);
 
     const scoreDisplay = match.finished
         ? `${match.homeScore ?? 0} – ${match.awayScore ?? 0}`

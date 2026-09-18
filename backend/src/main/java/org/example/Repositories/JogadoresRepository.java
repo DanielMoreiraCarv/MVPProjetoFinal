@@ -15,6 +15,8 @@ public interface JogadoresRepository extends JpaRepository<Jogadores, Long> {
     Optional<Jogadores> findByCpf(String cpf);
     
     List<Jogadores> findByModalidadeId(Long idModalidade);
+
+    List<Jogadores> findByTimeId(Long idTime);
     
     List<Jogadores> findByExpulsoTrue();
     
