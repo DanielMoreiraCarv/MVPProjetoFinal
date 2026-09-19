@@ -208,6 +208,35 @@ class ContratoDeFaseTest
     }
 
     @Test
+    void posicaoAbaixoDeUmViolaARestricaoDeclarada ()
+    {
+        jakarta.validation.ConstraintViolationException erro =
+                assertThrows( jakarta.validation.ConstraintViolationException.class,
+                        () -> new Classificado( 0, 1L ) );
+
+        assertTrue( erro.getMessage().contains( "começa em 1" ) );
+    }
+
+    @Test
+    void classificadoSemTimeViolaARestricaoDeclarada ()
+    {
+        jakarta.validation.ConstraintViolationException erro =
+                assertThrows( jakarta.validation.ConstraintViolationException.class,
+                        () -> new Classificado( 1, null ) );
+
+        assertTrue( erro.getMessage().contains( "referenciar um time" ) );
+    }
+
+    @Test
+    void classificadoValidoEhConstruido ()
+    {
+        Classificado classificado = new Classificado( 3, 42L );
+
+        assertEquals( 3, classificado.posicao() );
+        assertEquals( 42L, classificado.idTime() );
+    }
+
+    @Test
     void tipoSemEstrategiaRegistradaFalhaComMensagemClara ()
     {
         IllegalArgumentException erro = assertThrows( IllegalArgumentException.class,

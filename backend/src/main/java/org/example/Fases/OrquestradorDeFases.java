@@ -103,7 +103,7 @@ public class OrquestradorDeFases
     private ResultadoDaValidacao conferirEmpates ( EstrategiaDeFase estrategia,
             List<Classificado> entrada )
     {
-        if ( estrategia.aceitaEmpateNaEntrada() )
+        if ( estrategia.aceitaEmpateNaClassificacao() )
         {
             return ResultadoDaValidacao.valido();
         }

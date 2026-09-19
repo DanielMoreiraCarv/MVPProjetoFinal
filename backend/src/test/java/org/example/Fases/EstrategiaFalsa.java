@@ -41,7 +41,7 @@ public class EstrategiaFalsa implements EstrategiaDeFase
     }
 
     @Override
-    public boolean aceitaEmpateNaEntrada ()
+    public boolean aceitaEmpateNaClassificacao ()
     {
         return true;
     }

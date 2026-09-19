@@ -27,8 +27,11 @@ public interface EstrategiaDeFase
      */
     List<AtributoFase> atributosSuportados ();
 
-    /** Se a semeadura tolera posições repetidas na entrada. */
-    default boolean aceitaEmpateNaEntrada ()
+    /**
+     * Se a semeadura tolera posições repetidas na classificação que a fase
+     * recebe como entrada.
+     */
+    default boolean aceitaEmpateNaClassificacao ()
     {
         return false;
     }
