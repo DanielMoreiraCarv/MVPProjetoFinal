@@ -1,16 +1,22 @@
 package org.example.Services;
 
+import org.example.Fases.OrquestradorDeFases;
+import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
 import org.example.Models.Campeonato;
+import org.example.Models.Classificado;
 import org.example.Models.Fase;
+import org.example.Models.Partida;
 import org.example.Models.Request.FaseCreateRequest;
 import org.example.Models.Request.FaseUpdateRequest;
 import org.example.Models.Response.FaseResponse;
 import org.example.Repositories.FaseRepository;
+import org.example.Repositories.PartidaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class FaseService
@@ -20,6 +26,12 @@ public class FaseService
 
     @Autowired
     private CampeonatoService campeonatoService;
+
+    @Autowired
+    private OrquestradorDeFases orquestrador;
+
+    @Autowired
+    private PartidaRepository partidaRepository;
 
     public FaseResponse criarFase ( FaseCreateRequest request )
     {
@@ -70,5 +82,30 @@ public class FaseService
     public void deleteFase ( Fase fase )
     {
         faseRepository.delete( fase );
+    }
+
+    /** Confere se a fase tem o que precisa, na configuração e na entrada, para ser gerada. */
+    public ResultadoDaValidacao validarConfrontos ( Fase fase )
+    {
+        return orquestrador.validar( fase );
+    }
+
+    /** Gera os confrontos da fase a partir do zero, substituindo os que já existiam. */
+    public List<Partida> gerarConfrontos ( Fase fase )
+    {
+        orquestrador.configurar( fase );
+        return partidaRepository.findByFaseId( fase.getId() );
+    }
+
+    /** Recalcula os confrontos a partir dos resultados já registrados, sem apagar o que já existe. */
+    public List<Partida> atualizarConfrontos ( Fase fase, Map<String, String> opcoes )
+    {
+        orquestrador.atualizar( fase, opcoes );
+        return partidaRepository.findByFaseId( fase.getId() );
+    }
+
+    public List<Classificado> classificacaoDe ( Fase fase )
+    {
+        return orquestrador.classificacaoDe( fase );
     }
 }
