@@ -25,4 +25,6 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
     List<Partida> findByEnumFasePartida(EnumFasePartida enumFasePartida);
 
     List<Partida> findByIdTabela(Long idTabela);
+
+    List<Partida> findByFaseId(Long idFase);
 }

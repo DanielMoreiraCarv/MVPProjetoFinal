@@ -38,6 +38,17 @@ public class Partida {
     @JoinColumn(name = "ID_CAMPEONATO")
     private Campeonato campeonato;
 
+    @ManyToOne
+    @JoinColumn(name = "ID_FASE")
+    private Fase fase;
+
+    // Metadados que a fase grava ao gerar o confronto.
+    @Column(name = "GRUPO")
+    private Integer grupo;
+
+    @Column(name = "RODADA")
+    private Integer rodada;
+
     @Column(name = "ID_TABELA")
     private Long idTabela;
 
@@ -78,6 +89,11 @@ public class Partida {
     public Long getIdCampeonato ()
     {
         return campeonato == null ? null : campeonato.getId();
+    }
+
+    public Long getIdFase ()
+    {
+        return fase == null ? null : fase.getId();
     }
 
     public Long getIdSumula ()
