@@ -1,7 +1,6 @@
 package org.example.Controllers;
 
 
-import jakarta.websocket.server.PathParam;
 import org.example.Mapper.SancaoJogadorMapper;
 import org.example.Mapper.SancaoMapper;
 import org.example.Models.Request.SancaoJogadorRequest;
@@ -40,7 +39,7 @@ public class SancaoController
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarSancao ( @PathParam("id") Long id,
+    public ResponseEntity<?> editarSancao ( @PathVariable("id") Long id,
             @RequestBody SancaoRequest request )
     {
         return ResponseEntity.ok( sancaoService.atualizarSancao( id, request ) );
@@ -54,7 +53,7 @@ public class SancaoController
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscarSancaoPorId ( @PathParam("id") Long id )
+    public ResponseEntity<?> buscarSancaoPorId ( @PathVariable("id") Long id )
     {
         Sancao sancao = sancaoService.findById( id );
 
@@ -67,7 +66,7 @@ public class SancaoController
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delteSancao ( @PathParam("id") Long id )
+    public ResponseEntity<?> delteSancao ( @PathVariable("id") Long id )
     {
         Sancao sancao = sancaoService.findById( id );
 
@@ -95,7 +94,7 @@ public class SancaoController
     }
 
     @PutMapping("/sancao/{id}")
-    public ResponseEntity<?> editarSancaoParaUmJogador ( @PathParam("id") Long id,
+    public ResponseEntity<?> editarSancaoParaUmJogador ( @PathVariable("id") Long id,
             @RequestBody SancaoJogadorRequest request )
     {
         SancaoJogador sjA = sancaoJogadorService.update( request, id );

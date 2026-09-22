@@ -1,6 +1,5 @@
 package org.example.Controllers;
 
-import jakarta.websocket.server.PathParam;
 import org.example.Models.Arbitro;
 import org.example.Mapper.PartidaMapper;
 import org.example.Models.Response.PartidaResponse;
@@ -57,7 +56,7 @@ public class PartidaController {
     }
 
     @GetMapping("/acompanhamento/{status}")
-    public ResponseEntity<List<Partida>> listarPendentes(@PathParam ( "status" ) String status) {
+    public ResponseEntity<List<Partida>> listarPendentes(@PathVariable("status") String status) {
         if(status.equals("PENDENTE")) {
             List<Partida> partidas = partidaService.listarPendentes();
             return ResponseEntity.ok(partidas);
