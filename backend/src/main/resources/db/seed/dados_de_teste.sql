@@ -6,29 +6,29 @@
 -- Só para ambiente local. Não é migração e nunca roda em produção.
 --
 -- Conteúdo: 2 administrações, 6 competições,
--- 96 times, 1440 atletas e 91 partidas.
+-- 96 equipes, 1440 atletas e 91 partidas.
 
 begin;
 
 delete from sumula_ocorrencias;
 delete from sumula;
 delete from partida;
-delete from campeonato_times;
-delete from team_players;
-delete from sancao_jogador;
-delete from jogadores;
-delete from time;
+delete from competicao_equipe;
+delete from equipe_atleta;
+delete from sancao_atleta;
+delete from atleta;
+delete from equipe;
 delete from fase;
 delete from sancao;
-delete from campeonato_modalidades;
-delete from campeonato;
+delete from competicao_modalidade;
+delete from competicao;
 delete from administracao;
 
 insert into administracao (id, nome, descricao) values
     (1, 'Interclasses Colégio São João', 'Torneio interno anual do Colégio São João com disputas entre turmas.'),
     (2, 'Copa Casados VS Solteiros do Banco do Nordeste', 'Torneio recreativo dos colaboradores do BNB, edição especial casados x solteiros.');
 
-insert into campeonato (id, nome, descricao, categoria, id_administracao, mata_mata) values
+insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata) values
     (1, 'Futebol Fundamental II - Masculino', 'Campeonato interclasses do Fundamental II masculino do Colégio São João.', 'Masculino', 1, false),
     (2, 'Futebol Ensino Médio - Masculino', 'Campeonato interclasses do Ensino Médio masculino do Colégio São João.', 'Masculino', 1, false),
     (3, 'Futebol Fundamental II - Feminino', 'Campeonato interclasses do Fundamental II feminino do Colégio São João.', 'Feminino', 1, false),
@@ -36,7 +36,7 @@ insert into campeonato (id, nome, descricao, categoria, id_administracao, mata_m
     (5, 'Futebol Sênior 50+ - Masculino', 'Campeonato de pontos corridos para atletas veteranos acima de 50 anos.', 'Masculino', 2, false),
     (6, 'Futebol Masculino', 'Copa mata-mata aberta para todos os colaboradores do Banco do Nordeste.', 'Masculino', 2, false);
 
-insert into modalidade (codigo, nome, jogadores_em_quadra, ativo) values
+insert into modalidade (codigo, nome, atletas_em_quadra, ativo) values
     ('FUTEBOL_DE_CAMPO', 'Futebol de campo', 11, true),
     ('FUTSAL', 'Futsal', 5, true),
     ('SOCIETY', 'Society', 7, true),
@@ -45,12 +45,12 @@ insert into modalidade (codigo, nome, jogadores_em_quadra, ativo) values
     ('HANDEBOL', 'Handebol', 7, true)
 on conflict (codigo) do nothing;
 
-insert into campeonato_modalidades (campeonato_id, modalidade_id)
-select c.id, m.id from campeonato c
+insert into competicao_modalidade (competicao_id, modalidade_id)
+select c.id, m.id from competicao c
 cross join modalidade m
 where m.codigo = 'FUTEBOL_DE_CAMPO';
 
-insert into time (id, nome, id_modalidade) values
+insert into equipe (id, nome, modalidade_id) values
     (1, 'Panteras Negras', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')), (2, 'Trovões Azuis', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')),
     (3, 'Leões do Norte', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')), (4, 'Tubarões Furiosos', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')),
     (5, 'Falcões Dourados', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')), (6, 'Dragões de Ferro', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')),
@@ -100,7 +100,7 @@ insert into time (id, nome, id_modalidade) values
     (93, 'Prometidos FC', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')), (94, 'BNB Unleashed', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')),
     (95, 'Os Solteirões', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO')), (96, 'Aliança Dourada', (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO'));
 
-insert into jogadores (id, nome, idade, num_camisa, id_time, expulso) values
+insert into atleta (id, nome, idade, num_camisa, equipe_id, expulso) values
     (1001, 'João Victor Silva', 13, 1, 1, false), (1002, 'Pedro Alves', 14, 2, 1, false), (1003, 'Lucas Martins', 12, 3, 1, false),
     (1004, 'Gabriel Souza', 13, 4, 1, false), (1005, 'Matheus Ferreira', 14, 5, 1, false), (1006, 'Victor Lima', 12, 6, 1, false),
     (1007, 'Rafael Costa', 13, 7, 1, false), (1008, 'Gustavo Pereira', 14, 8, 1, false), (1009, 'Felipe Rodrigues', 11, 9, 1, false),
@@ -582,10 +582,10 @@ insert into jogadores (id, nome, idade, num_camisa, id_time, expulso) values
     (96010, 'Leandro Bartolomeu', 24, 10, 96, false), (96011, 'Tiago Basílio', 41, 11, 96, false), (96012, 'Wilson Bastos', 27, 12, 96, false),
     (96013, 'Wagner Batata', 35, 13, 96, false), (96014, 'Willian Batinga', 23, 14, 96, false), (96015, 'Edmilson Bauer', 38, 15, 96, false);
 
-insert into team_players (team_id, player_id)
-select id_time, id from jogadores;
+insert into equipe_atleta (equipe_id, atleta_id)
+select equipe_id, id from atleta;
 
-insert into campeonato_times (campeonato_id, team_id) values
+insert into competicao_equipe (competicao_id, equipe_id) values
     (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8),
     (1, 9), (1, 10), (1, 11), (1, 12), (1, 13), (1, 14), (1, 15), (1, 16),
     (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24),
@@ -600,9 +600,9 @@ insert into campeonato_times (campeonato_id, team_id) values
     (6, 89), (6, 90), (6, 91), (6, 92), (6, 93), (6, 94), (6, 95), (6, 96);
 
 -- 13 partidas dos mocks ficaram de fora: são confrontos de fase
--- futura, cujos times ainda dependem do vencedor de uma partida anterior.
-insert into partida (id, id_time_mandante, id_time_visitante, id_campeonato,
-                     resultado_mandante, resultado_visitante, id_vencedor,
+-- futura, cujas equipes ainda dependem do vencedor de uma partida anterior.
+insert into partida (id, equipe_mandante_id, equipe_visitante_id, competicao_id,
+                     placar_mandante, placar_visitante, equipe_vencedora_id,
                      realizada, enum_fase_partida) values
     (1, 1, 2, 1, 2, 1, 1, true, 'ELIMINATORIA'),
     (2, 3, 4, 1, 3, 0, 3, true, 'ELIMINATORIA'),
@@ -687,9 +687,9 @@ insert into partida (id, id_time_mandante, id_time_visitante, id_campeonato,
 do $$
 begin
     perform setval('administracao_id_seq', (select coalesce(max(id), 1) from administracao));
-    perform setval('campeonato_id_seq', (select coalesce(max(id), 1) from campeonato));
-    perform setval('time_id_seq', (select coalesce(max(id), 1) from time));
-    perform setval('jogadores_id_seq', (select coalesce(max(id), 1) from jogadores));
+    perform setval('competicao_id_seq', (select coalesce(max(id), 1) from competicao));
+    perform setval('equipe_id_seq', (select coalesce(max(id), 1) from equipe));
+    perform setval('atleta_id_seq', (select coalesce(max(id), 1) from atleta));
     perform setval('partida_id_seq', (select coalesce(max(id), 1) from partida));
 end $$;
 
