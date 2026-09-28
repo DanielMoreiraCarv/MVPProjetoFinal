@@ -1,71 +1,45 @@
-"use client"
+"use client";
 
 import Link from "next/link";
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
-import { Partida, partidaSchema } from "@/src/lib/types/partida";
-import { z } from "zod";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Partida } from "@/src/lib/types/partida";
 
-interface MatchCalendarProps {
-    matches?: Partida[];
-}
+// Só a lista: respiro e estado vazio são da seção que a contém.
+export const MatchCalendar = ({ matches = [] }: { matches?: Partida[] }) => (
+    <div className="space-y-2">
+        {matches.map((partida) => {
+            const placar = partida.realizada
+                ? `${partida.placarMandante ?? 0} × ${partida.placarVisitante ?? 0}`
+                : "×";
 
-export const MatchCalendar = ({ matches = [] }: MatchCalendarProps) => {
-    const listSchema = z.array(partidaSchema);
-    const validationResult = listSchema.safeParse(matches);
-
-    if (!validationResult.success) {
-        console.error("Invalid partida data provided:", validationResult.error);
-        return (
-            <div className="p-4 text-destructive border border-destructive/40 rounded-md">
-                Ops! Algum tipo incorreto de dados foram fornecidos. Verificar detalhes no console.
-            </div>
-        );
-    }
-
-    const validMatches = validationResult.data;
-
-    if (validMatches.length === 0) {
-        return (
-            <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
-                Nenhuma partida encontrada
-            </div>
-        );
-    }
-
-    return (
-        <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
-            <div className="flex flex-col gap-0.75">
-                {validMatches.map((partida) => {
-                    const scoreDisplay = partida.realizada
-                        ? `${partida.placarMandante ?? 0} x ${partida.placarVisitante ?? 0}`
-                        : "vs";
-
-                    return (
-                        <Link key={partida.id} href={`/partida/${partida.id}`} className="block">
-                            <Card className="cursor-pointer hover:border-ring transition-colors">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center justify-between">
-                                        {partida.equipeMandante} {scoreDisplay} {partida.equipeVisitante}
-                                        <Badge variant={partida.realizada ? "secondary" : "outline"}>
-                                            {partida.realizada ? "Encerrado" : "Agendado"}
-                                        </Badge>
-                                    </CardTitle>
-                                    <CardDescription className="whitespace-pre-wrap">
-                                        {partida.fase}
-                                        {partida.realizada && partida.vencedor ? `\nVencedor: ${partida.vencedor}` : ""}
-                                    </CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </Link>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
+            return (
+                <Link key={partida.id} href={`/partida/${partida.id}`} className="block">
+                    <Card className="transition-colors hover:border-ring">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between gap-3 text-sm">
+                                <span className="min-w-0 truncate">
+                                    {partida.equipeMandante}{" "}
+                                    <span className="numero-tabular font-mono text-muted-foreground">
+                                        {placar}
+                                    </span>{" "}
+                                    {partida.equipeVisitante}
+                                </span>
+                                <Badge variant={partida.realizada ? "secondary" : "outline"}>
+                                    {partida.realizada ? "Encerrada" : "Agendada"}
+                                </Badge>
+                            </CardTitle>
+                            <CardDescription>
+                                {partida.fase}
+                                {partida.realizada && partida.vencedor
+                                    ? ` · venceu ${partida.vencedor}`
+                                    : ""}
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </Link>
+            );
+        })}
+    </div>
+);

@@ -19,10 +19,13 @@ const partidaResponseSchema = z.object({
 
 type PartidaResponse = z.infer<typeof partidaResponseSchema>;
 
+// O backend manda o formato da fase, não o estágio da eliminatória: não há
+// como saber daqui se uma partida é oitava, quarta ou final. Rotular tudo de
+// "Final" era o que fazia toda partida de mata-mata aparecer como decisão.
 const FASE_POR_FORMATO: Record<string, FaseNome> = {
-    PONTOS_CORRIDOS: "Pontos Corridos",
-    GRUPOS: "Grupo",
-    ELIMINATORIA: "Final",
+    PONTOS_CORRIDOS: "Pontos corridos",
+    GRUPOS: "Fase de grupos",
+    ELIMINATORIA: "Eliminatória",
 };
 
 const placar = (resultado: string | null) => {
@@ -43,7 +46,7 @@ const paraPartida = (resposta: PartidaResponse): Partida => {
         nomeCompeticao: resposta.nomeCompeticao ?? "",
         idCompeticao: resposta.idCompeticao ?? 0,
         realizada: resposta.realizada ?? false,
-        fase: FASE_POR_FORMATO[resposta.fase ?? ""] ?? "Pontos Corridos",
+        fase: FASE_POR_FORMATO[resposta.fase ?? ""] ?? "Pontos corridos",
     };
 };
 

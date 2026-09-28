@@ -42,19 +42,17 @@ export const AddTeamDialog = ({ onAdd }: AddTeamDialogProps) => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button className="w-full bg-primary text-primary-foreground hover:bg-primary/85" />}>
-                + Adicionar Time
-            </DialogTrigger>
+            <DialogTrigger render={<Button size="sm" />}>Inscrever equipe</DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Novo Time</DialogTitle>
+                    <DialogTitle>Inscrever equipe</DialogTitle>
                     <DialogDescription>
-                        Preencha o nome do time para adicioná-lo à competição.
+                        Informe o nome da equipe para inscrevê-la nesta competição.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="equipe-name">Nome do time *</Label>
+                        <Label htmlFor="equipe-name">Nome da equipe *</Label>
                         <Input
                             id="equipe-name"
                             value={name}

@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 
-export const faseNomeSchema = z.enum([
-    'Pontos Corridos', 'Grupo', '16 de finais', 'Oitavas', 'Quartas', 'Semi-finais', 'Final'
-]);
+// O formato da fase, que é o que a API sabe dizer por partida hoje. O estágio
+// da eliminatória — oitavas, quartas, final — depende da entidade Fase chegar
+// na resposta da partida.
+export const faseNomeSchema = z.enum(["Pontos corridos", "Fase de grupos", "Eliminatória"]);
 
 export type FaseNome = z.infer<typeof faseNomeSchema>;
 

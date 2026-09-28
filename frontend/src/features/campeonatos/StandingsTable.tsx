@@ -28,7 +28,7 @@ interface StandingsTableProps {
 
 export function StandingsTable({ standings }: StandingsTableProps) {
     return (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-border">
             <Table>
                 <TableHeader>
                     <TableRow className="text-xs text-foreground">

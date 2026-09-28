@@ -53,7 +53,7 @@ export const EditCompetitionForm = ({ competicao, onSaved }: EditCompetitionForm
     };
 
     return (
-        <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
+        <div className="flex-1">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="comp-name">Nome</Label>

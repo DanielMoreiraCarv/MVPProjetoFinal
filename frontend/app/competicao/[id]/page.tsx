@@ -11,7 +11,6 @@ import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/Cabeca
 import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { AddTeamDialog } from "@/src/features/campeonatos/addTeamDialog";
 import { EditCompetitionForm } from "@/src/features/campeonatos/editCompetitionForm";
-import { KnockoutBracket } from "@/src/features/campeonatos/KnockoutBracket";
 import { MatchCalendar } from "@/src/features/campeonatos/matchCalendar";
 import { StandingsTable } from "@/src/features/campeonatos/StandingsTable";
 import { TeamsList } from "@/src/features/campeonatos/teamsList";
@@ -20,7 +19,7 @@ import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { Competicao } from "@/src/lib/types/competicao";
 import { Equipe } from "@/src/lib/types/equipe";
 import { Partida } from "@/src/lib/types/partida";
-import { computeBracket, computeStandings } from "@/src/features/campeonatos/calculos";
+import { computeStandings } from "@/src/features/campeonatos/calculos";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
 
@@ -80,7 +79,6 @@ const CompeticaoDetalhePage = () => {
 
     const pontosCorridos = competicao ? !competicao.isMataMata : false;
     const classificacao = pontosCorridos ? computeStandings(partidas) : [];
-    const chave = !pontosCorridos ? computeBracket(partidas) : null;
 
     const IconePartida = ICONES.partida;
 
@@ -183,13 +181,11 @@ const CompeticaoDetalhePage = () => {
                                     <TabsContent value="classificacao" className="pt-4">
                                         {pontosCorridos ? (
                                             <StandingsTable standings={classificacao} />
-                                        ) : chave ? (
-                                            <KnockoutBracket {...chave} />
                                         ) : (
                                             <Vazio
                                                 conceito="chaveamento"
-                                                titulo="Chaveamento indisponível"
-                                                descricao="Ainda não há confrontos gerados para montar a chave."
+                                                titulo="Chaveamento ainda não disponível"
+                                                descricao="A API informa o formato da fase, mas não em que estágio da eliminatória cada partida está. A chave entra quando a fase vier na resposta da partida."
                                             />
                                         )}
                                     </TabsContent>
