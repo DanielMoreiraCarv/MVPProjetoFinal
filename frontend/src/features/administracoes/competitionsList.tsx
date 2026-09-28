@@ -45,7 +45,7 @@ export const CompetitionsList =({ competitions = [] }: CompetitionsListProps) =>
                         <Card key={competicao.id}>
                             <CardHeader>
                                 <CardTitle>
-                                    <Link href={`/campeonatos/${competicao.id}`}>
+                                    <Link href={`/competicao/${competicao.id}`}>
                                         {competicao.nome}
                                     </Link>
                                 </CardTitle>

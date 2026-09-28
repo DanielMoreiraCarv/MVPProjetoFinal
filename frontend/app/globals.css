@@ -55,6 +55,11 @@
     --sidebar-border: oklch(0.912 0.005 152);
     --sidebar-ring: oklch(0.54 0.132 152);
 
+    /* Véu por trás de diálogo e gaveta. É sombra sobre a página, não cor de
+       tema — mas ainda assim token, porque no escuro precisa ser mais denso
+       para separar o diálogo de um fundo que já é escuro. */
+    --scrim: oklch(0 0 0 / 32%);
+
     --radius: 0.875rem;
 }
 
@@ -98,6 +103,8 @@
     --sidebar-accent-foreground: oklch(0.95 0.01 152);
     --sidebar-border: oklch(1 0 0 / 11%);
     --sidebar-ring: oklch(0.72 0.148 153);
+
+    --scrim: oklch(0 0 0 / 55%);
 }
 
 @theme inline {
@@ -124,6 +131,7 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+    --color-scrim: var(--scrim);
 
     --color-sidebar: var(--sidebar);
     --color-sidebar-foreground: var(--sidebar-foreground);

@@ -1,4 +1,7 @@
 import { Badge } from "@/components/ui/badge";
+import { AmostraDeEstados } from "@/app/tokens/AmostraDeEstados";
+import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { ICONES } from "@/src/lib/icones";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,14 +43,14 @@ const Secao = ({ titulo, children }: { titulo: string; children: React.ReactNode
 
 const TokensPage = () => {
     return (
-        <div className="mx-auto w-full max-w-5xl space-y-10 px-5 py-8">
-            <header className="space-y-1">
-                <h1 className="text-2xl font-semibold tracking-tight">Base visual</h1>
-                <p className="text-sm text-muted-foreground">
-                    Alterne o tema no canto superior direito: tudo aqui é token, então
-                    nada deve perder contraste nem trocar de cor fora de hora.
-                </p>
-            </header>
+        <>
+            <CabecalhoDaPagina
+                conceito="cadastro"
+                titulo="Base visual"
+                descricao="Tokens, ícones e estados — confira nos dois temas."
+                migalhas={[{ rotulo: "Base visual" }]}
+            />
+            <CorpoDaPagina className="space-y-10">
 
             <Secao titulo="Superfícies">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,7 +174,27 @@ const TokensPage = () => {
                     </CardContent>
                 </Card>
             </Secao>
-        </div>
+            <Secao titulo="Ícones por conceito">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                    {Object.entries(ICONES).map(([conceito, Icone]) => (
+                        <div
+                            key={conceito}
+                            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3 text-center"
+                        >
+                            <span className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                                <Icone className="size-4" />
+                            </span>
+                            <span className="text-xs text-muted-foreground">{conceito}</span>
+                        </div>
+                    ))}
+                </div>
+            </Secao>
+
+            <Secao titulo="Estados">
+                <AmostraDeEstados />
+            </Secao>
+            </CorpoDaPagina>
+        </>
     );
 };
 

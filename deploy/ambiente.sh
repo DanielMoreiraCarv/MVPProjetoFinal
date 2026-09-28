@@ -232,7 +232,7 @@ subir () {
     fi
 
     esperar "API" "http://localhost:8080/api/v1/modalidade"
-    esperar "front" "http://localhost:3000/administracoes" 40
+    esperar "front" "http://localhost:3000/administracao" 40
 
     if [ "$dados" -eq 1 ]; then
         verde "→ carregando dados de teste"

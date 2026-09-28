@@ -32,8 +32,8 @@ import { buscarEquipe } from "@/src/lib/api/equipes";
 import { Equipe } from "@/src/lib/types/equipe";
 
 export const TeamDetail = () => {
-    const params = useParams<{ teamId: string }>();
-    const teamId = Number(params?.teamId);
+    const params = useParams<{ id: string }>();
+    const teamId = Number(params?.id);
 
     const [equipe, setTeam] = useState<Equipe | null>(null);
 
@@ -125,7 +125,7 @@ export const TeamDetail = () => {
     return (
         <div className="p-8 flex flex-col gap-6">
             <div className="flex items-center gap-3">
-                <Link href="/administracoes" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/administracao" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     ← Administrações
                 </Link>
             </div>

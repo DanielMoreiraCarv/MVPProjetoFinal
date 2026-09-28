@@ -36,7 +36,7 @@ const HALF_GAP = 48;
 function MatchCard({ partida }: { partida: BracketMatchData }) {
     return (
         <Link
-            href={`/partidas/${partida.id}`}
+            href={`/partida/${partida.id}`}
             className="block w-40 border border-border rounded-md bg-card p-2 text-xs shadow-sm hover:border-primary hover:shadow transition-all"
         >
             <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeMandante ? "font-semibold text-foreground" : "text-muted-foreground"}`}>

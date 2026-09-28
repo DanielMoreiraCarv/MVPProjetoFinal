@@ -10,8 +10,8 @@ import { Partida } from "@/src/lib/types/partida";
 import { Sumula } from "@/src/lib/types/sumula";
 
 export const SumulaDetail = () => {
-    const params = useParams<{ matchId: string }>();
-    const matchId = Number(params?.matchId);
+    const params = useParams<{ id: string }>();
+    const matchId = Number(params?.id);
 
     const [partida, setMatch] = useState<Partida | null>(null);
     const [sumula, setSumula] = useState<Sumula | null>(null);
@@ -57,7 +57,7 @@ export const SumulaDetail = () => {
     return (
         <div className="p-8 flex flex-col gap-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3">
-                <Link href={`/campeonatos/${partida.nomeCompeticao}`} onClick={(e) => e.preventDefault()}>
+                <Link href={`/competicao/${partida.nomeCompeticao}`} onClick={(e) => e.preventDefault()}>
                     <button
                         onClick={() => window.history.back()}
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors"

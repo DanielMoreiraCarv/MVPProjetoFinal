@@ -42,7 +42,7 @@ export const TeamsList = ({ equipes = [] }: TeamsListProps) => {
         <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
                 {validTeams.map((equipe) => (
-                    <Link key={equipe.id} href={`/times/${equipe.id}`}>
+                    <Link key={equipe.id} href={`/equipe/${equipe.id}`}>
                         <Card className="cursor-pointer hover:border-ring transition-colors">
                             <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
