@@ -41,7 +41,10 @@ public class Competicao {
     )
     private List<Modalidade> lstModalidades;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    // Sem cascade: a equipe existe fora da competição e é compartilhada entre
+    // competições. Com CascadeType.ALL, apagar uma competição apagaria as
+    // equipes dela — e elas podem estar inscritas em outra.
+    @ManyToMany
     @JoinTable(
             name = "competicao_equipe",
             joinColumns = @JoinColumn(name = "competicao_id"),
@@ -137,22 +140,46 @@ public class Competicao {
         this.categoria = categoria;
     }
 
+    /**
+     * Inscreve a equipe. Recusar é lançar: antes isto imprimia no stdout e
+     * retornava normalmente, então quem chamava achava que tinha dado certo e
+     * a equipe simplesmente não estava lá.
+     *
+     * Inscrever duas vezes não é erro, é repetição de um pedido que já valeu
+     * — não duplica e não reclama.
+     */
     public void adicionarEquipe(Equipe equipe) {
         if (this.lstEquipes == null) {
             this.lstEquipes = new ArrayList<>();
         }
 
-        if (aceitaModalidade(equipe.getModalidade())) {
+        if (!aceitaModalidade(equipe.getModalidade())) {
+            throw new IllegalArgumentException(
+                    "A equipe " + equipe.getNome() + " é de outra modalidade e não pode disputar "
+                            + this.nome + ".");
+        }
+
+        boolean jaInscrita = this.lstEquipes.stream()
+                .anyMatch(inscrita -> inscrita.getId().equals(equipe.getId()));
+
+        if (!jaInscrita) {
             this.lstEquipes.add(equipe);
-        } else {
-            System.out.println("Essa equipe não pode participar dessa competição!");
         }
     }
 
-    public void removerEquipe(Equipe equipe) {
-        if (this.lstEquipes != null) {
-            this.lstEquipes.remove(equipe);
+    /**
+     * Remove pelo id, e não pelo objeto: `Equipe` não redefine `equals`, então
+     * `List.remove(equipe)` compara por identidade e não acha a instância que
+     * veio de outra consulta. Era esta a razão de remover não funcionar.
+     *
+     * Devolve se removeu, para a rota poder dizer que a equipe não estava
+     * inscrita em vez de responder sucesso sem ter feito nada.
+     */
+    public boolean removerEquipe(Long idEquipe) {
+        if (this.lstEquipes == null) {
+            return false;
         }
+        return this.lstEquipes.removeIf(inscrita -> inscrita.getId().equals(idEquipe));
     }
 
     public boolean aceitaModalidade(Modalidade modalidade) {

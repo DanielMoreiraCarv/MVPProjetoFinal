@@ -6,10 +6,12 @@ import org.example.Exception.CompeticaoCreateException;
 import org.example.Exception.CompeticaoUpdateException;
 import org.example.Mapper.CompeticaoMapper;
 import org.example.Models.Competicao;
+import org.example.Models.Equipe;
 import org.example.Models.Request.CompeticaoCreateRequest;
 import org.example.Models.Request.CompeticaoUpdateRequest;
 import org.example.Models.Response.CompeticaoResponse;
 import org.example.Services.CompeticaoService;
+import org.example.Services.EquipeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,9 @@ public class CompeticaoController
 {
     @Autowired
     private CompeticaoService competicaoService;
+
+    @Autowired
+    private EquipeService equipeService;
 
     @PostMapping
     public ResponseEntity<CompeticaoResponse> criar (
@@ -108,18 +113,49 @@ public class CompeticaoController
             throw NaoEncontradoException.de( "Competição", id );
         }
 
-        try
-        {
-            Competicao competicaoAtualizado = competicaoService.atualizar( request );
+        Competicao competicaoAtualizado = competicaoService.atualizar( request );
 
-            return ResponseEntity
-                    .status( HttpStatus.OK )
-                    .body( CompeticaoMapper.toResponse( competicaoAtualizado ) );
-        }
-        catch ( CompeticaoUpdateException e )
+        return ResponseEntity
+                .status( HttpStatus.OK )
+                .body( CompeticaoMapper.toResponse( competicaoAtualizado ) );
+    }
+
+    /**
+     * Inscreve uma equipe na competição.
+     *
+     * O caminho para isto era `PUT /competicao/{id}` com a lista `equipesIds`
+     * inteira: leitura, alteração e escrita no cliente, em que duas abas
+     * abertas sobrescrevem uma à outra e um corpo sem a lista apagava todas as
+     * inscrições. Aqui o pedido é o que ele é — uma inscrição.
+     */
+    @PostMapping("/{id}/equipe/{idEquipe}")
+    public ResponseEntity<CompeticaoResponse> inscreverEquipe (
+            @PathVariable Long id,
+            @PathVariable Long idEquipe
+    )
+    {
+        Equipe equipe = equipeService.buscarPorId( idEquipe );
+
+        if ( equipe == null )
         {
-            return ResponseEntity.status( HttpStatus.BAD_REQUEST ).build();
+            throw NaoEncontradoException.de( "Equipe", idEquipe );
         }
+
+        Competicao competicao = competicaoService.adicionarEquipeACompeticao( id, equipe );
+
+        return ResponseEntity.ok( CompeticaoMapper.toResponse( competicao ) );
+    }
+
+    /** Remove a inscrição. A equipe continua existindo fora da competição. */
+    @DeleteMapping("/{id}/equipe/{idEquipe}")
+    public ResponseEntity<CompeticaoResponse> removerEquipe (
+            @PathVariable Long id,
+            @PathVariable Long idEquipe
+    )
+    {
+        Competicao competicao = competicaoService.removerEquipeDaCompeticao( id, idEquipe );
+
+        return ResponseEntity.ok( CompeticaoMapper.toResponse( competicao ) );
     }
 
     @DeleteMapping("/{id}")

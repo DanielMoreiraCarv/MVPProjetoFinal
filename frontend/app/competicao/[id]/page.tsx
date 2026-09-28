@@ -9,12 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
 import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
-import { AddTeamDialog } from "@/src/features/campeonatos/addTeamDialog";
+import { InscreverEquipeDialog } from "@/src/features/campeonatos/InscreverEquipeDialog";
 import { EditCompetitionForm } from "@/src/features/campeonatos/editCompetitionForm";
 import { MatchCalendar } from "@/src/features/campeonatos/matchCalendar";
 import { StandingsTable } from "@/src/features/campeonatos/StandingsTable";
 import { TeamsList } from "@/src/features/campeonatos/teamsList";
-import { buscarCompeticao } from "@/src/lib/api/competicoes";
+import { buscarCompeticao, removerEquipeDaCompeticao } from "@/src/lib/api/competicoes";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { Competicao } from "@/src/lib/types/competicao";
 import { Equipe } from "@/src/lib/types/equipe";
@@ -22,6 +22,7 @@ import { Partida } from "@/src/lib/types/partida";
 import { computeStandings } from "@/src/features/campeonatos/calculos";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
+import { useAvisos } from "@/src/lib/avisos";
 
 const Secao = ({
     titulo,
@@ -49,6 +50,7 @@ const CompeticaoDetalhePage = () => {
     const params = useParams<{ id: string }>();
     const id = Number(params?.id);
     const { atual } = useEscopo();
+    const avisos = useAvisos();
 
     const [competicao, setCompeticao] = useState<Competicao | null>(null);
     const [equipes, setEquipes] = useState<Equipe[]>([]);
@@ -142,11 +144,13 @@ const CompeticaoDetalhePage = () => {
                             </Secao>
 
                             <Secao
-                                titulo="Equipes"
+                                titulo="Equipes inscritas"
                                 acao={
-                                    <AddTeamDialog
-                                        onAdd={(equipe: Equipe) =>
-                                            setEquipes((antes) => [...antes, equipe])
+                                    <InscreverEquipeDialog
+                                        idCompeticao={id}
+                                        jaInscritas={equipes}
+                                        aoInscrever={(atualizada) =>
+                                            setEquipes(atualizada.equipes)
                                         }
                                     />
                                 }
@@ -160,7 +164,21 @@ const CompeticaoDetalhePage = () => {
                                         descricao="Inscreva as equipes que vão disputar."
                                     />
                                 ) : (
-                                    <TeamsList equipes={equipes} />
+                                    <TeamsList
+                                        equipes={equipes}
+                                        aoRemover={async (equipe) => {
+                                            try {
+                                                const atualizada =
+                                                    await removerEquipeDaCompeticao(id, equipe.id);
+                                                setEquipes(atualizada.equipes);
+                                                avisos.sucesso(
+                                                    `${equipe.nome} saiu da competição.`,
+                                                );
+                                            } catch (causa) {
+                                                avisos.erro(causa);
+                                            }
+                                        }}
+                                    />
                                 )}
                             </Secao>
                         </div>

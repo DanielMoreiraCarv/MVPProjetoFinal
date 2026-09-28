@@ -97,3 +97,35 @@ export const atualizarCompeticao = async (
     });
     return paraCompeticao(competicaoResponseSchema.parse(resposta));
 };
+
+/**
+ * Inscreve uma equipe já existente na competição.
+ *
+ * O caminho anterior era um PUT com a lista `equipesIds` inteira — leitura,
+ * alteração e escrita no cliente, em que duas abas abertas se sobrescreviam e
+ * um corpo sem a lista apagava todas as inscrições.
+ */
+export const inscreverEquipe = async (
+    idCompeticao: number,
+    idEquipe: number,
+): Promise<Competicao> =>
+    paraCompeticao(
+        competicaoResponseSchema.parse(
+            await apiFetch<unknown>(`/competicao/${idCompeticao}/equipe/${idEquipe}`, {
+                method: "POST",
+            }),
+        ),
+    );
+
+/** Remove a inscrição. A equipe continua existindo fora da competição. */
+export const removerEquipeDaCompeticao = async (
+    idCompeticao: number,
+    idEquipe: number,
+): Promise<Competicao> =>
+    paraCompeticao(
+        competicaoResponseSchema.parse(
+            await apiFetch<unknown>(`/competicao/${idCompeticao}/equipe/${idEquipe}`, {
+                method: "DELETE",
+            }),
+        ),
+    );

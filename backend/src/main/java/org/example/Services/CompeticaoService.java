@@ -1,6 +1,7 @@
 package org.example.Services;
 
 import org.example.Exception.CompeticaoCreateException;
+import org.example.Exception.NaoEncontradoException;
 import org.example.Exception.CompeticaoUpdateException;
 import org.example.Mapper.CompeticaoMapper;
 import org.example.Models.Competicao;
@@ -80,20 +81,22 @@ public class CompeticaoService {
     }
     
     public Competicao adicionarEquipeACompeticao(Long idCompeticao, Equipe equipe) {
-        Optional<Competicao> competicao = competicaoRepository.findById(idCompeticao);
-        if (competicao.isPresent()) {
-            competicao.get().adicionarEquipe(equipe);
-            return competicaoRepository.save(competicao.get());
-        }
-        return null;
+        Competicao competicao = competicaoRepository.findById(idCompeticao)
+                .orElseThrow(() -> NaoEncontradoException.de("Competição", idCompeticao));
+
+        competicao.adicionarEquipe(equipe);
+        return competicaoRepository.save(competicao);
     }
 
-    public Competicao removerEquipeDaCompeticao(Long idCompeticao, Equipe equipe) {
-        Optional<Competicao> competicao = competicaoRepository.findById(idCompeticao);
-        if (competicao.isPresent()) {
-            competicao.get().removerEquipe(equipe);
-            return competicaoRepository.save(competicao.get());
+    public Competicao removerEquipeDaCompeticao(Long idCompeticao, Long idEquipe) {
+        Competicao competicao = competicaoRepository.findById(idCompeticao)
+                .orElseThrow(() -> NaoEncontradoException.de("Competição", idCompeticao));
+
+        if (!competicao.removerEquipe(idEquipe)) {
+            throw new IllegalArgumentException(
+                    "A equipe não está inscrita em " + competicao.getNome() + ".");
         }
-        return null;
+
+        return competicaoRepository.save(competicao);
     }
 }
