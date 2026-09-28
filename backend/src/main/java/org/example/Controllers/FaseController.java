@@ -58,10 +58,23 @@ public class FaseController
         return ResponseEntity.ok( faseAtualizada );
     }
 
+    /**
+     * As fases, opcionalmente só as de uma competição.
+     *
+     * Sem o filtro a tela da competição recebia as fases de todas as
+     * competições e teria que peneirar no cliente — o que só funciona
+     * enquanto o número de competições é pequeno.
+     */
     @GetMapping
-    public ResponseEntity<?> buscarFases ()
+    public ResponseEntity<?> buscarFases (
+            @RequestParam(required = false) Long idCompeticao
+    )
     {
-        return ResponseEntity.ok( FaseMapper.toResponse( faseService.buscarFases() ) );
+        List<Fase> fases = idCompeticao == null
+                ? faseService.buscarFases()
+                : faseService.buscarFasePorCompeticao( idCompeticao );
+
+        return ResponseEntity.ok( FaseMapper.toResponse( fases ) );
     }
 
     @GetMapping("/{id}")

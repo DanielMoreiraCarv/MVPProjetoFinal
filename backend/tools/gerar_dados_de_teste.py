@@ -189,7 +189,6 @@ delete from sumula_ocorrencia;
 delete from sumula;
 delete from partida;
 delete from competicao_equipe;
-delete from equipe_atleta;
 delete from sancao_atleta;
 delete from atleta;
 delete from equipe;
@@ -253,10 +252,6 @@ where m.codigo = 'FUTEBOL_DE_CAMPO';
         "insert into atleta (id, nome, idade, num_camisa, equipe_id, expulso) values\n"
         + lote(linhas, 3) + ";\n"
     )
-
-    partes.append("""insert into equipe_atleta (equipe_id, atleta_id)
-select equipe_id, id from atleta;
-""")
 
     # Inscrição da equipe na competição
     linhas = [

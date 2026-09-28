@@ -5,6 +5,8 @@ import org.example.Models.Atleta;
 import org.example.Models.Modalidade;
 import org.example.Models.Request.EquipeUpdateRequest;
 import org.example.Models.Equipe;
+import org.example.Exception.NaoEncontradoException;
+import org.example.Repositories.AtletaRepository;
 import org.example.Repositories.EquipeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,9 @@ public class EquipeService {
 
     @Autowired
     private EquipeRepository equipeRepository;
+
+    @Autowired
+    private AtletaRepository atletaRepository;
 
     @Autowired
     private FederacaoService federacaoService;
@@ -71,35 +76,52 @@ public class EquipeService {
         equipeRepository.deleteById(id);
     }
 
-    public Equipe adicionarAtletaAEquipe(Long idEquipe, Atleta atleta) {
-        Optional<Equipe> equipe = equipeRepository.findById(idEquipe);
-        if (equipe.isPresent()) {
-            Equipe equipeExistente = equipe.get();
-            if (equipeExistente.getLstAtletas() != null) {
-                equipeExistente.getLstAtletas().add(atleta);
-                return equipeRepository.save(equipeExistente);
-            }
+    /**
+     * O elenco é derivado de `atleta.equipe_id`, então entrar e sair da equipe
+     * é escrita no atleta — mexer na lista da equipe não persistiria nada.
+     */
+    public Equipe adicionarAtletaAEquipe(Long idEquipe, Long idAtleta) {
+        Equipe equipe = equipeRepository.findById(idEquipe)
+                .orElseThrow(() -> NaoEncontradoException.de("Equipe", idEquipe));
+
+        Atleta atleta = atletaRepository.findById(idAtleta)
+                .orElseThrow(() -> NaoEncontradoException.de("Atleta", idAtleta));
+
+        if (atleta.getModalidade() != null && equipe.getModalidade() != null
+                && !atleta.getModalidade().getId().equals(equipe.getModalidade().getId())) {
+            throw new IllegalArgumentException(
+                    "O atleta " + atleta.getNome() + " é de outra modalidade e não pode entrar em "
+                            + equipe.getNome() + ".");
         }
-        return null;
+
+        equipe.receberAtleta(atleta);
+        atletaRepository.save(atleta);
+        return equipe;
     }
 
     public Equipe removerAtletaDaEquipe(Long idEquipe, Long idAtleta) {
-        Optional<Equipe> equipe = equipeRepository.findById(idEquipe);
-        if (equipe.isPresent()) {
-            Equipe equipeExistente = equipe.get();
-            if (equipeExistente.getLstAtletas() != null) {
-                equipeExistente.getLstAtletas().removeIf(a -> a.getId().equals(idAtleta));
-                return equipeRepository.save(equipeExistente);
-            }
+        Equipe equipe = equipeRepository.findById(idEquipe)
+                .orElseThrow(() -> NaoEncontradoException.de("Equipe", idEquipe));
+
+        Atleta atleta = atletaRepository.findById(idAtleta)
+                .orElseThrow(() -> NaoEncontradoException.de("Atleta", idAtleta));
+
+        if (atleta.getEquipe() == null || !atleta.getEquipe().getId().equals(idEquipe)) {
+            throw new IllegalArgumentException(
+                    "O atleta " + atleta.getNome() + " não está em " + equipe.getNome() + ".");
         }
-        return null;
+
+        // Sai da equipe, continua cadastrado: atleta é pessoa, não item de
+        // elenco. Apagar junto perderia o histórico dele.
+        equipe.dispensarAtleta(atleta);
+        atletaRepository.save(atleta);
+        return equipe;
     }
 
     public List<Atleta> listarAtletasDaEquipe(Long idEquipe) {
-        Optional<Equipe> equipe = equipeRepository.findById(idEquipe);
-        if (equipe.isPresent()) {
-            return equipe.get().getLstAtletas();
+        if (!equipeRepository.existsById(idEquipe)) {
+            throw NaoEncontradoException.de("Equipe", idEquipe);
         }
-        return null;
+        return atletaRepository.findByEquipeId(idEquipe);
     }
 }

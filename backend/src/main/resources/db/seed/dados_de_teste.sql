@@ -14,7 +14,6 @@ delete from sumula_ocorrencia;
 delete from sumula;
 delete from partida;
 delete from competicao_equipe;
-delete from equipe_atleta;
 delete from sancao_atleta;
 delete from atleta;
 delete from equipe;
@@ -581,9 +580,6 @@ insert into atleta (id, nome, idade, num_camisa, equipe_id, expulso) values
     (96007, 'Fábio Barros', 44, 7, 96, false), (96008, 'Alan Barrozo', 30, 8, 96, false), (96009, 'Renato Barrueto', 36, 9, 96, false),
     (96010, 'Leandro Bartolomeu', 24, 10, 96, false), (96011, 'Tiago Basílio', 41, 11, 96, false), (96012, 'Wilson Bastos', 27, 12, 96, false),
     (96013, 'Wagner Batata', 35, 13, 96, false), (96014, 'Willian Batinga', 23, 14, 96, false), (96015, 'Edmilson Bauer', 38, 15, 96, false);
-
-insert into equipe_atleta (equipe_id, atleta_id)
-select equipe_id, id from atleta;
 
 insert into competicao_equipe (competicao_id, equipe_id) values
     (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8),

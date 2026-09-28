@@ -1,9 +1,11 @@
 package org.example.Controllers;
 
 import org.example.Exception.NaoEncontradoException;
+import org.example.Mapper.AtletaMapper;
 import org.example.Mapper.EquipeMapper;
 import org.example.Models.Request.EquipeCreateRequest;
 import org.example.Models.Request.EquipeUpdateRequest;
+import org.example.Models.Response.AtletaResponse;
 import org.example.Models.Response.EquipeResponse;
 import org.example.Models.Equipe;
 import org.example.Services.EquipeService;
@@ -51,9 +53,14 @@ public class EquipeController
     }
 
     @GetMapping
-    public ResponseEntity<List<EquipeResponse>> listarEquipe (){
-        List<EquipeResponse> equipes = EquipeMapper.toResponse( equipeService.listarTodos() );
-
+    public ResponseEntity<List<EquipeResponse>> listarEquipe (
+            @RequestParam(required = false) Long idModalidade
+    )
+    {
+        List<EquipeResponse> equipes = EquipeMapper.toResponse(
+                idModalidade == null
+                        ? equipeService.listarTodos()
+                        : equipeService.listarPorModalidade( idModalidade ) );
 
         return ResponseEntity
                 .status( HttpStatus.OK )
@@ -72,6 +79,36 @@ public class EquipeController
         return ResponseEntity
                 .status( HttpStatus.OK )
                 .body( EquipeMapper.toResponse( equipe ) );
+    }
+
+    /** O elenco da equipe. */
+    @GetMapping("/{id}/atleta")
+    public ResponseEntity<List<AtletaResponse>> listarElenco ( @PathVariable Long id )
+    {
+        return ResponseEntity.ok(
+                AtletaMapper.toResponse( equipeService.listarAtletasDaEquipe( id ) ) );
+    }
+
+    /** Traz um atleta já cadastrado para a equipe. */
+    @PostMapping("/{id}/atleta/{idAtleta}")
+    public ResponseEntity<EquipeResponse> adicionarAoElenco (
+            @PathVariable Long id,
+            @PathVariable Long idAtleta
+    )
+    {
+        return ResponseEntity.ok(
+                EquipeMapper.toResponse( equipeService.adicionarAtletaAEquipe( id, idAtleta ) ) );
+    }
+
+    /** Tira o atleta da equipe. Ele continua cadastrado. */
+    @DeleteMapping("/{id}/atleta/{idAtleta}")
+    public ResponseEntity<EquipeResponse> removerDoElenco (
+            @PathVariable Long id,
+            @PathVariable Long idAtleta
+    )
+    {
+        return ResponseEntity.ok(
+                EquipeMapper.toResponse( equipeService.removerAtletaDaEquipe( id, idAtleta ) ) );
     }
 
     @DeleteMapping("/{id}")
