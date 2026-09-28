@@ -55,7 +55,7 @@ export const Confirmacao = ({
             <AlertDialog.Trigger render={gatilho as React.ReactElement} />
             <AlertDialog.Portal>
                 <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-scrim supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-                <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-4xl bg-popover p-6 text-popover-foreground shadow-xl outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+                <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-3xl bg-popover p-6 text-popover-foreground shadow-xl outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
                     <div className="space-y-1.5">
                         <AlertDialog.Title className="font-heading text-base font-medium">
                             {titulo}

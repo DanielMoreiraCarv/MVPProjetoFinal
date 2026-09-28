@@ -64,7 +64,11 @@ const CompeticaoPage = () => {
                             ) : (
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     {competicoes.map((competicao) => (
-                                        <Link key={competicao.id} href={`/competicao/${competicao.id}`}>
+                                        <Link
+                                            key={competicao.id}
+                                            href={`/competicao/${competicao.id}`}
+                                            className="block h-full"
+                                        >
                                             <Card className="h-full transition-colors hover:border-ring">
                                                 <CardHeader>
                                                     <CardTitle>{competicao.nome}</CardTitle>
@@ -97,7 +101,11 @@ const CompeticaoPage = () => {
                             ) : (
                                 <div className="space-y-2">
                                     {partidas.map((partida) => (
-                                        <Link key={partida.id} href={`/partida/${partida.id}`}>
+                                        <Link
+                                            key={partida.id}
+                                            href={`/partida/${partida.id}`}
+                                            className="block"
+                                        >
                                             <Card className="transition-colors hover:border-ring">
                                                 <CardHeader>
                                                     <CardTitle className="text-sm">

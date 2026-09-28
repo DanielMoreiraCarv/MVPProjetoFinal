@@ -47,7 +47,7 @@ export const MatchCalendar = ({ matches = [] }: MatchCalendarProps) => {
                         : "vs";
 
                     return (
-                        <Link key={partida.id} href={`/partida/${partida.id}`}>
+                        <Link key={partida.id} href={`/partida/${partida.id}`} className="block">
                             <Card className="cursor-pointer hover:border-ring transition-colors">
                                 <CardHeader>
                                     <CardTitle className="flex items-center justify-between">

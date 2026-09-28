@@ -83,10 +83,10 @@ export const PaletaDeCompeticoes = () => {
         >
             <Dialog.Portal>
                 <Dialog.Backdrop className="fixed inset-0 z-50 bg-scrim data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-                <Dialog.Popup className="fixed top-[12vh] left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden rounded-4xl border border-border bg-popover text-popover-foreground shadow-2xl outline-none sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+                <Dialog.Popup className="fixed top-[12vh] left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden rounded-3xl border border-border bg-popover text-popover-foreground shadow-2xl outline-none sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
                     <Dialog.Title className="sr-only">Trocar de competição</Dialog.Title>
 
-                    <div className="flex items-center gap-3 border-b border-border px-4">
+                    <div className="flex items-center gap-3 border-b border-border px-5">
                         <Search className="size-4 shrink-0 text-muted-foreground" />
                         <input
                             autoFocus
@@ -102,7 +102,7 @@ export const PaletaDeCompeticoes = () => {
                         </kbd>
                     </div>
 
-                    <ul ref={listaRef} className="max-h-[50vh] overflow-y-auto p-2">
+                    <ul ref={listaRef} className="max-h-[50vh] overflow-y-auto p-2.5">
                         {carregando &&
                             Array.from({ length: 5 }).map((_, i) => (
                                 <li key={i} className="flex items-center gap-3 px-2 py-2">
@@ -163,7 +163,7 @@ export const PaletaDeCompeticoes = () => {
                             ))}
                     </ul>
 
-                    <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
+                    <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-[11px] text-muted-foreground">
                         <span>↑ ↓ para navegar · ↵ para abrir</span>
                         {/* O caminho longo continua existindo: quem não sabe o
                             nome vai pela administração e desce até a competição. */}
