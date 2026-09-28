@@ -1,23 +1,64 @@
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
+/** Uma falha atribuída a um campo do formulário que foi enviado. */
+export type DetalheDeErro = { campo: string; mensagem: string };
+
 export class ApiError extends Error {
-    constructor(readonly status: number, message: string) {
+    constructor(
+        readonly status: number,
+        message: string,
+        /** `VALIDACAO_FALHOU`, `NAO_ENCONTRADO`, `CONFLITO`… */
+        readonly codigo?: string,
+        readonly detalhes: DetalheDeErro[] = [],
+    ) {
         super(message);
         this.name = "ApiError";
     }
+
+    /** A mensagem para um campo, quando o servidor disse qual. */
+    mensagemDoCampo(campo: string) {
+        return this.detalhes.find((detalhe) => detalhe.campo === campo)?.mensagem;
+    }
+
+    get ehValidacao() {
+        return this.codigo === "VALIDACAO_FALHOU";
+    }
 }
 
-const mensagemDeErro = async (resposta: Response) => {
-    // O backend ainda não tem contrato de erro padronizado: às vezes responde
-    // sem corpo, às vezes com o stack do Spring. Extrai o que der.
+/**
+ * O contrato de erro de `documentos/padrao-api.md` §4:
+ *
+ *     { "erro": { "codigo": "…", "mensagem": "…", "detalhes": [ { campo, mensagem } ] } }
+ *
+ * Respostas antigas sem envelope ainda aparecem enquanto alguma rota não
+ * passar pelo tratador central, então o texto cru continua servindo de
+ * último recurso — é melhor mostrar o que veio do que "erro desconhecido".
+ */
+const erroDaResposta = async (resposta: Response) => {
     const texto = await resposta.text().catch(() => "");
-    if (!texto) return `A requisição falhou (HTTP ${resposta.status}).`;
+    if (!texto) {
+        return new ApiError(resposta.status, `A requisição falhou (HTTP ${resposta.status}).`);
+    }
 
     try {
         const corpo = JSON.parse(texto);
-        return corpo.mensagem ?? corpo.message ?? corpo.error ?? texto;
+        const erro = corpo?.erro;
+
+        if (erro?.mensagem) {
+            return new ApiError(
+                resposta.status,
+                erro.mensagem,
+                erro.codigo,
+                Array.isArray(erro.detalhes) ? erro.detalhes : [],
+            );
+        }
+
+        return new ApiError(
+            resposta.status,
+            corpo.mensagem ?? corpo.message ?? corpo.error ?? texto,
+        );
     } catch {
-        return texto;
+        return new ApiError(resposta.status, texto);
     }
 };
 
@@ -29,7 +70,7 @@ export const apiFetch = async <T>(caminho: string, init?: RequestInit): Promise<
     });
 
     if (!resposta.ok) {
-        throw new ApiError(resposta.status, await mensagemDeErro(resposta));
+        throw await erroDaResposta(resposta);
     }
 
     if (resposta.status === 204) {

@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import jakarta.validation.Valid;
 import org.example.Exception.CompeticaoCreateException;
 import org.example.Exception.CompeticaoUpdateException;
@@ -12,7 +13,6 @@ import org.example.Services.CompeticaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +27,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/competicao")
-@CrossOrigin(origins = "*")
 public class CompeticaoController
 {
     @Autowired
@@ -88,7 +87,7 @@ public class CompeticaoController
 
         if ( competicao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Competição", id );
         }
 
         return ResponseEntity
@@ -106,7 +105,7 @@ public class CompeticaoController
 
         if ( competicao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Competição", id );
         }
 
         try
@@ -132,7 +131,7 @@ public class CompeticaoController
 
         if ( competicao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Competição", id );
         }
 
         competicaoService.deletarCompeticao( id );

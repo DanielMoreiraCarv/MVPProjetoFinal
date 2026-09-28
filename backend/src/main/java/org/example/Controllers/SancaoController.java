@@ -1,6 +1,7 @@
 package org.example.Controllers;
 
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Mapper.SancaoAtletaMapper;
 import org.example.Mapper.SancaoMapper;
 import org.example.Models.Request.SancaoAtletaRequest;
@@ -19,7 +20,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/sancao")
-@CrossOrigin(origins = "*")
 public class SancaoController
 {
     @Autowired
@@ -59,7 +59,7 @@ public class SancaoController
 
         if ( sancao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Sanção", id );
         }
 
         return ResponseEntity.ok( SancaoMapper.toResponse( sancao ) );
@@ -72,7 +72,7 @@ public class SancaoController
 
         if ( sancao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Sanção", id );
         }
 
         sancaoService.deletarSancao( id );

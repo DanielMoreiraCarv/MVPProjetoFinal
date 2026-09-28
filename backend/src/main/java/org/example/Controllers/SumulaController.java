@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Models.Sumula;
 import org.example.Services.PartidaService;
 import org.example.Services.SumulaService;
@@ -12,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/sumula")
-@CrossOrigin(origins = "*")
 public class SumulaController {
 
     @Autowired
@@ -23,12 +23,8 @@ public class SumulaController {
 
     @PostMapping
     public ResponseEntity<Sumula> criar(@RequestParam Long idPartida, @RequestBody Sumula sumula) {
-        try {
-            Sumula nova = sumulaService.criarSumula(idPartida, sumula);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nova);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        Sumula nova = sumulaService.criarSumula(idPartida, sumula);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nova);
     }
 
     @GetMapping("/{id}")
@@ -37,7 +33,7 @@ public class SumulaController {
         if (sumula != null) {
             return ResponseEntity.ok(sumula);
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Súmula", id );
     }
 
     @GetMapping
@@ -64,7 +60,7 @@ public class SumulaController {
         if (sumula != null) {
             return ResponseEntity.ok(sumula);
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Súmula", idPartida );
     }
 
     @GetMapping("/arbitro/{idArbitro}")
@@ -83,7 +79,7 @@ public class SumulaController {
         if (finalizada != null) {
             return ResponseEntity.ok(finalizada);
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Súmula", id );
     }
 
     @PostMapping("/{id}/ocorrencia")
@@ -94,7 +90,7 @@ public class SumulaController {
         if (atualizada != null) {
             return ResponseEntity.ok(atualizada);
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Súmula", id );
     }
 
     @PutMapping("/{id}")
@@ -103,7 +99,7 @@ public class SumulaController {
         if (atualizada != null) {
             return ResponseEntity.ok(atualizada);
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Súmula", id );
     }
 
     @DeleteMapping("/{id}")
@@ -113,6 +109,6 @@ public class SumulaController {
             sumulaService.deletarSumula(id);
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Súmula", id );
     }
 }

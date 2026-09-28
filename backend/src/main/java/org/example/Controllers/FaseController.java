@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
 import org.example.Mapper.PartidaMapper;
@@ -24,7 +25,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/fase")
-@CrossOrigin(origins = "*")
 public class FaseController
 {
     @Autowired
@@ -43,13 +43,14 @@ public class FaseController
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarFase ( @RequestBody FaseUpdateRequest request )
+    public ResponseEntity<?> atualizarFase ( @PathVariable("id") Long id,
+            @RequestBody FaseUpdateRequest request )
     {
-        Fase fase = faseService.buscarFasePorId( request.id() );
+        Fase fase = faseService.buscarFasePorId( id );
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         FaseResponse faseAtualizada = faseService.atualizarFase( request, fase );
@@ -70,7 +71,7 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         return ResponseEntity.ok( fase );
@@ -82,7 +83,7 @@ public class FaseController
         Fase fase = faseService.buscarFasePorId( id );
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         if ( fase.getFaseSucessora() != null )
@@ -106,7 +107,7 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         ResultadoDaValidacao resultado = faseService.validarConfrontos( fase );
@@ -122,7 +123,7 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         try
@@ -145,7 +146,7 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         try
@@ -165,7 +166,7 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         List<Classificado> classificacao = faseService.classificacaoDe( fase );

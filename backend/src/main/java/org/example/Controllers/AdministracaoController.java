@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import jakarta.validation.Valid;
 import org.example.Mapper.AdministracaoMapper;
 import org.example.Models.Administracao;
@@ -10,7 +11,6 @@ import org.example.Services.AdministracaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +24,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/administracao")
-@CrossOrigin(origins = "*")
 public class AdministracaoController
 {
     @Autowired
@@ -65,7 +64,7 @@ public class AdministracaoController
 
         if ( administracao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Administração", id );
         }
 
         return ResponseEntity
@@ -83,7 +82,7 @@ public class AdministracaoController
 
         if ( administracao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Administração", id );
         }
 
         Administracao administracaoAtualizada = administracaoService.atualizar( request );
@@ -102,7 +101,7 @@ public class AdministracaoController
 
         if ( administracao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Administração", id );
         }
 
         administracaoService.deletar( id );

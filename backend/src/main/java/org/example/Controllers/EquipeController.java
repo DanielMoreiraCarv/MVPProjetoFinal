@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Mapper.EquipeMapper;
 import org.example.Models.Request.EquipeCreateRequest;
 import org.example.Models.Request.EquipeUpdateRequest;
@@ -15,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/equipe")
-@CrossOrigin(origins = "*")
 public class EquipeController
 {
     @Autowired
@@ -40,7 +40,7 @@ public class EquipeController
     public ResponseEntity<EquipeResponse> atualizarEquipe (@PathVariable Long id, @RequestBody EquipeUpdateRequest request){
         Equipe equipe = equipeService.buscarPorId( id );
         if (equipe == null){
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Equipe", id );
         }
 
         Equipe equipeAtualizada = equipeService.atualizarEquipe( id, request);
@@ -66,7 +66,7 @@ public class EquipeController
 
         if( equipe == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Equipe", id );
         }
 
         return ResponseEntity
@@ -81,7 +81,7 @@ public class EquipeController
 
         if( equipe == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Equipe", id );
         }
 
         equipeService.deletarEquipe( id );

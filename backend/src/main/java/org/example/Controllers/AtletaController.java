@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import jakarta.validation.Valid;
 
 import org.example.Mapper.AtletaMapper;
@@ -19,7 +20,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/atleta")
-@CrossOrigin(origins = "*")
 public class AtletaController
 {
 
@@ -55,7 +55,7 @@ public class AtletaController
 
         if ( atleta == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Atleta", id );
         }
 
         Atleta atletaAtualizado = atletaService.atualizarAtleta( id, request );
@@ -86,7 +86,7 @@ public class AtletaController
 
         if ( atleta == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Atleta", id );
         }
 
         return ResponseEntity.ok( AtletaMapper.toResponse( atleta ) );
@@ -99,7 +99,7 @@ public class AtletaController
 
         if ( atleta == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Atleta", id );
         }
 
         atletaService.deletarAtleta( id );

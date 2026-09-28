@@ -135,3 +135,25 @@ Com base nas decisões tomadas, os primeiros endpoints a serem implementados ou 
 | **POST** | `/api/v1/time` | Cadastro de nova equipe (antigo time) | `{ "id": 3, "nomeEquipe": "..." }` |
 | **POST** | `/api/v1/atleta` | Cadastro de novo atleta (antigo jogador) | `{ "id": 45, "nomeAtleta": "..." }` |
 | **GET** | `/api/v1/arbitro` | Lista árbitros disponíveis | `[ { "id": 5, "nome": "..." } ]` |
+
+
+---
+
+## 6. O que já vale e o que ainda não
+
+**Vale:** o envelope de erro da §4, em toda falha, produzido por um
+`@RestControllerAdvice` só. Os códigos em uso são `VALIDACAO_FALHOU`,
+`NAO_ENCONTRADO`, `CONFLITO`, `REGRA_VIOLADA`, `ENTRADA_INVALIDA`,
+`ROTA_INEXISTENTE` e `ERRO_INTERNO`. Mensagem de exceção interna nunca vai
+para a resposta: o que o cliente pode corrigir vira 4xx com a causa, o resto
+vira 500 genérico com o stack no log.
+
+**Vale:** o vocabulário do glossário nas rotas e nos campos, e o recurso no
+singular.
+
+**Ainda não vale:** o envelope de sucesso da §2 (`{ "resultado": ... }`). As
+rotas devolvem o DTO cru. Mexer nisso toca todas as rotas e todos os parsers
+do front de uma vez, e nenhuma tela consome a diferença — ficou registrado
+como evolução, não como dívida urgente.
+
+**Ainda não vale:** paginação (§2.3). Nenhum `listar` pagina.

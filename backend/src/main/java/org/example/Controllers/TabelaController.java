@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Mapper.TabelaMapper;
 import org.example.Models.Tabela;
 import org.example.Services.TabelaService;
@@ -30,7 +31,7 @@ public class TabelaController
 
         if ( tabela == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Tabela", id );
         }
 
         return ResponseEntity.ok( TabelaMapper.toResponse( tabela ) );
@@ -43,7 +44,7 @@ public class TabelaController
 
         if ( tabela == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Tabela", id );
         }
 
         return ResponseEntity.ok( TabelaMapper.toResponse( tabela ) );

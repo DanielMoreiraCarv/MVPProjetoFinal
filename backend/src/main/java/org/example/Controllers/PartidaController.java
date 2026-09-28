@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Models.Arbitro;
 import org.example.Mapper.PartidaMapper;
 import org.example.Models.Response.PartidaResponse;
@@ -16,7 +17,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/partida")
-@CrossOrigin(origins = "*")
 public class PartidaController {
 
     @Autowired
@@ -30,12 +30,8 @@ public class PartidaController {
 
     @PostMapping
     public ResponseEntity<Partida> criar(@RequestBody Partida partida) {
-        try {
-            Partida nova = partidaService.criarPartida(partida);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nova);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        Partida nova = partidaService.criarPartida(partida);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nova);
     }
 
     @GetMapping("/{id}")
@@ -44,7 +40,7 @@ public class PartidaController {
         if (partida != null) {
             return ResponseEntity.ok(PartidaMapper.toResponse(partida));
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Partida", id );
     }
 
     @GetMapping
@@ -90,14 +86,14 @@ public class PartidaController {
     public ResponseEntity<Partida> escalarArbitro(@PathVariable Long id, @RequestParam Long idArbitro) {
         Partida partida = partidaService.buscarPorId(id);
         if (partida == null) {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Partida", id );
         }
         if (partida.isRealizada()) {
             return ResponseEntity.badRequest().build();
         }
         Arbitro arbitro = arbitroService.buscarPorId(idArbitro);
         if (arbitro == null) {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Partida", id );
         }
         partida.setArbitro(arbitro);
         arbitro.registrarTrabalho();
@@ -112,7 +108,7 @@ public class PartidaController {
             @RequestParam int placarVisitante) {
         Partida partida = partidaService.buscarPorId(id);
         if (partida == null) {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Partida", id );
         }
         if (partida.isRealizada()) {
             return ResponseEntity.badRequest().build();
@@ -127,7 +123,7 @@ public class PartidaController {
     public ResponseEntity<Partida> finalizarPartida(@PathVariable Long id) {
         Partida partida = partidaService.buscarPorId(id);
         if (partida == null) {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Partida", id );
         }
         if (partida.isRealizada()) {
             return ResponseEntity.badRequest().build();
@@ -146,7 +142,7 @@ public class PartidaController {
         if (atualizada != null) {
             return ResponseEntity.ok(atualizada);
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Partida", id );
     }
 
     @DeleteMapping("/{id}")
@@ -156,7 +152,7 @@ public class PartidaController {
             partidaService.deletarPartida(id);
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.notFound().build();
+        throw NaoEncontradoException.de( "Partida", id );
     }
 
 }
