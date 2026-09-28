@@ -17,7 +17,8 @@ import { useEscopo } from "@/src/lib/escopo";
  * sempre visível, não só na página que o definiu.
  */
 export const SeletorDeEscopo = ({ recolhido = false }: { recolhido?: boolean }) => {
-    const { atual, carregando, abrirPaleta, competicoes, ultimoId } = useEscopo();
+    const { atual, carregando, abrirPaleta, competicoes, ultimoId, administracaoAtual } =
+        useEscopo();
     const Icone = ICONES.competicao;
 
     // Sem competição na rota, mas com uma última visitada: oferece a volta em
@@ -86,8 +87,11 @@ export const SeletorDeEscopo = ({ recolhido = false }: { recolhido?: boolean }) 
                 ) : (
                     <>
                         <span className="block text-sm font-medium">Escolher competição</span>
-                        <span className="block text-xs text-muted-foreground">
-                            Buscar pelo nome · ⌘K
+                        {/* Sem competição, o subtítulo mostra a administração em
+                            foco: é ela que decide o que a página de competições
+                            lista. */}
+                        <span className="block truncate text-xs text-muted-foreground">
+                            {administracaoAtual?.nome ?? "Buscar pelo nome · ⌘K"}
                         </span>
                     </>
                 )}

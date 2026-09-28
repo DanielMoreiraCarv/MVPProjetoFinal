@@ -16,6 +16,7 @@ import { Administracao } from "@/src/lib/types/administracao";
 import { Competicao } from "@/src/lib/types/competicao";
 
 const CHAVE_ULTIMO_ESCOPO = "tcc.escopo.ultimo";
+const CHAVE_ADMINISTRACAO = "tcc.escopo.administracao";
 
 /** Uma competição com o nome da administração a que pertence, já resolvido. */
 export type CompeticaoComAdministracao = Competicao & {
@@ -30,6 +31,13 @@ type Escopo = {
     recarregar: () => void;
     /** A competição da rota atual, ou null fora de uma rota de competição. */
     atual: CompeticaoComAdministracao | null;
+    /**
+     * A administração em foco. Vem da competição aberta quando há uma — uma
+     * competição sempre pertence a uma administração — e, fora disso, da
+     * última escolhida na página de administrações.
+     */
+    administracaoAtual: Administracao | null;
+    escolherAdministracao: (id: number | null) => void;
     /** Onde a pessoa estava da última vez, para a raiz do app saber voltar. */
     ultimoId: number | null;
     paletaAberta: boolean;
@@ -55,6 +63,7 @@ export const ProvedorDeEscopo = ({ children }: { children: React.ReactNode }) =>
     const [erro, setErro] = useState<unknown>(null);
     const [paletaAberta, setPaletaAberta] = useState(false);
     const [ultimoId, setUltimoId] = useState<number | null>(null);
+    const [idAdministracaoEscolhida, setIdAdministracaoEscolhida] = useState<number | null>(null);
 
     const carregar = useCallback(() => {
         setCarregando(true);
@@ -82,6 +91,17 @@ export const ProvedorDeEscopo = ({ children }: { children: React.ReactNode }) =>
     useEffect(() => {
         const salvo = Number(localStorage.getItem(CHAVE_ULTIMO_ESCOPO));
         if (Number.isFinite(salvo) && salvo > 0) setUltimoId(salvo);
+
+        const administracao = Number(localStorage.getItem(CHAVE_ADMINISTRACAO));
+        if (Number.isFinite(administracao) && administracao > 0) {
+            setIdAdministracaoEscolhida(administracao);
+        }
+    }, []);
+
+    const escolherAdministracao = useCallback((id: number | null) => {
+        setIdAdministracaoEscolhida(id);
+        if (id == null) localStorage.removeItem(CHAVE_ADMINISTRACAO);
+        else localStorage.setItem(CHAVE_ADMINISTRACAO, String(id));
     }, []);
 
     const idNaRota = useMemo(() => {
@@ -99,6 +119,24 @@ export const ProvedorDeEscopo = ({ children }: { children: React.ReactNode }) =>
         localStorage.setItem(CHAVE_ULTIMO_ESCOPO, String(idNaRota));
         setUltimoId(idNaRota);
     }, [idNaRota]);
+
+    // Abrir uma competição — inclusive pela busca — passa a administração
+    // dela a ser a administração em foco. É o que faz "Competições", no menu,
+    // mostrar as irmãs da que acabou de ser aberta.
+    const idAdministracaoEmFoco = atual?.idAdministracao ?? idAdministracaoEscolhida;
+
+    useEffect(() => {
+        if (atual?.idAdministracao == null) return;
+        localStorage.setItem(CHAVE_ADMINISTRACAO, String(atual.idAdministracao));
+        setIdAdministracaoEscolhida(atual.idAdministracao);
+    }, [atual?.idAdministracao]);
+
+    const administracaoAtual = useMemo(
+        () =>
+            administracoes.find((administracao) => administracao.id === idAdministracaoEmFoco) ??
+            null,
+        [administracoes, idAdministracaoEmFoco],
+    );
 
     // ⌘K / Ctrl+K de qualquer lugar. Fora de campo de texto, para não roubar
     // o atalho de quem está digitando.
@@ -122,12 +160,25 @@ export const ProvedorDeEscopo = ({ children }: { children: React.ReactNode }) =>
             erro,
             recarregar: carregar,
             atual,
+            administracaoAtual,
+            escolherAdministracao,
             ultimoId,
             paletaAberta,
             abrirPaleta: () => setPaletaAberta(true),
             fecharPaleta: () => setPaletaAberta(false),
         }),
-        [competicoes, administracoes, carregando, erro, carregar, atual, ultimoId, paletaAberta],
+        [
+            competicoes,
+            administracoes,
+            carregando,
+            erro,
+            carregar,
+            atual,
+            administracaoAtual,
+            escolherAdministracao,
+            ultimoId,
+            paletaAberta,
+        ],
     );
 
     return <ContextoDeEscopo.Provider value={valor}>{children}</ContextoDeEscopo.Provider>;
