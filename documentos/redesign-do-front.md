@@ -1,5 +1,10 @@
 # Redesign do Front-end — plano da sprint
 
+> **Estado: entregue.** O que segue é o plano como foi escrito, com o registro
+> do que mudou na execução. O relatório do que de fato ficou pronto, e dos
+> defeitos que a reescrita revelou, está em
+> [`o-que-a-sprint-revelou.md`](o-que-a-sprint-revelou.md).
+
 Reescrita integral da camada de interface do `frontend/`, mantendo e ampliando a
 camada de dados (`src/lib/api/`). Pressuposto desta sprint: **usuário único** —
 não há login, sessão nem papéis; o lugar deles na interface fica reservado, mas
