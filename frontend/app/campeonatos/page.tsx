@@ -33,7 +33,7 @@ const TorneiosPage = () => {
     }, []);
 
     return (
-        <div className="p-8 flex-1 flex flex-col text-black">
+        <div className="p-8 flex-1 flex flex-col">
             {erro && (
                 <div role="alert" className="mb-4 p-4 text-destructive border border-destructive/40 rounded-md">
                     {erro}

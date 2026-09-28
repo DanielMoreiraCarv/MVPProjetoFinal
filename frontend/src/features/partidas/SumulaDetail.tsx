@@ -55,7 +55,7 @@ export const SumulaDetail = () => {
         : "vs";
 
     return (
-        <div className="p-8 flex flex-col gap-6 text-black max-w-3xl mx-auto">
+        <div className="p-8 flex flex-col gap-6 max-w-3xl mx-auto">
             <div className="flex items-center gap-3">
                 <Link href={`/campeonatos/${partida.nomeCompeticao}`} onClick={(e) => e.preventDefault()}>
                     <button
@@ -87,7 +87,7 @@ export const SumulaDetail = () => {
 
                 {partida.realizada && partida.vencedor && (
                     <p className="text-center text-sm text-muted-foreground">
-                        Vencedor: <span className="font-medium text-black">{partida.vencedor}</span>
+                        Vencedor: <span className="font-medium text-foreground">{partida.vencedor}</span>
                     </p>
                 )}
             </div>

@@ -39,12 +39,12 @@ function MatchCard({ partida }: { partida: BracketMatchData }) {
             href={`/partidas/${partida.id}`}
             className="block w-40 border border-border rounded-md bg-card p-2 text-xs shadow-sm hover:border-primary hover:shadow transition-all"
         >
-            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeMandante ? "font-semibold text-black" : "text-muted-foreground"}`}>
+            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeMandante ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                 <span className="truncate">{partida.equipeMandante}</span>
                 <span className="shrink-0 font-mono w-4 text-right">{partida.realizada ? partida.placarMandante : "–"}</span>
             </div>
             <div className="my-0.5 border-t border-border" />
-            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeVisitante ? "font-semibold text-black" : "text-muted-foreground"}`}>
+            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeVisitante ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                 <span className="truncate">{partida.equipeVisitante}</span>
                 <span className="shrink-0 font-mono w-4 text-right">{partida.realizada ? partida.placarVisitante : "–"}</span>
             </div>

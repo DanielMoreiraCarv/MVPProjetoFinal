@@ -126,9 +126,16 @@ Os dois manifestos publicam a porta 5433, então rode **um de cada vez**.
 | Alteração em | O que roda | Tempo |
 |---|---|---|
 | `backend/` | `mvn test` (compila e roda os testes) | ~2 s |
-| `frontend/` | `yarn build` (inclui a checagem de tipos) | ~9 s |
+| `frontend/` | `yarn cores` e `yarn build` (o build inclui a checagem de tipos) | ~9 s |
 | ambos | os dois | ~11 s |
 | só `documentos/`, `deploy/` | nada | instantâneo |
+
+`yarn cores` recusa cor fixa em `app/` e `src/` — `bg-red-500`, `text-black`,
+`text-[#1a1a1a]`. Toda cor tem que sair de um token de `app/globals.css`, senão
+o tema escuro fica com texto preto sobre fundo preto. Não é regra de ESLint
+porque classe do Tailwind é string e nenhuma regra padrão olha dentro dela; um
+grep custa zero e o erro custa uma tela ilegível. Há uma amostra de todos os
+tokens em `/tokens`.
 
 O front não tem script de `typecheck` isolado; a checagem acontece dentro do
 `next build`, que é por isso o comando escolhido.

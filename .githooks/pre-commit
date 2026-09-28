@@ -25,6 +25,12 @@ if mudou frontend; then
         echo "✗ frontend: node_modules ausente — rode 'yarn install' em frontend/"
         FALHAS=1
     else
+        echo "→ frontend: cor fora dos tokens"
+        if ! ( cd "$RAIZ/frontend" && node scripts/verificar-cores.mjs ); then
+            echo "✗ frontend: cor fixa nas telas"
+            FALHAS=1
+        fi
+
         echo "→ frontend: build do Next (inclui checagem de tipos)"
         if ! ( cd "$RAIZ/frontend" && yarn --silent build ); then
             echo "✗ frontend falhou"
