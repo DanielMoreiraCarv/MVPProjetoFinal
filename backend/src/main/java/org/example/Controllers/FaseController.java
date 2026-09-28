@@ -13,7 +13,7 @@ import org.example.Models.Response.FaseResponse;
 import org.example.Models.Response.PartidaResponse;
 import org.example.Models.Response.ValidacaoResponse;
 import org.example.Services.FaseService;
-import org.example.Services.TimeService;
+import org.example.Services.EquipeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +31,7 @@ public class FaseController
     private FaseService faseService;
 
     @Autowired
-    private TimeService timeService;
+    private EquipeService timeService;
 
     @PostMapping
     public ResponseEntity<?> criarFase ( @RequestBody FaseCreateRequest request )
@@ -42,7 +42,7 @@ public class FaseController
 
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> atualizarFase ( @RequestBody FaseUpdateRequest request )
     {
         Fase fase = faseService.buscarFasePorId( request.id() );
@@ -172,16 +172,16 @@ public class FaseController
 
         List<ClassificadoResponse> resposta = classificacao.stream()
                 .map( classificado -> new ClassificadoResponse( classificado.posicao(),
-                        classificado.idTime(), nomeDoTime( classificado.idTime() ) ) )
+                        classificado.idEquipe(), nomeDoTime( classificado.idEquipe() ) ) )
                 .toList();
 
         return ResponseEntity.ok( resposta );
     }
 
-    private String nomeDoTime ( Long idTime )
+    private String nomeDoTime ( Long idEquipe )
     {
-        var time = timeService.buscarPorId( idTime );
-        return time == null ? null : time.getNome();
+        var equipe = timeService.buscarPorId( idEquipe );
+        return equipe == null ? null : equipe.getNome();
     }
 
     private List<PartidaResponse> paraResposta ( List<Partida> confrontos )

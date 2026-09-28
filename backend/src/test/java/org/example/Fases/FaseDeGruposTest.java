@@ -1,17 +1,17 @@
 package org.example.Fases;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Modalidade;
 import org.example.Models.Partida;
-import org.example.Models.Time;
-import org.example.Repositories.CampeonatoRepository;
+import org.example.Models.Equipe;
+import org.example.Repositories.CompeticaoRepository;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.ModalidadeRepository;
 import org.example.Repositories.PartidaRepository;
-import org.example.Repositories.TimeRepository;
+import org.example.Repositories.EquipeRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +49,8 @@ class FaseDeGruposTest
     @Autowired private EstrategiaDeGrupos estrategia;
     @Autowired private PartidaRepository partidaRepository;
     @Autowired private FaseRepository faseRepository;
-    @Autowired private CampeonatoRepository campeonatoRepository;
-    @Autowired private TimeRepository timeRepository;
+    @Autowired private CompeticaoRepository competicaoRepository;
+    @Autowired private EquipeRepository timeRepository;
     @Autowired private ModalidadeRepository modalidadeRepository;
 
     private Fase faseCom ( int quantidadeDeTimes, Map<String, String> atributos )
@@ -59,25 +59,25 @@ class FaseDeGruposTest
                 .orElseGet( () -> modalidadeRepository.save(
                         new Modalidade( "FUTEBOL_DE_CAMPO", "Futebol de campo", 11 ) ) );
 
-        List<Time> times = new ArrayList<>();
+        List<Equipe> equipes = new ArrayList<>();
         for ( int i = 1; i <= quantidadeDeTimes; i++ )
         {
-            Time time = new Time();
-            time.setNome( "Time " + i );
-            time.setModalidade( modalidade );
-            times.add( timeRepository.save( time ) );
+            Equipe equipe = new Equipe();
+            equipe.setNome( "Equipe " + i );
+            equipe.setModalidade( modalidade );
+            equipes.add( timeRepository.save( equipe ) );
         }
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setNome( "Campeonato de grupos" );
-        campeonato.setLstTimes( times );
-        campeonato = campeonatoRepository.save( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setNome( "Competicao de grupos" );
+        competicao.setLstEquipes( equipes );
+        competicao = competicaoRepository.save( competicao );
 
         Fase aCriar = new Fase();
         aCriar.setNome( "Fase de grupos" );
         aCriar.setOrdem( 1 );
         aCriar.setFasePartida( EnumFasePartida.GRUPOS );
-        aCriar.setCampeonato( campeonato );
+        aCriar.setCompeticao( competicao );
         Fase fase = faseRepository.save( aCriar );
 
         atributos.forEach( ( codigo, valor ) -> orquestrador.definirAtributo( fase, codigo, valor ) );
@@ -86,8 +86,8 @@ class FaseDeGruposTest
 
     private void encerrar ( Partida partida, int golsMandante, int golsVisitante )
     {
-        partida.setResultadoMandante( golsMandante );
-        partida.setResultadoVisitante( golsVisitante );
+        partida.setPlacarMandante( golsMandante );
+        partida.setPlacarVisitante( golsVisitante );
         partida.setRealizada( true );
         partidaRepository.save( partida );
     }
@@ -194,16 +194,16 @@ class FaseDeGruposTest
         orquestrador.configurar( fase );
 
         List<Partida> partidas = partidaRepository.findByFaseId( fase.getId() );
-        Long vencedorGeral = partidas.get( 0 ).getIdTimeMandante();
+        Long vencedorGeral = partidas.get( 0 ).getIdEquipeMandante();
 
         // O mandante da primeira partida vence as suas; as demais ficam 0 a 0.
         for ( Partida partida : partidas )
         {
-            if ( vencedorGeral.equals( partida.getIdTimeMandante() ) )
+            if ( vencedorGeral.equals( partida.getIdEquipeMandante() ) )
             {
                 encerrar( partida, 3, 0 );
             }
-            else if ( vencedorGeral.equals( partida.getIdTimeVisitante() ) )
+            else if ( vencedorGeral.equals( partida.getIdEquipeVisitante() ) )
             {
                 encerrar( partida, 0, 3 );
             }
@@ -216,7 +216,7 @@ class FaseDeGruposTest
         List<Classificado> classificacao = orquestrador.classificacaoDe( fase );
 
         assertEquals( 1, classificacao.get( 0 ).posicao() );
-        assertEquals( vencedorGeral, classificacao.get( 0 ).idTime() );
+        assertEquals( vencedorGeral, classificacao.get( 0 ).idEquipe() );
     }
 
     @Test
@@ -232,16 +232,16 @@ class FaseDeGruposTest
         for ( Partida partida : partidas )
         {
             encerrar( partida, 2, 0 );
-            primeiros.add( partida.getIdTimeMandante() );
+            primeiros.add( partida.getIdEquipeMandante() );
         }
 
         List<Classificado> classificacao = orquestrador.classificacaoDe( fase );
 
         assertEquals( 4, classificacao.size() );
-        assertTrue( primeiros.contains( classificacao.get( 0 ).idTime() ) );
-        assertTrue( primeiros.contains( classificacao.get( 1 ).idTime() ) );
-        assertFalse( primeiros.contains( classificacao.get( 2 ).idTime() ) );
-        assertFalse( primeiros.contains( classificacao.get( 3 ).idTime() ) );
+        assertTrue( primeiros.contains( classificacao.get( 0 ).idEquipe() ) );
+        assertTrue( primeiros.contains( classificacao.get( 1 ).idEquipe() ) );
+        assertFalse( primeiros.contains( classificacao.get( 2 ).idEquipe() ) );
+        assertFalse( primeiros.contains( classificacao.get( 3 ).idEquipe() ) );
     }
 
     @Test

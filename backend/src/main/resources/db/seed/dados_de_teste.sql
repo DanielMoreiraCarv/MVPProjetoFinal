@@ -10,7 +10,7 @@
 
 begin;
 
-delete from sumula_ocorrencias;
+delete from sumula_ocorrencia;
 delete from sumula;
 delete from partida;
 delete from competicao_equipe;

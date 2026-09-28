@@ -1,16 +1,16 @@
 package org.example.Fases;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Modalidade;
-import org.example.Models.Time;
+import org.example.Models.Equipe;
 import org.example.Repositories.AtributoFaseRepository;
-import org.example.Repositories.CampeonatoRepository;
+import org.example.Repositories.CompeticaoRepository;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.ModalidadeRepository;
-import org.example.Repositories.TimeRepository;
+import org.example.Repositories.EquipeRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,11 +60,11 @@ class ContratoDeFaseTest
     @Autowired private EstrategiaFalsa estrategia;
     @Autowired private AtributoFaseRepository atributoRepository;
     @Autowired private FaseRepository faseRepository;
-    @Autowired private CampeonatoRepository campeonatoRepository;
-    @Autowired private TimeRepository timeRepository;
+    @Autowired private CompeticaoRepository competicaoRepository;
+    @Autowired private EquipeRepository timeRepository;
     @Autowired private ModalidadeRepository modalidadeRepository;
 
-    private Campeonato campeonato;
+    private Competicao competicao;
 
     @BeforeEach
     void prepararCampeonatoComQuatroTimes ()
@@ -74,19 +74,19 @@ class ContratoDeFaseTest
                                                             .save( new Modalidade( "FUTEBOL_DE_CAMPO",
                                                                     "Futebol de campo", 11 ) ) );
 
-        List<Time> times = new ArrayList<>();
+        List<Equipe> equipes = new ArrayList<>();
         for ( int i = 1; i <= 4; i++ )
         {
-            Time time = new Time();
-            time.setNome( "Time de teste " + i );
-            time.setModalidade( modalidade );
-            times.add( timeRepository.save( time ) );
+            Equipe equipe = new Equipe();
+            equipe.setNome( "Equipe de teste " + i );
+            equipe.setModalidade( modalidade );
+            equipes.add( timeRepository.save( equipe ) );
         }
 
-        campeonato = new Campeonato();
-        campeonato.setNome( "Campeonato de teste do contrato" );
-        campeonato.setLstTimes( times );
-        campeonato = campeonatoRepository.save( campeonato );
+        competicao = new Competicao();
+        competicao.setNome( "Competicao de teste do contrato" );
+        competicao.setLstEquipes( equipes );
+        competicao = competicaoRepository.save( competicao );
     }
 
     private Fase novaFase ()
@@ -95,7 +95,7 @@ class ContratoDeFaseTest
         fase.setNome( "Fase de teste" );
         fase.setOrdem( 1 );
         fase.setFasePartida( EnumFasePartida.PONTOS_CORRIDOS );
-        fase.setCampeonato( campeonato );
+        fase.setCompeticao( competicao );
         return faseRepository.save( fase );
     }
 
@@ -170,7 +170,7 @@ class ContratoDeFaseTest
     void validacaoDaPropriaEstrategiaTambemVale ()
     {
         Fase fase = novaFase();
-        // 4 times não se dividem em grupos de 3
+        // 4 equipes não se dividem em grupos de 3
         orquestrador.definirAtributo( fase, EstrategiaFalsa.TAMANHO, "3" );
 
         ResultadoDaValidacao resultado = orquestrador.validar( fase );
@@ -224,7 +224,7 @@ class ContratoDeFaseTest
                 assertThrows( jakarta.validation.ConstraintViolationException.class,
                         () -> new Classificado( 1, null ) );
 
-        assertTrue( erro.getMessage().contains( "referenciar um time" ) );
+        assertTrue( erro.getMessage().contains( "referenciar uma equipe" ) );
     }
 
     @Test
@@ -233,7 +233,7 @@ class ContratoDeFaseTest
         Classificado classificado = new Classificado( 3, 42L );
 
         assertEquals( 3, classificado.posicao() );
-        assertEquals( 42L, classificado.idTime() );
+        assertEquals( 42L, classificado.idEquipe() );
     }
 
     @Test

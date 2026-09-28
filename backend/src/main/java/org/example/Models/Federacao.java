@@ -16,7 +16,7 @@ public class Federacao
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "NOME_FEDERACAO")

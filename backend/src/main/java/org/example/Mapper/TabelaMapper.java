@@ -1,6 +1,6 @@
 package org.example.Mapper;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Response.PartidaResponse;
 import org.example.Models.Response.TabelaResponse;
 import org.example.Models.Tabela;
@@ -19,7 +19,7 @@ public class TabelaMapper
         return toResponse( tabela, null );
     }
 
-    public static TabelaResponse toResponse ( Tabela tabela, Campeonato campeonato )
+    public static TabelaResponse toResponse ( Tabela tabela, Competicao competicao )
     {
         if ( tabela == null )
         {
@@ -30,7 +30,7 @@ public class TabelaMapper
                 ? Collections.emptyList()
                 : tabela.getPartidas().stream().map( PartidaMapper::toResponse ).toList();
 
-        return new TabelaResponse( tabela.getId(), CampeonatoMapper.toResponse( campeonato ),
+        return new TabelaResponse( tabela.getId(), CompeticaoMapper.toResponse( competicao ),
                 partidas );
     }
 

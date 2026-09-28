@@ -58,19 +58,19 @@ public class SumulaService {
         Optional<Sumula> sumulaExistente = sumulaRepository.findById(id);
         if (sumulaExistente.isPresent()) {
             Sumula sumula = sumulaExistente.get();
-            sumula.setGolsMandante(sumulaAtualizada.getGolsMandante());
-            sumula.setGolsVisitante(sumulaAtualizada.getGolsVisitante());
+            sumula.setPlacarMandante(sumulaAtualizada.getPlacarMandante());
+            sumula.setPlacarVisitante(sumulaAtualizada.getPlacarVisitante());
             sumula.setObservacoesRelatadas(sumulaAtualizada.getObservacoesRelatadas());
             return sumulaRepository.save(sumula);
         }
         return null;
     }
     
-    public Sumula finalizarSumula(Long id, int golsMandante, int golsVisitante, String relato) {
+    public Sumula finalizarSumula(Long id, int placarMandante, int placarVisitante, String relato) {
         Optional<Sumula> sumula = sumulaRepository.findById(id);
         if (sumula.isPresent()) {
             Sumula s = sumula.get();
-            s.finalizarSumula(golsMandante, golsVisitante, relato);
+            s.finalizarSumula(placarMandante, placarVisitante, relato);
             return sumulaRepository.save(s);
         }
         return null;

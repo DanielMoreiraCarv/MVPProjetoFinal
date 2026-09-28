@@ -15,9 +15,9 @@ public interface FaseRepository extends JpaRepository<Fase, Long>
     @Query("""
         SELECT f
         FROM Fase f
-        WHERE f.campeonato.id = :campeonatoId
+        WHERE f.competicao.id = :competicaoId
     """)
-    Optional<List<Fase>> findFaseByCampeonatoId(@Param("campeonatoId") Long campeonatoId);
+    Optional<List<Fase>> findFaseByCompeticaoId(@Param("competicaoId") Long competicaoId);
 
     /** A fase que alimenta esta, ou seja, aquela cuja sucessora é ela. */
     Optional<Fase> findByFaseSucessoraId(Long idFaseSucessora);

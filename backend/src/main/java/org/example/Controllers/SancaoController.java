@@ -1,14 +1,14 @@
 package org.example.Controllers;
 
 
-import org.example.Mapper.SancaoJogadorMapper;
+import org.example.Mapper.SancaoAtletaMapper;
 import org.example.Mapper.SancaoMapper;
-import org.example.Models.Request.SancaoJogadorRequest;
+import org.example.Models.Request.SancaoAtletaRequest;
 import org.example.Models.Request.SancaoRequest;
 import org.example.Models.Response.SancaoResponse;
 import org.example.Models.Sancao;
-import org.example.Models.SancaoJogador;
-import org.example.Services.SancaoJogadorService;
+import org.example.Models.SancaoAtleta;
+import org.example.Services.SancaoAtletaService;
 import org.example.Services.SancaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,7 +26,7 @@ public class SancaoController
     private SancaoService sancaoService;
 
     @Autowired
-    private SancaoJogadorService sancaoJogadorService;
+    private SancaoAtletaService sancaoAtletaService;
 
     //Controller das Regras das Sanções
 
@@ -80,40 +80,40 @@ public class SancaoController
         return ResponseEntity.ok().build();
     }
 
-    //Controller das Sanções por Jogadores e Campeonatos
+    //Controller das Sanções por Atleta e Competicaos
 
 
     @PostMapping("/sancao")
-    public ResponseEntity<?> criarSancaoParaUmJogador (
-            SancaoJogadorRequest request )
+    public ResponseEntity<?> criarSancaoParaUmAtleta (
+            SancaoAtletaRequest request )
     {
-        SancaoJogador sancaoJogador = sancaoJogadorService.criarSancaoJogador( request );
+        SancaoAtleta sancaoAtleta = sancaoAtletaService.criarSancaoAtleta( request );
 
         return ResponseEntity.status( HttpStatus.CREATED )
-                             .body( SancaoJogadorMapper.toResponse( sancaoJogador ) );
+                             .body( SancaoAtletaMapper.toResponse( sancaoAtleta ) );
     }
 
     @PutMapping("/sancao/{id}")
-    public ResponseEntity<?> editarSancaoParaUmJogador ( @PathVariable("id") Long id,
-            @RequestBody SancaoJogadorRequest request )
+    public ResponseEntity<?> editarSancaoParaUmAtleta ( @PathVariable("id") Long id,
+            @RequestBody SancaoAtletaRequest request )
     {
-        SancaoJogador sjA = sancaoJogadorService.update( request, id );
+        SancaoAtleta sjA = sancaoAtletaService.update( request, id );
 
         return ResponseEntity.ok( sjA );
     }
 
     @DeleteMapping("/sancao/inativar/{id}")
-    public ResponseEntity<?> inativarSancaoParaUmJogador ( @PathVariable Long id )
+    public ResponseEntity<?> inativarSancaoParaUmAtleta ( @PathVariable Long id )
     {
-        sancaoJogadorService.inativarSancaoJogador( id );
+        sancaoAtletaService.inativarSancaoAtleta( id );
 
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/sancao/deletar/{id}")
-    public ResponseEntity<?> deletarSancaoParaUmJogador ( @PathVariable Long id )
+    public ResponseEntity<?> deletarSancaoParaUmAtleta ( @PathVariable Long id )
     {
-        sancaoJogadorService.deleteSancaoJogador( id );
+        sancaoAtletaService.deleteSancaoAtleta( id );
 
         return ResponseEntity.ok().build();
     }

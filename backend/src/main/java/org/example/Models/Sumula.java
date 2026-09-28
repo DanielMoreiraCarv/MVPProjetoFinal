@@ -14,7 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "SUMULA")
+@Table(name = "sumula")
 public class Sumula {
 
     @Id
@@ -23,32 +23,32 @@ public class Sumula {
 
     @JsonIgnore
     @OneToOne
-    @JoinColumn(name = "PARTIDA_ID", unique = true)
+    @JoinColumn(name = "partida_id", unique = true)
     private Partida partida;
 
     @ManyToOne
-    @JoinColumn(name = "ARBITRO_ID")
+    @JoinColumn(name = "arbitro_id")
     private Arbitro arbitro;
 
-    @Column(name = "GOLS_MANDANTE")
-    private int golsMandante;
+    @Column(name = "placar_mandante")
+    private int placarMandante;
 
-    @Column(name = "GOLS_VISITANTE")
-    private int golsVisitante;
+    @Column(name = "placar_visitante")
+    private int placarVisitante;
 
     @ElementCollection
-    @CollectionTable(name = "SUMULA_OCORRENCIAS", joinColumns = @JoinColumn(name = "SUMULA_ID"))
-    @Column(name = "OCORRENCIA")
+    @CollectionTable(name = "sumula_ocorrencia", joinColumns = @JoinColumn(name = "sumula_id"))
+    @Column(name = "ocorrencia")
     private List<String> ocorrencias = new ArrayList<>();
 
-    @Column(name = "OBSERVACOES_RELATAS")
+    @Column(name = "observacoes_relatadas")
     private String observacoesRelatadas;
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "DATA_FECHAMENTO")
+    @Column(name = "data_fechamento")
     private Date dataFechamento;
 
-    @Column(name = "ASSINADA")
+    @Column(name = "assinada")
     private boolean assinada;
 
     public Sumula ( Partida partida, Arbitro arbitro )
@@ -72,10 +72,10 @@ public class Sumula {
         this.ocorrencias.add( ocorrencia );
     }
 
-    public void finalizarSumula ( int golsMandante, int golsVisitante, String relato )
+    public void finalizarSumula ( int placarMandante, int placarVisitante, String relato )
     {
-        this.golsMandante = golsMandante;
-        this.golsVisitante = golsVisitante;
+        this.placarMandante = placarMandante;
+        this.placarVisitante = placarVisitante;
         this.observacoesRelatadas = relato;
         this.assinada = true;
         this.dataFechamento = new Date();

@@ -3,7 +3,7 @@ package org.example.Services;
 import org.example.Fases.OrquestradorDeFases;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
 import org.example.Models.Fase;
 import org.example.Models.Partida;
@@ -25,7 +25,7 @@ public class FaseService
     private FaseRepository faseRepository;
 
     @Autowired
-    private CampeonatoService campeonatoService;
+    private CompeticaoService competicaoService;
 
     @Autowired
     private OrquestradorDeFases orquestrador;
@@ -48,9 +48,9 @@ public class FaseService
         return faseRepository.findAll();
     }
 
-    public List<Fase> buscarFasePorCampeonato ( Long idCampeonato )
+    public List<Fase> buscarFasePorCompeticao ( Long idCompeticao )
     {
-        return faseRepository.findFaseByCampeonatoId( idCampeonato ).orElse( null );
+        return faseRepository.findFaseByCompeticaoId( idCompeticao ).orElse( null );
     }
 
     public FaseResponse atualizarFase ( FaseUpdateRequest request, Fase fase )
@@ -60,11 +60,11 @@ public class FaseService
             fase.setOrdem( request.ordem() );
             fase.setFasePartida(  request.fasePartida() );
 
-            Campeonato campeonato = campeonatoService.buscarPorId( request.idCampeonato() );
-            if(campeonato==null){
-                throw new IllegalArgumentException("Campeonato precisa ser informado");
+            Competicao competicao = competicaoService.buscarPorId( request.idCompeticao() );
+            if(competicao==null){
+                throw new IllegalArgumentException("Competicao precisa ser informado");
             }
-            fase.setCampeonato( campeonato );
+            fase.setCompeticao( competicao );
 
             if(request.idFaseSucessora()!=null){
                 Fase sucessoro =  buscarFasePorId( request.idFaseSucessora() );

@@ -3,7 +3,7 @@ package org.example.Fases;
 import org.example.Models.AtributoFase;
 import org.example.Models.Classificado;
 import org.example.Models.Fase;
-import org.example.Models.Time;
+import org.example.Models.Equipe;
 import org.example.Models.ValorAtributoFase;
 import org.example.Repositories.AtributoFaseRepository;
 import org.example.Repositories.FaseRepository;
@@ -48,7 +48,7 @@ public class OrquestradorDeFases
 
     /**
      * A entrada da fase: a classificação da fase anterior, ou — na primeira —
-     * os times inscritos no campeonato, todos na posição 1, porque ainda não
+     * os equipes inscritos no competicao, todos na posição 1, porque ainda não
      * houve nada que os ordenasse.
      */
     public List<Classificado> entradaDe ( Fase fase )
@@ -60,15 +60,15 @@ public class OrquestradorDeFases
 
     private List<Classificado> timesInscritos ( Fase fase )
     {
-        if ( fase.getCampeonato() == null || fase.getCampeonato().getLstTimes() == null )
+        if ( fase.getCompeticao() == null || fase.getCompeticao().getLstEquipes() == null )
         {
             return Collections.emptyList();
         }
 
         List<Classificado> entrada = new ArrayList<>();
-        for ( Time time : fase.getCampeonato().getLstTimes() )
+        for ( Equipe equipe : fase.getCompeticao().getLstEquipes() )
         {
-            entrada.add( new Classificado( 1, time.getId() ) );
+            entrada.add( new Classificado( 1, equipe.getId() ) );
         }
         return entrada;
     }

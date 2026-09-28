@@ -5,13 +5,13 @@ import org.example.Models.EnumFasePartida;
 public record PartidaResponse(
         Long id,
 
-        TimeResponse timeMandante,
+        EquipeResponse equipeMandante,
 
-        TimeResponse timeVisitante,
+        EquipeResponse equipeVisitante,
 
-        String nomeCampeonato,
+        String nomeCompeticao,
 
-        Long idCampeonato,
+        Long idCompeticao,
 
         String vencedor,
 

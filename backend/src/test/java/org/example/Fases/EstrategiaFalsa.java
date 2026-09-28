@@ -35,7 +35,7 @@ public class EstrategiaFalsa implements EstrategiaDeFase
     {
         return List.of(
                 new AtributoFase( tipo(), TAMANHO, EnumTipoDeDado.INTEIRO, true, null,
-                        "Quantos times por grupo" ),
+                        "Quantos equipes por grupo" ),
                 new AtributoFase( tipo(), IDA_E_VOLTA, EnumTipoDeDado.BOOLEANO, false, "false",
                         "Se os confrontos têm partida de volta" ) );
     }
@@ -55,7 +55,7 @@ public class EstrategiaFalsa implements EstrategiaDeFase
         if ( tamanho != null && !entrada.isEmpty() && entrada.size() % tamanho != 0 )
         {
             return ResultadoDaValidacao.com( "os " + entrada.size()
-                    + " times não se dividem em grupos de " + tamanho );
+                    + " equipes não se dividem em grupos de " + tamanho );
         }
 
         return ResultadoDaValidacao.valido();
@@ -82,7 +82,7 @@ public class EstrategiaFalsa implements EstrategiaDeFase
         int posicao = 1;
         for ( Classificado classificado : entradaFixa() )
         {
-            ordem.add( new Classificado( posicao++, classificado.idTime() ) );
+            ordem.add( new Classificado( posicao++, classificado.idEquipe() ) );
         }
         return ordem;
     }

@@ -6,17 +6,17 @@ import java.util.List;
 public record SumulaResponse(
         Long id,
 
-        PartidaResponse partidaResponse,
+        PartidaResponse partida,
 
         ArbitroResponse arbitro,
 
-        Integer pontosMandante,
+        Integer placarMandante,
 
-        Integer pontosVisitante,
+        Integer placarVisitante,
 
-        List<String> lstOcorrencias,
+        List<String> ocorrencias,
 
-        List<String> lstObservacoes,
+        List<String> observacoes,
 
         Date dataFechamento,
 

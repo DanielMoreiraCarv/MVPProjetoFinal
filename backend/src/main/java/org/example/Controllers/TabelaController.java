@@ -36,10 +36,10 @@ public class TabelaController
         return ResponseEntity.ok( TabelaMapper.toResponse( tabela ) );
     }
 
-    @GetMapping("/campeonato/{id}")
+    @GetMapping("/competicao/{id}")
     public ResponseEntity<?> buscarTabelaPorCampenato ( @PathVariable Long id )
     {
-        Tabela tabela = tabelaService.buscarPorCampeonato( id );
+        Tabela tabela = tabelaService.buscarPorCompeticao( id );
 
         if ( tabela == null )
         {

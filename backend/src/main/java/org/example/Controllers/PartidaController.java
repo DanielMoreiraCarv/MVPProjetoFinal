@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/partidas")
+@RequestMapping("/api/v1/partida")
 @CrossOrigin(origins = "*")
 public class PartidaController {
 
@@ -70,18 +70,18 @@ public class PartidaController {
 
     }
 
-    @GetMapping("/campeonato/{idCampeonato}")
-    public ResponseEntity<List<PartidaResponse>> listarPorCampeonato(@PathVariable Long idCampeonato) {
+    @GetMapping("/competicao/{idCompeticao}")
+    public ResponseEntity<List<PartidaResponse>> listarPorCompeticao(@PathVariable Long idCompeticao) {
         return ResponseEntity.ok(
-                partidaService.listarPorCampeonato(idCampeonato).stream()
+                partidaService.listarPorCompeticao(idCompeticao).stream()
                               .map(PartidaMapper::toResponse)
                               .toList());
     }
 
-    @GetMapping("/time/{idTime}")
-    public ResponseEntity<List<PartidaResponse>> listarPartidasDoTime(@PathVariable Long idTime) {
+    @GetMapping("/equipe/{idTime}")
+    public ResponseEntity<List<PartidaResponse>> listarPartidasDoTime(@PathVariable Long idEquipe) {
         return ResponseEntity.ok(
-                partidaService.listarPartidasDoTime(idTime).stream()
+                partidaService.listarPartidasDoTime(idEquipe).stream()
                               .map(PartidaMapper::toResponse)
                               .toList());
     }
@@ -108,8 +108,8 @@ public class PartidaController {
     @PutMapping("/{id}/placar")
     public ResponseEntity<Partida> atualizarPlacar(
             @PathVariable Long id,
-            @RequestParam int golsMandante,
-            @RequestParam int golsVisitante) {
+            @RequestParam int placarMandante,
+            @RequestParam int placarVisitante) {
         Partida partida = partidaService.buscarPorId(id);
         if (partida == null) {
             return ResponseEntity.notFound().build();
@@ -117,8 +117,8 @@ public class PartidaController {
         if (partida.isRealizada()) {
             return ResponseEntity.badRequest().build();
         }
-        partida.setResultadoMandante(golsMandante);
-        partida.setResultadoVisitante(golsVisitante);
+        partida.setPlacarMandante(placarMandante);
+        partida.setPlacarVisitante(placarVisitante);
         Partida atualizada = partidaService.atualizarPartida(id, partida);
         return ResponseEntity.ok(atualizada);
     }
@@ -134,8 +134,8 @@ public class PartidaController {
         }
         Partida finalizada = partidaService.definirResultado(
                 id,
-                partida.getResultadoMandante(),
-                partida.getResultadoVisitante()
+                partida.getPlacarMandante(),
+                partida.getPlacarVisitante()
         );
         return ResponseEntity.ok(finalizada);
     }

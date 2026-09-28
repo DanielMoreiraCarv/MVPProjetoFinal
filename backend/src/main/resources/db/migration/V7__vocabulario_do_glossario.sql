@@ -91,6 +91,9 @@ alter table sancao_atleta rename column excao to excecao;
 
 -- --------------------------------------------------------------------- sumula
 
+-- Tabela de coleção no singular, como as outras associativas do esquema.
+alter table sumula_ocorrencias rename to sumula_ocorrencia;
+
 alter table sumula rename column gols_mandante to placar_mandante;
 alter table sumula rename column gols_visitante to placar_visitante;
 -- `observacoes_relatas` era erro de digitação de relatadas.

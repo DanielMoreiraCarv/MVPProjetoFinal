@@ -27,16 +27,16 @@ public class Modalidade {
     @Column(name = "NOME", nullable = false, length = 80)
     private String nome;
 
-    @Column(name = "JOGADORES_EM_QUADRA", nullable = false)
-    private int jogadoresEmQuadra;
+    @Column(name = "ATLETAS_EM_QUADRA", nullable = false)
+    private int atletasEmQuadra;
 
     @Column(name = "ATIVO", nullable = false)
     private boolean ativo = true;
 
-    public Modalidade ( String codigo, String nome, int jogadoresEmQuadra )
+    public Modalidade ( String codigo, String nome, int atletasEmQuadra )
     {
         this.codigo = codigo;
         this.nome = nome;
-        this.jogadoresEmQuadra = jogadoresEmQuadra;
+        this.atletasEmQuadra = atletasEmQuadra;
     }
 }

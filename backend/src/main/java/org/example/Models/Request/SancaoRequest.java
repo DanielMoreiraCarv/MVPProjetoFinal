@@ -10,8 +10,8 @@ public record SancaoRequest(
         @NotBlank(message = "É preciso informar o esporta da sanção")
         String tipoEsporte,
 
-        @NotNull(message = "É preciso informar o campeonato da sanção")
-        Long idCampeonato
+        @NotNull(message = "É preciso informar a competição da sanção")
+        Long idCompeticao
 )
 {
 }

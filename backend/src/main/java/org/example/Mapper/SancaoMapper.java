@@ -1,6 +1,6 @@
 package org.example.Mapper;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.EnumTipoEsporte;
 import org.example.Models.Request.SancaoRequest;
 import org.example.Models.Response.SancaoResponse;
@@ -12,11 +12,11 @@ public class SancaoMapper
 {
     private SancaoMapper(){}
 
-    public static Sancao toEntity ( SancaoRequest request, Campeonato campeonato )
+    public static Sancao toEntity ( SancaoRequest request, Competicao competicao )
     {
         Sancao sancao = new Sancao();
         sancao.setEnumTipoEsporte( EnumTipoEsporte.valueOf( request.tipoEsporte() ) );
-        sancao.setCampeonato( campeonato );
+        sancao.setCompeticao( competicao );
         sancao.setQuantidadePartidasPadrao( request.qtdPartidas() );
 
         return sancao;
@@ -26,7 +26,7 @@ public class SancaoMapper
     {
         SancaoResponse response = new SancaoResponse( sancao.getId(),
                 sancao.getQuantidadePartidasPadrao(), sancao.getEnumTipoEsporte().getDescricao(),
-                sancao.getCampeonato().getId());
+                sancao.getCompeticao().getId());
 
         return response;
     }

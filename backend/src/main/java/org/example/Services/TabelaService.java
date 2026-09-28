@@ -28,8 +28,8 @@ public class TabelaService {
         return tabelaRepository.findAll();
     }
     
-    public Tabela buscarPorCampeonato(Long idCampeonato) {
-        return tabelaRepository.findByIdCampeonato(idCampeonato).orElse(null);
+    public Tabela buscarPorCompeticao(Long idCompeticao) {
+        return tabelaRepository.findByIdCompeticao(idCompeticao).orElse(null);
     }
     
     public Tabela atualizarTabela(Long id, Tabela tabelaAtualizada) {
@@ -37,7 +37,7 @@ public class TabelaService {
         if (tabelaExistente.isPresent()) {
             Tabela tabela = tabelaExistente.get();
             tabela.setPartidas(tabelaAtualizada.getPartidas());
-            tabela.setIdCampeonato(tabelaAtualizada.getIdCampeonato());
+            tabela.setIdCompeticao(tabelaAtualizada.getIdCompeticao());
             return tabelaRepository.save(tabela);
         }
         return null;

@@ -28,8 +28,8 @@ public class SumulaMapper
                 : List.of( sumula.getObservacoesRelatadas() );
 
         return new SumulaResponse( sumula.getId(), PartidaMapper.toResponse( sumula.getPartida() ),
-                ArbitroMapper.toResponse( sumula.getArbitro() ), sumula.getGolsMandante(),
-                sumula.getGolsVisitante(), ocorrencias, observacoes, sumula.getDataFechamento(),
+                ArbitroMapper.toResponse( sumula.getArbitro() ), sumula.getPlacarMandante(),
+                sumula.getPlacarVisitante(), ocorrencias, observacoes, sumula.getDataFechamento(),
                 sumula.isAssinada() );
     }
 }

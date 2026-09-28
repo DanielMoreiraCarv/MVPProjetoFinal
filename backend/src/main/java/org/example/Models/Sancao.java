@@ -7,7 +7,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "SANCAO")
+@Table(name = "sancao")
 public class Sancao
 {
     //regra da sanção
@@ -16,14 +16,14 @@ public class Sancao
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "QUANTIDADE_PARTIDAS_PADRAO")
+    @Column(name = "quantidade_partidas_padrao")
     private Integer quantidadePartidasPadrao;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "TIPO_ESPORTE")
+    @Column(name = "tipo_esporte")
     private EnumTipoEsporte enumTipoEsporte;
 
     @ManyToOne
-    @JoinColumn(name = "ID_CAMPEONATO")
-    private Campeonato campeonato;
+    @JoinColumn(name = "competicao_id")
+    private Competicao competicao;
 }

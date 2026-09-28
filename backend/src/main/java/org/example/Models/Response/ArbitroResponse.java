@@ -4,7 +4,7 @@ public record ArbitroResponse(
         Long id,
         String nome,
         String federacao,
-        Integer partidasAptadas
+        Integer partidasApitadas
 )
 {
 }

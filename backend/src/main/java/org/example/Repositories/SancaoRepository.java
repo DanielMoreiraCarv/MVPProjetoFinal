@@ -15,18 +15,18 @@ public interface SancaoRepository extends JpaRepository<Sancao, Long>
     @Query("""
                SELECT s
                FROM Sancao s
-               WHERE s.campeonato.id = :campeonatoId
+               WHERE s.competicao.id = :competicaoId
            """)
-    List<Sancao> findAllByCompeticaoId ( Long campeonatoId );
+    List<Sancao> findAllByCompeticaoId ( Long competicaoId );
 
     @Query("""
                SELECT COUNT(s)
                FROM Sancao s
-               WHERE s.campeonato.id = :campeonatoId
+               WHERE s.competicao.id = :competicaoId
                  AND s.enumTipoEsporte = :tipoEsporte
            """)
     Long countSancoesCompeticoesEEsporte (
-            Long campeonatoId,
+            Long competicaoId,
             EnumTipoEsporte tipoEsporte
     );
 

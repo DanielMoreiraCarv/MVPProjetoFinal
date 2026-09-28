@@ -1,6 +1,6 @@
 package org.example.Mapper;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Request.FaseCreateRequest;
@@ -21,9 +21,9 @@ public class FaseMapper
         fase.setOrdem(request.ordem());
         fase.setFasePartida( EnumFasePartida.valueOf( request.fasePartida() ) );
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setId( request.idCampeonato() );
-        fase.setCampeonato( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setId( request.idCompeticao() );
+        fase.setCompeticao( competicao );
         return fase;
     }
 
@@ -35,9 +35,9 @@ public class FaseMapper
         fase.setOrdem( request.ordem() );
         fase.setFasePartida( request.fasePartida() );
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setId( request.idCampeonato() );
-        fase.setCampeonato( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setId( request.idCompeticao() );
+        fase.setCompeticao( competicao );
 
         fase.setQuantidadeClassificados( request.qtdClassificados() );
 

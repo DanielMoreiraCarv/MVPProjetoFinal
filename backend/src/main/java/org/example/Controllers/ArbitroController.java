@@ -37,7 +37,7 @@ public class ArbitroController
                              .body( ArbitroMapper.toResponse( arbitro ) );
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> atualizarArbitro ( @RequestBody ArbitroUpdateResquest request )
     {
         Arbitro arbitro = arbitroService.buscarPorId( request.id() );

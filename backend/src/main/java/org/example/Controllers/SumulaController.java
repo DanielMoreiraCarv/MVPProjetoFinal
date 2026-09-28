@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/sumulas")
+@RequestMapping("/api/v1/sumula")
 @CrossOrigin(origins = "*")
 public class SumulaController {
 
@@ -76,10 +76,10 @@ public class SumulaController {
     @PostMapping("/{id}/finalizar")
     public ResponseEntity<Sumula> finalizarSumula(
             @PathVariable Long id,
-            @RequestParam int golsMandante,
-            @RequestParam int golsVisitante,
+            @RequestParam int placarMandante,
+            @RequestParam int placarVisitante,
             @RequestParam String relato) {
-        Sumula finalizada = sumulaService.finalizarSumula(id, golsMandante, golsVisitante, relato);
+        Sumula finalizada = sumulaService.finalizarSumula(id, placarMandante, placarVisitante, relato);
         if (finalizada != null) {
             return ResponseEntity.ok(finalizada);
         }

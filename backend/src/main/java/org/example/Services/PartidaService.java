@@ -29,8 +29,8 @@ public class PartidaService {
         return partidaRepository.findAll();
     }
     
-    public List<Partida> listarPorCampeonato(Long idCampeonato) {
-        return partidaRepository.findByCampeonatoId(idCampeonato);
+    public List<Partida> listarPorCompeticao(Long idCompeticao) {
+        return partidaRepository.findByCompeticaoId(idCompeticao);
     }
     
     public List<Partida> listarPendentes() {
@@ -41,14 +41,14 @@ public class PartidaService {
         return partidaRepository.findByRealizadaTrue();
     }
     
-    public List<Partida> listarPartidasDoTime(Long idTime) {
-        List<Partida> partidas = new ArrayList<>(partidaRepository.findByTimeMandanteId(idTime));
-        partidas.addAll(partidaRepository.findByTimeVisitanteId(idTime));
+    public List<Partida> listarPartidasDoTime(Long idEquipe) {
+        List<Partida> partidas = new ArrayList<>(partidaRepository.findByEquipeMandanteId(idEquipe));
+        partidas.addAll(partidaRepository.findByEquipeVisitanteId(idEquipe));
         return partidas;
     }
     
-    public List<Partida> listarVitoriasDo(Long idTime) {
-        return partidaRepository.findByIdVencedor(idTime);
+    public List<Partida> listarVitoriasDo(Long idEquipe) {
+        return partidaRepository.findByIdEquipeVencedora(idEquipe);
     }
     
     public List<Partida> listarPorFase(EnumFasePartida fase) {
@@ -63,8 +63,8 @@ public class PartidaService {
         Optional<Partida> partidaExistente = partidaRepository.findById(id);
         if (partidaExistente.isPresent()) {
             Partida partida = partidaExistente.get();
-            partida.setResultadoMandante(partidaAtualizada.getResultadoMandante());
-            partida.setResultadoVisitante(partidaAtualizada.getResultadoVisitante());
+            partida.setPlacarMandante(partidaAtualizada.getPlacarMandante());
+            partida.setPlacarVisitante(partidaAtualizada.getPlacarVisitante());
             partida.setRealizada(partidaAtualizada.isRealizada());
             partida.setEnumFasePartida(partidaAtualizada.getEnumFasePartida());
             return partidaRepository.save(partida);
@@ -72,21 +72,21 @@ public class PartidaService {
         return null;
     }
     
-    public Partida definirResultado(Long id, int golsMandante, int golsVisitante) {
+    public Partida definirResultado(Long id, int placarMandante, int placarVisitante) {
         Optional<Partida> partida = partidaRepository.findById(id);
         if (partida.isPresent()) {
             Partida p = partida.get();
-            p.setResultadoMandante(golsMandante);
-            p.setResultadoVisitante(golsVisitante);
+            p.setPlacarMandante(placarMandante);
+            p.setPlacarVisitante(placarVisitante);
             p.setRealizada(true);
             
             // Define vencedor (empate favorece mandante)
-            if (golsMandante > golsVisitante) {
-                p.setIdVencedor(p.getIdTimeMandante());
-            } else if (golsVisitante > golsMandante) {
-                p.setIdVencedor(p.getIdTimeVisitante());
+            if (placarMandante > placarVisitante) {
+                p.setIdEquipeVencedora(p.getIdEquipeMandante());
+            } else if (placarVisitante > placarMandante) {
+                p.setIdEquipeVencedora(p.getIdEquipeVisitante());
             } else {
-                p.setIdVencedor(p.getIdTimeMandante()); // Empate favorece mandante
+                p.setIdEquipeVencedora(p.getIdEquipeMandante()); // Empate favorece mandante
             }
             
             return partidaRepository.save(p);

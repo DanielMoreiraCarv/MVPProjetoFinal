@@ -3,15 +3,15 @@ package org.example.Models.Request;
 public record PartidaUpdateRequest(
         Long id,
 
-        Long idMandante,
+        Long idEquipeMandante,
 
-        Long idVisitante,
+        Long idEquipeVisitante,
 
-        Long idCampeonato,
+        Long idCompeticao,
 
-        Integer resultadoVisitante,
+        Integer placarMandante,
 
-        Integer resultadoMandante,
+        Integer placarVisitante,
 
         Long idArbitro
 )
