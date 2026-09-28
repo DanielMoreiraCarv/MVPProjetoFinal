@@ -357,8 +357,9 @@ Menu lateral
 │
 ├─ GLOBAL
 │  ├─ Início                        /
-│  ├─ Administrações                /administracao
-│  ├─ Competições                   /competicao
+│  ├─ Competições                   /competicao     (escolhe a administração
+│  │                                                 e lista as competições
+│  │                                                 dela, na mesma página)
 │  ├─ Equipes                       /equipe
 │  ├─ Árbitros                      /arbitro
 │  └─ Cadastros                     /cadastro       (modalidade, federação)
@@ -469,8 +470,15 @@ arquivos. Todos saem de Z2.
 | # | PR | Página | Depende |
 |---|---|---|---|
 | C1 | `feat/pagina-inicio` | Início: cartões de resumo do escopo, próximas partidas, atalhos | A3 |
-| C2 | `feat/pagina-administracoes` | Administrações: lista, criar, editar, remover (com confirmação) | A3, B1 |
-| C3 | `feat/pagina-competicoes` | Competições: lista filtrada por administração, criar, editar, remover | C2 |
+| C2 | `feat/pagina-competicoes` | Competições: administrações à esquerda, competições da escolhida à direita — uma página só. Criar, editar e remover dos dois lados | A3, B1 |
+
+**Administrações e competições ficaram na mesma página.** Eram duas entregas e
+viraram uma: a lista de competições não existe sozinha — sem administração
+escolhida não tem o que mostrar, e com uma escolhida repete o que a outra tela
+já mostrava ao lado. Escolher à esquerda, ver à direita, um item de menu só.
+
+Os próximos jogos saíram da lista e foram para dentro da competição: fora dela
+não diziam de qual competição eram.
 | C4 | `feat/pagina-competicao-visao-geral` | Competição: visão geral + edição (nome, descrição, categoria, modalidades) e estado | C3, B7 |
 | C5 | `feat/pagina-competicao-equipes` | Equipes inscritas: inscrever (busca entre as existentes), remover, atalho para a equipe | C4, B2 |
 | C6 | `feat/pagina-equipes` | Equipes (global): lista, criar, editar, remover; modalidade e federação | A3, B4 |

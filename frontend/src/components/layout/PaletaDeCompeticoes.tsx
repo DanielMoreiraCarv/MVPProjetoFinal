@@ -166,16 +166,17 @@ export const PaletaDeCompeticoes = () => {
                     <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-[11px] text-muted-foreground">
                         <span>↑ ↓ para navegar · ↵ para abrir</span>
                         {/* O caminho longo continua existindo: quem não sabe o
-                            nome vai pela administração e desce até a competição. */}
+                            nome escolhe a administração e desce até a
+                            competição, na mesma página. */}
                         <button
                             type="button"
                             onClick={() => {
                                 fecharPaleta();
-                                router.push("/administracao");
+                                router.push("/competicao");
                             }}
                             className="hover:text-foreground transition-colors"
                         >
-                            Escolher por administração
+                            Ver por administração
                         </button>
                     </div>
                 </Dialog.Popup>

@@ -1,27 +1,39 @@
 "use client";
 
-import { Building2, Layers } from "lucide-react";
+import { Check } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
-import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
+import { CarregandoCartoes, Erro, Vazio } from "@/src/components/estado/Estados";
+import { AddAdministrationDialog } from "@/src/features/administracoes/addAdministrationDialog";
 import { AddCompetitionDialog } from "@/src/features/administracoes/addCompetitionDialog";
-import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
-import { Partida } from "@/src/lib/types/partida";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
 
-const Secao = ({ titulo, acao, className, children }: {
+/**
+ * Administrações e competições na mesma página.
+ *
+ * Eram duas, e a segunda não tinha como existir sozinha: competição sem
+ * administração escolhida não tem o que listar, e com uma escolhida repetia o
+ * que a primeira já mostrava ao lado. Escolher à esquerda, ver à direita.
+ */
+
+const Secao = ({
+    titulo,
+    acao,
+    className,
+    children,
+}: {
     titulo: string;
     acao?: React.ReactNode;
     className?: string;
     children: React.ReactNode;
 }) => (
-    <section className={`space-y-3 ${className ?? ""}`}>
-        <div className="flex items-center justify-between gap-3">
+    <section className={cn("space-y-3", className)}>
+        <div className="flex min-h-9 items-center justify-between gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 {titulo}
             </h2>
@@ -31,19 +43,9 @@ const Secao = ({ titulo, acao, className, children }: {
     </section>
 );
 
-/**
- * As competições da administração em foco — não todas.
- *
- * Uma competição sempre pertence a uma administração, e ver as seis de duas
- * ligas diferentes numa lista só não ajuda ninguém: os nomes se repetem entre
- * administrações ("Futebol Masculino" existe em duas) e a lista cresce com o
- * número de clientes, não com o que a pessoa está fazendo.
- *
- * O foco vem do escopo: a administração escolhida na página de administrações,
- * ou a da competição aberta — inclusive quando ela foi aberta pela busca.
- */
 const CompeticaoPage = () => {
     const {
+        administracoes,
         competicoes,
         carregando,
         erro,
@@ -52,8 +54,7 @@ const CompeticaoPage = () => {
         escolherAdministracao,
     } = useEscopo();
 
-    const [partidas, setPartidas] = useState<Partida[]>([]);
-    const [carregandoPartidas, setCarregandoPartidas] = useState(false);
+    const IconeAdministracao = ICONES.administracao;
     const IconeCompeticao = ICONES.competicao;
 
     const daAdministracao = useMemo(
@@ -64,92 +65,125 @@ const CompeticaoPage = () => {
         [competicoes, administracaoAtual],
     );
 
-    // Os próximos jogos seguem o mesmo foco das competições: jogo de outra
-    // liga na tela desta não é informação, é ruído.
-    useEffect(() => {
-        if (daAdministracao.length === 0) {
-            setPartidas([]);
-            return;
-        }
-        let vigente = true;
-        setCarregandoPartidas(true);
-        Promise.all(daAdministracao.map((c) => listarPartidasDaCompeticao(c.id)))
-            .then((porCompeticao) => {
-                if (!vigente) return;
-                setPartidas(porCompeticao.flat().filter((partida) => !partida.realizada));
-            })
-            .finally(() => vigente && setCarregandoPartidas(false));
-        return () => {
-            vigente = false;
-        };
-    }, [daAdministracao]);
-
     return (
         <>
             <CabecalhoDaPagina
                 conceito="competicao"
                 titulo="Competições"
-                descricao={
-                    administracaoAtual
-                        ? `Organizadas por ${administracaoAtual.nome}`
-                        : "Escolha uma administração para ver as competições dela."
-                }
-                migalhas={[
-                    { rotulo: "Administrações", href: "/administracao" },
-                    ...(administracaoAtual ? [{ rotulo: administracaoAtual.nome }] : []),
-                ]}
-                acoes={
-                    administracaoAtual && (
-                        <>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => escolherAdministracao(null)}
-                                title="Deixar de filtrar por administração"
-                            >
-                                <Layers />
-                                Trocar
-                            </Button>
-                            <AddCompetitionDialog
-                                idAdministracao={administracaoAtual.id}
-                                onSaved={recarregar}
-                            />
-                        </>
-                    )
-                }
+                descricao="Escolha a administração à esquerda para ver as competições dela."
             />
             <CorpoDaPagina>
                 {erro ? (
                     <Erro causa={erro} aoTentarDeNovo={recarregar} />
-                ) : !administracaoAtual && !carregando ? (
-                    <Vazio
-                        conceito="administracao"
-                        titulo="Nenhuma administração em foco"
-                        descricao="As competições são organizadas por quem as promove. Escolha uma administração, ou busque a competição pelo nome com ⌘K."
-                        acao={
-                            <Button size="sm" render={<Link href="/administracao" />}>
-                                <Building2 />
-                                Escolher administração
-                            </Button>
-                        }
-                    />
                 ) : (
                     <div className="grid gap-6 lg:grid-cols-3">
-                        <Secao className="lg:col-span-2" titulo="Competições">
+                        <Secao
+                            titulo="Administrações"
+                            acao={<AddAdministrationDialog onSaved={recarregar} />}
+                        >
+                            {carregando ? (
+                                <CarregandoCartoes cartoes={2} />
+                            ) : administracoes.length === 0 ? (
+                                <Vazio
+                                    conceito="administracao"
+                                    titulo="Nenhuma administração ainda"
+                                    descricao="Comece criando quem organiza as competições."
+                                    acao={<AddAdministrationDialog onSaved={recarregar} />}
+                                />
+                            ) : (
+                                <div className="space-y-2">
+                                    {administracoes.map((administracao) => {
+                                        const selecionada =
+                                            administracao.id === administracaoAtual?.id;
+                                        const quantas = competicoes.filter(
+                                            (c) => c.idAdministracao === administracao.id,
+                                        ).length;
+
+                                        return (
+                                            <button
+                                                key={administracao.id}
+                                                type="button"
+                                                aria-pressed={selecionada}
+                                                onClick={() =>
+                                                    escolherAdministracao(administracao.id)
+                                                }
+                                                className={cn(
+                                                    "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
+                                                    selecionada
+                                                        ? "border-primary/40 bg-accent/60"
+                                                        : "border-border hover:border-ring",
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                                                        selecionada
+                                                            ? "bg-primary text-primary-foreground"
+                                                            : "bg-muted text-muted-foreground",
+                                                    )}
+                                                >
+                                                    {selecionada ? (
+                                                        <Check className="size-4" />
+                                                    ) : (
+                                                        <IconeAdministracao className="size-4" />
+                                                    )}
+                                                </span>
+                                                <span className="min-w-0 flex-1 space-y-0.5">
+                                                    <span className="block truncate font-medium">
+                                                        {administracao.nome}
+                                                    </span>
+                                                    {administracao.descricao && (
+                                                        <span className="block text-sm text-muted-foreground">
+                                                            {administracao.descricao}
+                                                        </span>
+                                                    )}
+                                                    <span className="block text-xs text-muted-foreground">
+                                                        {quantas === 1
+                                                            ? "1 competição"
+                                                            : `${quantas} competições`}
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Secao>
+
+                        <Secao
+                            className="lg:col-span-2"
+                            titulo={
+                                administracaoAtual
+                                    ? `Competições de ${administracaoAtual.nome}`
+                                    : "Competições"
+                            }
+                            acao={
+                                administracaoAtual && (
+                                    <AddCompetitionDialog
+                                        idAdministracao={administracaoAtual.id}
+                                        onSaved={recarregar}
+                                    />
+                                )
+                            }
+                        >
                             {carregando ? (
                                 <CarregandoCartoes cartoes={4} />
+                            ) : !administracaoAtual ? (
+                                <Vazio
+                                    conceito="administracao"
+                                    titulo="Escolha uma administração"
+                                    descricao="As competições são listadas por quem as organiza."
+                                />
                             ) : daAdministracao.length === 0 ? (
                                 <Vazio
                                     conceito="competicao"
                                     titulo="Nenhuma competição aqui"
-                                    descricao={`${administracaoAtual?.nome} ainda não tem competições.`}
+                                    descricao={`${administracaoAtual.nome} ainda não tem competições.`}
                                     acao={
-                                        administracaoAtual && (
-                                            <AddCompetitionDialog
-                                                idAdministracao={administracaoAtual.id}
-                                                onSaved={recarregar}
-                                            />
-                                        )
+                                        <AddCompetitionDialog
+                                            idAdministracao={administracaoAtual.id}
+                                            onSaved={recarregar}
+                                        />
                                     }
                                 />
                             ) : (
@@ -164,7 +198,9 @@ const CompeticaoPage = () => {
                                                 <CardHeader>
                                                     <CardTitle className="flex items-start gap-2">
                                                         <IconeCompeticao className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                                        <span className="min-w-0">{competicao.nome}</span>
+                                                        <span className="min-w-0">
+                                                            {competicao.nome}
+                                                        </span>
                                                     </CardTitle>
                                                     {competicao.descricao && (
                                                         <CardDescription>
@@ -175,39 +211,6 @@ const CompeticaoPage = () => {
                                                         {[competicao.modalidade, competicao.categoria]
                                                             .filter(Boolean)
                                                             .join(" · ")}
-                                                    </CardDescription>
-                                                </CardHeader>
-                                            </Card>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                        </Secao>
-
-                        <Secao titulo="Próximos jogos">
-                            {carregando || carregandoPartidas ? (
-                                <CarregandoLista linhas={4} />
-                            ) : partidas.length === 0 ? (
-                                <Vazio
-                                    conceito="partida"
-                                    titulo="Nenhum jogo agendado"
-                                    descricao="As partidas aparecem quando uma fase gera os confrontos."
-                                />
-                            ) : (
-                                <div className="space-y-2">
-                                    {partidas.map((partida) => (
-                                        <Link
-                                            key={partida.id}
-                                            href={`/partida/${partida.id}`}
-                                            className="block"
-                                        >
-                                            <Card className="transition-colors hover:border-ring">
-                                                <CardHeader>
-                                                    <CardTitle className="text-sm">
-                                                        {partida.equipeMandante} × {partida.equipeVisitante}
-                                                    </CardTitle>
-                                                    <CardDescription>
-                                                        {partida.nomeCompeticao} · {partida.fase}
                                                     </CardDescription>
                                                 </CardHeader>
                                             </Card>

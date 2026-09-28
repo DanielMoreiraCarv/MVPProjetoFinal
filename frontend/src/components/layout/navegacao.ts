@@ -28,12 +28,9 @@ export const SECOES_GLOBAIS: SecaoDeMenu[] = [
     {
         titulo: "Cadastro",
         itens: [
-            {
-                rotulo: "Administrações",
-                href: "/administracao",
-                conceito: "administracao",
-                prefixo: true,
-            },
+            // Administrações e competições vivem na mesma página: escolher a
+            // administração é o que decide quais competições aparecem, e
+            // separá-las dava uma tela que não existia sozinha.
             {
                 rotulo: "Competições",
                 href: "/competicao",

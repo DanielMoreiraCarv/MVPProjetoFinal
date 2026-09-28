@@ -125,7 +125,7 @@ export const TeamDetail = () => {
     return (
         <div className="p-8 flex flex-col gap-6">
             <div className="flex items-center gap-3">
-                <Link href="/administracao" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/competicao" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     ← Administrações
                 </Link>
             </div>
