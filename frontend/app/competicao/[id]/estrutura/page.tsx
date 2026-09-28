@@ -339,7 +339,16 @@ const EstruturaPage = () => {
                             </div>
                         )}
 
-                        {ordenadas.length === 0 ? (
+                        {ordenadas.length === 0 && !editavel ? (
+                            // Competição publicada e sem fases: oferecer modelos
+                            // que não dão para clicar é pior do que dizer o que
+                            // aconteceu.
+                            <Vazio
+                                conceito="fase"
+                                titulo="Esta competição não tem fases"
+                                descricao="Ela foi publicada sem estrutura, e a estrutura só é editável enquanto a competição está em rascunho. As partidas dela, se houver, foram criadas avulsas."
+                            />
+                        ) : ordenadas.length === 0 ? (
                             <Secao
                                 titulo="Comece por um modelo"
                                 descricao="Cada um cria as fases já encadeadas e configuradas. Daí em diante tudo é editável."

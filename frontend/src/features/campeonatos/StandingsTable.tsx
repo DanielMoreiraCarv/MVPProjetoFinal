@@ -33,7 +33,7 @@ export function StandingsTable({ standings }: StandingsTableProps) {
                 <TableHeader>
                     <TableRow className="text-xs text-foreground">
                         <TableHead className="w-8 pl-3 text-foreground">#</TableHead>
-                        <TableHead className="text-foreground">Time</TableHead>
+                        <TableHead className="text-foreground">Equipe</TableHead>
                         <TableHead className="w-10 text-center font-semibold text-primary">Pts</TableHead>
                         <TableHead className="w-8 text-center text-foreground">PJ</TableHead>
                         <TableHead className="w-8 text-center text-foreground">V</TableHead>
