@@ -16,7 +16,7 @@ export const MatchCalendar = ({ matches = [] }: { matches?: Partida[] }) => (
                 : "×";
 
             return (
-                <Link key={partida.id} href={`/partida/${partida.id}`} className="block">
+                <Link key={partida.id} href={`/competicao/${partida.idCompeticao}/partida/${partida.id}`} className="block">
                     <Card className="transition-colors hover:border-ring">
                         <CardHeader>
                             <CardTitle className="flex items-center justify-between gap-3 text-sm">

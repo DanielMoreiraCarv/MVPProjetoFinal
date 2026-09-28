@@ -24,6 +24,9 @@ public class FaseMapper
         Competicao competicao = new Competicao();
         competicao.setId( request.idCompeticao() );
         fase.setCompeticao( competicao );
+        // O create aceitava `qtdClassificados` e nunca o gravava: a resposta
+        // devolvia null e ninguém via que o valor tinha sido descartado.
+        fase.setQuantidadeClassificados( request.qtdClassificados() );
         return fase;
     }
 
@@ -55,7 +58,12 @@ public class FaseMapper
         }
 
         return new FaseResponse( fase.getId(), fase.getNome(), fase.getOrdem(),
-                fase.getFasePartida().getDescricao(), fase.getQuantidadeClassificados(),
+                // O nome da constante, e não a descrição: o pedido exige
+                // "PONTOS_CORRIDOS" e a resposta devolvia "Pontos Corridos",
+                // então o cliente tinha que traduzir nos dois sentidos para
+                // marcar o formato atual num seletor.
+                fase.getFasePartida() == null ? null : fase.getFasePartida().name(),
+                fase.getQuantidadeClassificados(),
                 fase.getFaseSucessora() == null ? null : fase.getFaseSucessora().getId() );
 
     }

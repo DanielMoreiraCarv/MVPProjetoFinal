@@ -29,9 +29,7 @@ public class EquipeController
     )
     {
 
-        Equipe equipe = equipeService.criarEquipe(
-                EquipeMapper.toEntity( request )
-        );
+        Equipe equipe = equipeService.criar( request );
 
         return ResponseEntity
                 .status( HttpStatus.CREATED )

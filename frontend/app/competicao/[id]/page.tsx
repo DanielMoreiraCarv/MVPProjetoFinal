@@ -139,7 +139,7 @@ const CompeticaoDetalhePage = () => {
                                         {proximas.slice(0, 6).map((partida) => (
                                             <Link
                                                 key={partida.id}
-                                                href={`/partida/${partida.id}`}
+                                                href={`/competicao/${id}/partida/${partida.id}`}
                                                 className="block"
                                             >
                                                 <Card className="transition-colors hover:border-ring">

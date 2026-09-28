@@ -192,6 +192,7 @@ delete from competicao_equipe;
 delete from sancao_atleta;
 delete from atleta;
 delete from equipe;
+delete from valor_atributo_fase;
 delete from fase;
 delete from sancao;
 delete from competicao_modalidade;

@@ -144,15 +144,12 @@ public class FaseController
             throw NaoEncontradoException.de( "Fase", id );
         }
 
-        try
-        {
-            return ResponseEntity.status( HttpStatus.CREATED )
-                                 .body( paraResposta( faseService.gerarConfrontos( fase ) ) );
-        }
-        catch ( IllegalStateException erro )
-        {
-            return ResponseEntity.badRequest().body( erro.getMessage() );
-        }
+        // Sem try: `IllegalStateException` já é tratada centralmente e sai no
+        // envelope de erro. O catch que havia aqui devolvia texto puro, fora
+        // do contrato, e o cliente recebia uma string solta onde esperava
+        // `{ erro: { codigo, mensagem } }`.
+        return ResponseEntity.status( HttpStatus.CREATED )
+                             .body( paraResposta( faseService.gerarConfrontos( fase ) ) );
     }
 
     /** Recalcula os confrontos a partir dos resultados já registrados, sem apagar o que já existe. */
@@ -167,14 +164,7 @@ public class FaseController
             throw NaoEncontradoException.de( "Fase", id );
         }
 
-        try
-        {
-            return ResponseEntity.ok( paraResposta( faseService.atualizarConfrontos( fase, opcoes ) ) );
-        }
-        catch ( IllegalStateException erro )
-        {
-            return ResponseEntity.badRequest().body( erro.getMessage() );
-        }
+        return ResponseEntity.ok( paraResposta( faseService.atualizarConfrontos( fase, opcoes ) ) );
     }
 
     /**

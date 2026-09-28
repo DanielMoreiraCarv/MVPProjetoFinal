@@ -65,15 +65,26 @@ public class AtletaService {
     public Atleta atualizarAtleta(Long id, AtletaUpdateRequest atletaAtualizado) {
         Optional<Atleta> jogadorExistente = atletaRepository.findById(id);
         if (jogadorExistente.isPresent()) {
+            // Campo ausente é campo que não muda. Antes, corrigir só a idade
+            // apagava o CPF e a modalidade do atleta.
             Atleta atleta = jogadorExistente.get();
-            atleta.setNome(atletaAtualizado.nome());
-            atleta.setIdade(atletaAtualizado.idade());
-            atleta.setNumCamisa(atletaAtualizado.numCamisa());
-            atleta.setCpf(atletaAtualizado.cpf());
 
-            Modalidade modalidade =
-                    modalidadeService.buscarPorId( atletaAtualizado.idModalidade() );
-            atleta.setModalidade(modalidade);
+            if (atletaAtualizado.nome() != null && !atletaAtualizado.nome().isBlank()) {
+                atleta.setNome(atletaAtualizado.nome());
+            }
+            if (atletaAtualizado.idade() != null) {
+                atleta.setIdade(atletaAtualizado.idade());
+            }
+            if (atletaAtualizado.numCamisa() != null) {
+                atleta.setNumCamisa(atletaAtualizado.numCamisa());
+            }
+            if (atletaAtualizado.cpf() != null) {
+                atleta.setCpf(atletaAtualizado.cpf());
+            }
+            if (atletaAtualizado.idModalidade() != null) {
+                atleta.setModalidade(modalidadeService.buscarPorId(atletaAtualizado.idModalidade()));
+            }
+
             return atletaRepository.save(atleta);
         }
         return null;

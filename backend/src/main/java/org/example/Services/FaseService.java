@@ -18,6 +18,8 @@ import org.example.Models.Request.FaseUpdateRequest;
 import org.example.Models.Response.FaseResponse;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.PartidaRepository;
+import org.example.Repositories.ValorAtributoFaseRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +40,9 @@ public class FaseService
 
     @Autowired
     private RegistroDeEstrategias registro;
+
+    @Autowired
+    private ValorAtributoFaseRepository valorAtributoFaseRepository;
 
     @Autowired
     private PartidaRepository partidaRepository;
@@ -75,6 +80,11 @@ public class FaseService
             }
             fase.setCompeticao( competicao );
 
+            fase.setQuantidadeClassificados( request.qtdClassificados() );
+
+            // Sucessora nula desencadeia: antes o `if` só permitia trocar o
+            // vínculo, nunca removê-lo, e uma fase encadeada por engano ficava
+            // impossível de apagar pelos dois lados.
             if(request.idFaseSucessora()!=null){
                 Fase sucessoro =  buscarFasePorId( request.idFaseSucessora() );
                 if(sucessoro==null){
@@ -82,14 +92,26 @@ public class FaseService
                 }
                 fase.setFaseSucessora( sucessoro );
             }
-
+            else {
+                fase.setFaseSucessora( null );
+            }
         }
 
         return FaseMapper.toResponse( faseRepository.save( fase ) );
     }
 
+    /**
+     * Apaga a fase e o que só existe por causa dela.
+     *
+     * Os valores de atributo referenciam a fase, então apagá-la sem apagá-los
+     * antes violava a chave estrangeira — e o erro chegava como conflito
+     * genérico, sem dizer o que estava segurando.
+     */
+    @Transactional
     public void deleteFase ( Fase fase )
     {
+        valorAtributoFaseRepository.deleteByFaseId( fase.getId() );
+        partidaRepository.deleteAll( partidaRepository.findByFaseId( fase.getId() ) );
         faseRepository.delete( fase );
     }
 

@@ -3,6 +3,7 @@ package org.example.Services;
 import org.example.Models.Federacao;
 import org.example.Models.Atleta;
 import org.example.Models.Modalidade;
+import org.example.Models.Request.EquipeCreateRequest;
 import org.example.Models.Request.EquipeUpdateRequest;
 import org.example.Models.Equipe;
 import org.example.Exception.NaoEncontradoException;
@@ -31,6 +32,33 @@ public class EquipeService {
 
     public Equipe criarEquipe(Equipe equipe) {
         equipe.setId(null);
+        return equipeRepository.save(equipe);
+    }
+
+    /**
+     * Cria a equipe resolvendo modalidade e federação de verdade.
+     *
+     * O mapper montava referências só com o id, o que gravava a chave mas
+     * devolvia um objeto sem nome na resposta — e a modalidade nem chegava a
+     * ser copiada do pedido, então a equipe nascia sem ela e a inscrição na
+     * competição, que compara modalidade, recusava sempre.
+     */
+    public Equipe criar(EquipeCreateRequest request) {
+        Equipe equipe = new Equipe();
+        equipe.setNome(request.nome());
+
+        if (request.idModalidade() != null) {
+            Modalidade modalidade = modalidadeService.buscarPorId(request.idModalidade());
+            if (modalidade == null) {
+                throw NaoEncontradoException.de("Modalidade", request.idModalidade());
+            }
+            equipe.setModalidade(modalidade);
+        }
+
+        if (request.idFederacao() != null) {
+            equipe.setFederacao(federacaoService.exigirPorId(request.idFederacao()));
+        }
+
         return equipeRepository.save(equipe);
     }
 

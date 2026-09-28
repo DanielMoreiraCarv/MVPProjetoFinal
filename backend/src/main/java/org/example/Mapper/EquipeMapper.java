@@ -8,6 +8,7 @@ import org.example.Models.Request.EquipeUpdateRequest;
 import org.example.Models.Response.AtletaResponse;
 import org.example.Models.Response.EquipeResponse;
 import org.example.Models.Equipe;
+import org.example.Models.Modalidade;
 
 import java.util.Collections;
 import java.util.List;
@@ -75,5 +76,17 @@ public class EquipeMapper
         return equipes.stream()
                     .map(EquipeMapper::toResponse)
                     .toList();
+    }
+
+    /** Referência por id, sem ir ao banco: o JPA resolve na gravação. */
+    private static Modalidade toModalidade ( Long id )
+    {
+        if ( id == null )
+        {
+            return null;
+        }
+        Modalidade modalidade = new Modalidade();
+        modalidade.setId( id );
+        return modalidade;
     }
 }

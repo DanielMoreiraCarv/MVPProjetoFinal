@@ -22,11 +22,29 @@ export const ROTULO_DO_FORMATO: Record<FormatoDeFase, string> = {
     ELIMINATORIA: "Eliminatória",
 };
 
+/**
+ * O `fasePartida` da resposta não é o nome da constante: o mapeador do
+ * servidor devolve `EnumFasePartida.getDescricao()` — "Pontos Corridos",
+ * "Grupo", "Eliminatória" — enquanto a requisição espera o nome
+ * ("PONTOS_CORRIDOS"). Traduzir aqui é o que impede a tela de ficar com um
+ * formato que o rótulo não reconhece e que nenhum seletor consegue marcar.
+ */
+/**
+ * A resposta devolve a mesma constante que o pedido exige — antes devolvia a
+ * descrição ("Pontos Corridos") enquanto o POST pedia `PONTOS_CORRIDOS`, e o
+ * cliente tinha que traduzir nos dois sentidos para marcar o formato atual num
+ * seletor.
+ */
+const formatoDoTexto = (texto?: string | null): FormatoDeFase | undefined =>
+    texto && (FORMATOS_DE_FASE as readonly string[]).includes(texto)
+        ? (texto as FormatoDeFase)
+        : undefined;
+
 export type Fase = {
     id: number;
     nome: string;
     ordem?: number;
-    formato?: string;
+    formato?: FormatoDeFase;
     classificados?: number;
     idFaseSucessora?: number;
 };
@@ -35,10 +53,48 @@ const paraFase = (resposta: z.infer<typeof faseResponseSchema>): Fase => ({
     id: resposta.id,
     nome: resposta.nome ?? "",
     ordem: resposta.ordem ?? undefined,
-    formato: resposta.fasePartida ?? undefined,
+    formato: formatoDoTexto(resposta.fasePartida),
     classificados: resposta.qtdClassificados ?? undefined,
     idFaseSucessora: resposta.idFaseSucessora ?? undefined,
 });
+
+/** O corpo de `POST /fase` e de `PUT /fase/{id}`. */
+export type EntradaDeFase = {
+    nome: string;
+    ordem: number;
+    fasePartida: FormatoDeFase;
+    idCompeticao: number;
+    qtdClassificados?: number;
+    idFaseSucessora?: number;
+};
+
+export const criarFase = async (entrada: EntradaDeFase): Promise<Fase> =>
+    paraFase(
+        faseResponseSchema.parse(
+            await apiFetch<unknown>("/fase", {
+                method: "POST",
+                body: JSON.stringify(entrada),
+            }),
+        ),
+    );
+
+/**
+ * O `PUT` substitui a fase inteira: mande sempre todos os campos, porque o
+ * que vier ausente é gravado como nulo.
+ */
+export const atualizarFase = async (id: number, entrada: EntradaDeFase): Promise<Fase> =>
+    paraFase(
+        faseResponseSchema.parse(
+            await apiFetch<unknown>(`/fase/${id}`, {
+                method: "PUT",
+                body: JSON.stringify({ id, ...entrada }),
+            }),
+        ),
+    );
+
+export const removerFase = async (id: number): Promise<void> => {
+    await apiFetch<unknown>(`/fase/${id}`, { method: "DELETE" });
+};
 
 /**
  * As fases de uma competição. Sem o filtro esta rota devolve as fases de
@@ -47,8 +103,11 @@ const paraFase = (resposta: z.infer<typeof faseResponseSchema>): Fase => ({
  */
 export const listarFasesDaCompeticao = async (idCompeticao: number): Promise<Fase[]> =>
     z
+        // Lista vazia volta como corpo vazio: o mapeador do servidor devolve
+        // nulo quando não há fase nenhuma, e sem o `?? []` o schema estoura na
+        // competição que ainda não tem fase — justamente a primeira que se abre.
         .array(faseResponseSchema)
-        .parse(await apiFetch<unknown>(`/fase?idCompeticao=${idCompeticao}`))
+        .parse((await apiFetch<unknown>(`/fase?idCompeticao=${idCompeticao}`)) ?? [])
         .map(paraFase);
 
 /* ------------------------------------------------ atributos de fase ------ */
@@ -119,3 +178,78 @@ export const definirAtributoDaFase = async (
             }),
         )
         .map(paraAtributo);
+
+/* -------------------------------------- validação, confrontos, tabela ---- */
+
+const validacaoResponseSchema = z.object({
+    valido: z.boolean(),
+    erros: z.array(z.string()).nullable(),
+});
+
+export type ValidacaoDaFase = {
+    valido: boolean;
+    /** Em linguagem de quem organiza: "um mata-mata precisa de ao menos 2 equipes, recebeu 1". */
+    erros: string[];
+};
+
+/**
+ * O que falta para a fase poder ser montada.
+ *
+ * Quem decide é o servidor, que conhece a estratégia e a entrada; a tela só
+ * mostra a lista. Repetir a regra aqui seria manter duas validações que
+ * discordam na primeira mudança de estratégia.
+ */
+export const validarFase = async (idFase: number): Promise<ValidacaoDaFase> => {
+    const resposta = validacaoResponseSchema.parse(
+        await apiFetch<unknown>(`/fase/${idFase}/validacao`),
+    );
+
+    return { valido: resposta.valido, erros: resposta.erros ?? [] };
+};
+
+/**
+ * Gera os confrontos da fase, substituindo os que já existiam. Devolve
+ * quantos ficaram.
+ */
+export const gerarConfrontosDaFase = async (idFase: number): Promise<number> => {
+    const resposta = await apiFetch<unknown>(`/fase/${idFase}/confrontos`, { method: "POST" });
+
+    return z
+        .array(z.unknown())
+        .parse(resposta ?? [])
+        .length;
+};
+
+const classificadoResponseSchema = z.object({
+    posicao: z.number().nullable(),
+    idEquipe: z.number().nullable(),
+    nomeEquipe: z.string().nullable(),
+});
+
+/**
+ * Uma linha da classificação de uma fase.
+ *
+ * É só a ordem: posição, equipe e o nome dela. A rota não devolve pontos,
+ * jogos, vitórias nem saldo — quem precisa dos números não os tem aqui.
+ */
+export type Classificado = {
+    posicao?: number;
+    idEquipe?: number;
+    nomeEquipe: string;
+};
+
+/**
+ * A classificação da fase, calculada no servidor.
+ *
+ * Vazia enquanto os confrontos não forem gerados: sem partida não há ordem a
+ * apurar.
+ */
+export const listarClassificacaoDaFase = async (idFase: number): Promise<Classificado[]> =>
+    z
+        .array(classificadoResponseSchema)
+        .parse((await apiFetch<unknown>(`/fase/${idFase}/classificacao`)) ?? [])
+        .map((r) => ({
+            posicao: r.posicao ?? undefined,
+            idEquipe: r.idEquipe ?? undefined,
+            nomeEquipe: r.nomeEquipe ?? "Equipe sem nome",
+        }));

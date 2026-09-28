@@ -33,11 +33,19 @@ public class AtletaController
     public ResponseEntity<?> criarAtleta (
             @Valid @RequestBody AtletaCreateRequest request )
     {
-        Equipe equipe = equipeService.buscarPorId( request.idEquipe() );
+        // Atleta é pessoa, e pode ser cadastrado antes de entrar numa equipe.
+        // Sem equipe informada, `findById(null)` estourava com 500; com equipe
+        // inexistente, a recusa saía como texto puro, fora do envelope.
+        Equipe equipe = null;
 
-        if ( equipe == null )
+        if ( request.idEquipe() != null )
         {
-            return ResponseEntity.badRequest().body( "Equipe não encontrada" );
+            equipe = equipeService.buscarPorId( request.idEquipe() );
+
+            if ( equipe == null )
+            {
+                throw NaoEncontradoException.de( "Equipe", request.idEquipe() );
+            }
         }
 
         Atleta atleta = atletaService.criarAtleta( request, equipe );
