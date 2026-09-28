@@ -1,35 +1,17 @@
 package org.example.Mapper;
 
-import org.example.Exception.PartidaCreateException;
-import org.example.Exception.PartidaUpdateException;
-import org.example.Models.Arbitro;
 import org.example.Models.Competicao;
-import org.example.Models.Partida;
-import org.example.Models.Request.PartidaUpdateRequest;
-import org.example.Models.Response.PartidaResponse;
 import org.example.Models.Equipe;
+import org.example.Models.Partida;
+import org.example.Models.Response.EquipeResumoResponse;
+import org.example.Models.Response.PartidaResponse;
+
+import java.util.List;
 
 public class PartidaMapper
 {
     private PartidaMapper ()
     {
-    }
-
-    public static Partida toEntity ( PartidaUpdateRequest partidaRequest )
-            throws PartidaCreateException
-    {
-        Partida partida = new Partida();
-        aplicarRequest( partidaRequest, partida );
-
-        return partida;
-    }
-
-    public static Partida toEntity ( PartidaUpdateRequest updateRequest, Partida partida )
-            throws PartidaUpdateException
-    {
-        aplicarRequest( updateRequest, partida );
-
-        return partida;
     }
 
     public static PartidaResponse toResponse ( Partida partida )
@@ -40,32 +22,39 @@ public class PartidaMapper
         }
 
         Competicao competicao = partida.getCompeticao();
-        Equipe mandante = partida.getEquipeMandante();
-        Equipe visitante = partida.getEquipeVisitante();
 
-        return new PartidaResponse( partida.getId(), EquipeMapper.toResponse( mandante ),
-                EquipeMapper.toResponse( visitante ),
+        return new PartidaResponse(
+                partida.getId(),
+                resumo( partida.getEquipeMandante() ),
+                resumo( partida.getEquipeVisitante() ),
                 competicao == null ? null : competicao.getNome(),
                 competicao == null ? null : competicao.getId(),
-                resolverNomeVencedor( partida ), partida.isRealizada(), partida.getEnumFasePartida(),
+                resolverNomeVencedor( partida ),
+                partida.isRealizada(),
+                partida.getEnumFasePartida(),
                 ArbitroMapper.toResponse( partida.getArbitro() ),
-                partida.getPlacarMandante() + " x " + partida.getPlacarVisitante() );
+                partida.getPlacarMandante(),
+                partida.getPlacarVisitante(),
+                partida.getDataHora(),
+                partida.getLocal() );
     }
 
-    private static void aplicarRequest ( PartidaUpdateRequest request, Partida partida )
+    public static List<PartidaResponse> toResponse ( List<Partida> partidas )
     {
-        partida.setEquipeMandante( toTime( request.idEquipeMandante() ) );
-        partida.setEquipeVisitante( toTime( request.idEquipeVisitante() ) );
-        partida.setCompeticao( toCompeticao( request.idCompeticao() ) );
-        if ( request.placarVisitante() != null )
+        if ( partidas == null )
         {
-            partida.setPlacarVisitante( request.placarVisitante() );
+            return List.of();
         }
-        if ( request.placarMandante() != null )
+        return partidas.stream().map( PartidaMapper::toResponse ).toList();
+    }
+
+    private static EquipeResumoResponse resumo ( Equipe equipe )
+    {
+        if ( equipe == null )
         {
-            partida.setPlacarMandante( request.placarMandante() );
+            return null;
         }
-        partida.setArbitro( toArbitro( request.idArbitro() ) );
+        return new EquipeResumoResponse( equipe.getId(), equipe.getNome() );
     }
 
     private static String resolverNomeVencedor ( Partida partida )
@@ -88,41 +77,5 @@ public class PartidaMapper
         }
 
         return null;
-    }
-
-    private static Equipe toTime ( Long id )
-    {
-        if ( id == null )
-        {
-            return null;
-        }
-
-        Equipe equipe = new Equipe();
-        equipe.setId( id );
-        return equipe;
-    }
-
-    private static Competicao toCompeticao ( Long id )
-    {
-        if ( id == null )
-        {
-            return null;
-        }
-
-        Competicao competicao = new Competicao();
-        competicao.setId( id );
-        return competicao;
-    }
-
-    private static Arbitro toArbitro ( Long id )
-    {
-        if ( id == null )
-        {
-            return null;
-        }
-
-        Arbitro arbitro = new Arbitro();
-        arbitro.setId( id );
-        return arbitro;
     }
 }

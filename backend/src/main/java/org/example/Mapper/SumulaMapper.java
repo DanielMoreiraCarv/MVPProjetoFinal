@@ -23,13 +23,18 @@ public class SumulaMapper
                 ? Collections.emptyList()
                 : sumula.getOcorrencias();
 
-        List<String> observacoes = sumula.getObservacoesRelatadas() == null
-                ? Collections.emptyList()
-                : List.of( sumula.getObservacoesRelatadas() );
-
         return new SumulaResponse( sumula.getId(), PartidaMapper.toResponse( sumula.getPartida() ),
                 ArbitroMapper.toResponse( sumula.getArbitro() ), sumula.getPlacarMandante(),
-                sumula.getPlacarVisitante(), ocorrencias, observacoes, sumula.getDataFechamento(),
-                sumula.isAssinada() );
+                sumula.getPlacarVisitante(), ocorrencias, sumula.getObservacoesRelatadas(),
+                sumula.getDataFechamento(), sumula.isAssinada() );
+    }
+
+    public static List<SumulaResponse> toResponse ( List<Sumula> sumulas )
+    {
+        if ( sumulas == null )
+        {
+            return List.of();
+        }
+        return sumulas.stream().map( SumulaMapper::toResponse ).toList();
     }
 }

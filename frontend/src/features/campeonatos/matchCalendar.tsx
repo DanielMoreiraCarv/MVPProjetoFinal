@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Partida } from "@/src/lib/types/partida";
+import { formatarDiaEHora, porDataHora } from "@/src/lib/formato";
 
 // Só a lista: respiro e estado vazio são da seção que a contém.
 export const MatchCalendar = ({ matches = [] }: { matches?: Partida[] }) => (
     <div className="space-y-2">
-        {matches.map((partida) => {
+        {[...matches].sort(porDataHora).map((partida) => {
             const placar = partida.realizada
                 ? `${partida.placarMandante ?? 0} × ${partida.placarVisitante ?? 0}`
                 : "×";
@@ -31,7 +32,9 @@ export const MatchCalendar = ({ matches = [] }: { matches?: Partida[] }) => (
                                 </Badge>
                             </CardTitle>
                             <CardDescription>
-                                {partida.fase}
+                                {formatarDiaEHora(partida.dataHora)}
+                                {partida.local ? ` · ${partida.local}` : ""}
+                                {` · ${partida.fase}`}
                                 {partida.realizada && partida.vencedor
                                     ? ` · venceu ${partida.vencedor}`
                                     : ""}

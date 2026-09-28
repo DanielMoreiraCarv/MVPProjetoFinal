@@ -1,6 +1,10 @@
 package org.example.Services;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Models.Partida;
+import org.example.Models.Request.SumulaCreateRequest;
+import org.example.Models.Request.SumulaUpdateRequest;
+import org.example.Repositories.ArbitroRepository;
 import org.example.Models.Sumula;
 import org.example.Repositories.PartidaRepository;
 import org.example.Repositories.SumulaRepository;
@@ -19,15 +23,36 @@ public class SumulaService {
     @Autowired
     private PartidaRepository partidaRepository;
 
-    public Sumula criarSumula(Long idPartida, Sumula sumula) {
-        Partida partida = partidaRepository.findById(idPartida)
-                .orElseThrow(() -> new IllegalArgumentException("Partida " + idPartida + " não encontrada."));
+    @Autowired
+    private ArbitroRepository arbitroRepository;
+
+    public Sumula criar(SumulaCreateRequest request) {
+        Partida partida = partidaRepository.findById(request.idPartida())
+                .orElseThrow(() -> NaoEncontradoException.de("Partida", request.idPartida()));
+
         if (partida.getSumula() != null) {
-            throw new IllegalStateException("Partida " + idPartida + " já possui súmula.");
+            throw new IllegalStateException(
+                    "Esta partida já tem súmula. Abra a que existe em vez de criar outra.");
         }
-        sumula.setId(null);
+
+        Sumula sumula = new Sumula();
+        if (request.idArbitro() != null) {
+            sumula.setArbitro(arbitroRepository.findById(request.idArbitro())
+                    .orElseThrow(() -> NaoEncontradoException.de("Árbitro", request.idArbitro())));
+        }
+        else if (partida.getArbitro() != null) {
+            // Sem árbitro no pedido, herda o que já está escalado na partida:
+            // é quem conduz o jogo, e repetir a escolha é trabalho à toa.
+            sumula.setArbitro(partida.getArbitro());
+        }
+
         partida.vincularSumula(sumula);
         return sumulaRepository.save(sumula);
+    }
+
+    public Sumula exigirPorId(Long id) {
+        return sumulaRepository.findById(id)
+                .orElseThrow(() -> NaoEncontradoException.de("Súmula", id));
     }
     
     public Sumula buscarPorId(Long id) {
@@ -54,29 +79,52 @@ public class SumulaService {
         return sumulaRepository.findByArbitroId(idArbitro);
     }
     
-    public Sumula atualizarSumula(Long id, Sumula sumulaAtualizada) {
-        Optional<Sumula> sumulaExistente = sumulaRepository.findById(id);
-        if (sumulaExistente.isPresent()) {
-            Sumula sumula = sumulaExistente.get();
-            sumula.setPlacarMandante(sumulaAtualizada.getPlacarMandante());
-            sumula.setPlacarVisitante(sumulaAtualizada.getPlacarVisitante());
-            sumula.setObservacoesRelatadas(sumulaAtualizada.getObservacoesRelatadas());
-            return sumulaRepository.save(sumula);
+    /**
+     * Campo ausente é campo que não muda. O que havia aqui copiava placar e
+     * observações do corpo sempre — e como o corpo era a entidade crua, um
+     * pedido que só quisesse trocar o árbitro zerava o placar.
+     */
+    public Sumula atualizar(Long id, SumulaUpdateRequest request) {
+        Sumula sumula = exigirPorId(id);
+
+        if (sumula.isAssinada()) {
+            throw new IllegalStateException(
+                    "Esta súmula já foi assinada e não aceita alteração.");
         }
-        return null;
+
+        if (request.idArbitro() != null) {
+            sumula.setArbitro(arbitroRepository.findById(request.idArbitro())
+                    .orElseThrow(() -> NaoEncontradoException.de("Árbitro", request.idArbitro())));
+        }
+        if (request.placarMandante() != null) {
+            sumula.setPlacarMandante(request.placarMandante());
+        }
+        if (request.placarVisitante() != null) {
+            sumula.setPlacarVisitante(request.placarVisitante());
+        }
+        if (request.observacoes() != null) {
+            sumula.setObservacoesRelatadas(request.observacoes());
+        }
+
+        return sumulaRepository.save(sumula);
     }
     
     public Sumula finalizarSumula(Long id, int placarMandante, int placarVisitante, String relato) {
-        Optional<Sumula> sumula = sumulaRepository.findById(id);
-        if (sumula.isPresent()) {
-            Sumula s = sumula.get();
-            s.finalizarSumula(placarMandante, placarVisitante, relato);
-            return sumulaRepository.save(s);
+        Sumula sumula = exigirPorId(id);
+
+        if (sumula.isAssinada()) {
+            throw new IllegalStateException("Esta súmula já foi encerrada.");
         }
-        return null;
+
+        sumula.finalizarSumula(placarMandante, placarVisitante, relato);
+        return sumulaRepository.save(sumula);
     }
     
     public Sumula adicionarOcorrencia(Long id, String evento) {
+        if (exigirPorId(id).isAssinada()) {
+            throw new IllegalStateException(
+                    "Esta súmula já foi encerrada e não aceita novas ocorrências.");
+        }
         Optional<Sumula> sumula = sumulaRepository.findById(id);
         if (sumula.isPresent()) {
             Sumula s = sumula.get();

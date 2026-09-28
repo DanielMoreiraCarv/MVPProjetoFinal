@@ -22,6 +22,7 @@ import { Partida } from "@/src/lib/types/partida";
 import { computeStandings } from "@/src/features/campeonatos/calculos";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
+import { formatarDiaEHora, porDataHora } from "@/src/lib/formato";
 import { useAvisos } from "@/src/lib/avisos";
 
 const Secao = ({
@@ -75,7 +76,7 @@ const CompeticaoDetalhePage = () => {
     useEffect(carregar, [id]);
 
     const proximas = useMemo(
-        () => partidas.filter((partida) => !partida.realizada),
+        () => partidas.filter((partida) => !partida.realizada).sort(porDataHora),
         [partidas],
     );
 
@@ -134,7 +135,10 @@ const CompeticaoDetalhePage = () => {
                                                                 {partida.equipeVisitante}
                                                             </span>
                                                         </CardTitle>
-                                                        <CardDescription>{partida.fase}</CardDescription>
+                                                        <CardDescription>
+                                                            {formatarDiaEHora(partida.dataHora)}
+                                                            {partida.local ? ` · ${partida.local}` : ""}
+                                                        </CardDescription>
                                                     </CardHeader>
                                                 </Card>
                                             </Link>

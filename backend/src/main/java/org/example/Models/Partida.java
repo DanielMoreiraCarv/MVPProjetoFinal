@@ -1,6 +1,8 @@
 package org.example.Models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.time.OffsetDateTime;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -63,6 +65,14 @@ public class Partida {
 
     @Column(name = "realizada")
     private boolean realizada;
+
+    // Instante, não relógio de parede: uma partida marcada para 09:00 em
+    // Fortaleza é um ponto no tempo, e o fuso faz parte do agendamento.
+    @Column(name = "data_hora")
+    private OffsetDateTime dataHora;
+
+    @Column(name = "local", length = 180)
+    private String local;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "enum_fase_partida")
