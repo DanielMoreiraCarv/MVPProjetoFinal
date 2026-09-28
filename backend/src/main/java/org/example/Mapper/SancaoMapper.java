@@ -33,9 +33,12 @@ public class SancaoMapper
 
     public static List<SancaoResponse> toResponse ( List<Sancao> sancao )
     {
-        if ( sancao == null || sancao.isEmpty() )
+        // Lista vazia devolve lista vazia, não null: `null` sai como corpo
+        // vazio no 200, e o cliente estoura ao interpretar em vez de receber
+        // `[]`. Coleção que existe sem elementos é `[]`.
+        if ( sancao == null )
         {
-            return null;
+            return List.of();
         }
 
         return sancao.stream().map( SancaoMapper::toResponse ).toList();

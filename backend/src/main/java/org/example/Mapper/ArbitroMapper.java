@@ -51,9 +51,12 @@ public class ArbitroMapper
 
     public static List<ArbitroResponse> toResponse ( List<Arbitro> arbitros )
     {
-        if ( arbitros == null || arbitros.isEmpty() )
+        // Lista vazia devolve lista vazia, não null: `null` sai como corpo
+        // vazio no 200, e aí o cliente estoura ao interpretar o JSON em vez de
+        // receber `[]`. Coleção que existe sem elementos é `[]`.
+        if ( arbitros == null )
         {
-            return null;
+            return List.of();
         }
 
         return arbitros.stream().map( ArbitroMapper::toResponse ).toList();

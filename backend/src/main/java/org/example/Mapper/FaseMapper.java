@@ -62,9 +62,12 @@ public class FaseMapper
 
     public static List<FaseResponse> toResponse ( List<Fase> fases )
     {
-        if ( fases == null || fases.isEmpty() )
+        // Lista vazia devolve lista vazia, não null: `null` sai como corpo
+        // vazio no 200, e o cliente estoura ao interpretar em vez de receber
+        // `[]`. Coleção que existe sem elementos é `[]`.
+        if ( fases == null )
         {
-            return null;
+            return List.of();
         }
 
         return fases.stream().map( FaseMapper::toResponse ).toList();

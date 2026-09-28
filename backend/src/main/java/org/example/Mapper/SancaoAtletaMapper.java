@@ -22,9 +22,12 @@ public class SancaoAtletaMapper
     }
 
     public static List<SancaoAtletaResponse> toResponse ( List<SancaoAtleta> entitys ){
-        if ( entitys == null || entitys.isEmpty() )
+        // Lista vazia devolve lista vazia, não null: `null` sai como corpo
+        // vazio no 200, e o cliente estoura ao interpretar em vez de receber
+        // `[]`. Coleção que existe sem elementos é `[]`.
+        if ( entitys == null )
         {
-            return null;
+            return List.of();
         }
 
         return entitys.stream().map( SancaoAtletaMapper::toResponse ).toList();
