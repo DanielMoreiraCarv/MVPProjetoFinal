@@ -53,7 +53,7 @@ export const EditCompetitionForm = ({ competicao, onSaved }: EditCompetitionForm
     };
 
     return (
-        <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+        <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                     <Label htmlFor="comp-name">Nome</Label>
@@ -72,8 +72,8 @@ export const EditCompetitionForm = ({ competicao, onSaved }: EditCompetitionForm
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
-                {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
-                {salvo && <p className="text-sm text-green-700">Dados atualizados.</p>}
+                {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
+                {salvo && <p className="text-sm text-primary">Dados atualizados.</p>}
                 <div className="flex justify-end">
                     <Button type="submit" disabled={salvando}>
                         {salvando ? "Salvando..." : "Salvar"}

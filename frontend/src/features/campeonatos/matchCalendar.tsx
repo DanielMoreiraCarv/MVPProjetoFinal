@@ -22,7 +22,7 @@ export const MatchCalendar = ({ matches = [] }: MatchCalendarProps) => {
     if (!validationResult.success) {
         console.error("Invalid partida data provided:", validationResult.error);
         return (
-            <div className="p-4 text-red-500 border border-red-300 rounded-md">
+            <div className="p-4 text-destructive border border-destructive/40 rounded-md">
                 Ops! Algum tipo incorreto de dados foram fornecidos. Verificar detalhes no console.
             </div>
         );
@@ -32,14 +32,14 @@ export const MatchCalendar = ({ matches = [] }: MatchCalendarProps) => {
 
     if (validMatches.length === 0) {
         return (
-            <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+            <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
                 Nenhuma partida encontrada
             </div>
         );
     }
 
     return (
-        <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+        <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
                 {validMatches.map((partida) => {
                     const scoreDisplay = partida.realizada
@@ -48,7 +48,7 @@ export const MatchCalendar = ({ matches = [] }: MatchCalendarProps) => {
 
                     return (
                         <Link key={partida.id} href={`/partidas/${partida.id}`}>
-                            <Card className="cursor-pointer hover:border-gray-400 transition-colors">
+                            <Card className="cursor-pointer hover:border-ring transition-colors">
                                 <CardHeader>
                                     <CardTitle className="flex items-center justify-between">
                                         {partida.equipeMandante} {scoreDisplay} {partida.equipeVisitante}

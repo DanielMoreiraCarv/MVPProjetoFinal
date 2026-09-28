@@ -67,7 +67,7 @@ export const TeamDetail = () => {
     if (carregandoAtletas && !equipe) {
         return (
             <div className="p-8">
-                <div className="bg-white shadow-sm rounded-lg p-4">Carregando time...</div>
+                <div className="bg-card shadow-sm rounded-lg p-4">Carregando time...</div>
             </div>
         );
     }
@@ -75,7 +75,7 @@ export const TeamDetail = () => {
     if (!equipe) {
         return (
             <div className="p-8">
-                <div className="bg-white shadow-sm rounded-lg p-4">
+                <div className="bg-card shadow-sm rounded-lg p-4">
                     {erroAtletas ?? "Time não encontrado."}
                 </div>
             </div>
@@ -125,7 +125,7 @@ export const TeamDetail = () => {
     return (
         <div className="p-8 flex flex-col gap-6 text-black">
             <div className="flex items-center gap-3">
-                <Link href="/administracoes" className="text-sm text-gray-500 hover:text-black transition-colors">
+                <Link href="/administracoes" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     ← Administrações
                 </Link>
             </div>
@@ -133,12 +133,12 @@ export const TeamDetail = () => {
             <div className="flex items-center gap-3">
                 <div>
                     <h1 className="text-2xl font-bold">{teamName}</h1>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-muted-foreground text-sm mt-1">
                         {equipe.modalidade.nome} · {players.length} jogador{players.length !== 1 ? "es" : ""}
                     </p>
                 </div>
                 <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-                    <DialogTrigger render={<Button size="sm" className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" />} onClick={handleRenameOpen}>
+                    <DialogTrigger render={<Button size="sm" className="border border-border bg-card text-foreground hover:bg-muted" />} onClick={handleRenameOpen}>
                         Renomear
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
@@ -158,8 +158,8 @@ export const TeamDetail = () => {
                                 />
                             </div>
                             <DialogFooter>
-                                <DialogClose render={<Button className="border border-gray-300 bg-white text-gray-800 hover:bg-gray-50" />}>Cancelar</DialogClose>
-                                <Button type="submit" className="bg-green-700 text-white hover:bg-green-600">Salvar</Button>
+                                <DialogClose render={<Button className="border border-border bg-card text-foreground hover:bg-muted" />}>Cancelar</DialogClose>
+                                <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/85">Salvar</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
@@ -169,9 +169,9 @@ export const TeamDetail = () => {
             <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Jogadores</h2>
-                    <Button size="sm" onClick={handleOpenAddPlayer} className="bg-green-700 text-white hover:bg-green-600">+ Adicionar Jogador</Button>
+                    <Button size="sm" onClick={handleOpenAddPlayer} className="bg-primary text-primary-foreground hover:bg-primary/85">+ Adicionar Jogador</Button>
                 </div>
-                <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+                <div className="bg-card shadow-sm rounded-lg overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -185,16 +185,16 @@ export const TeamDetail = () => {
                         <TableBody>
                             {players.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-gray-400 py-8">
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                         Nenhum jogador cadastrado
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 players.map((atleta) => (
                                     <TableRow key={atleta.id}>
-                                        <TableCell className="text-gray-500">{atleta.numCamisa ?? "—"}</TableCell>
+                                        <TableCell className="text-muted-foreground">{atleta.numCamisa ?? "—"}</TableCell>
                                         <TableCell className="font-medium">{atleta.nome}</TableCell>
-                                        <TableCell className="text-gray-500">{atleta.idade ?? "—"}</TableCell>
+                                        <TableCell className="text-muted-foreground">{atleta.idade ?? "—"}</TableCell>
                                         <TableCell>
                                             <Badge variant="secondary">
                                                 Ativo
@@ -206,7 +206,7 @@ export const TeamDetail = () => {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleOpenEditPlayer(atleta)}
-                                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                                    className="text-primary hover:text-primary hover:bg-primary/10"
                                                 >
                                                     Editar
                                                 </Button>
@@ -214,7 +214,7 @@ export const TeamDetail = () => {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => handleRemovePlayer(atleta.id)}
-                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                 >
                                                     Remover
                                                 </Button>

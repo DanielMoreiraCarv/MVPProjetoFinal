@@ -19,16 +19,16 @@ interface StageInfoProps {
 export const StageInfo = ({ currentStage }: StageInfoProps) => {
     if (!currentStage) {
         return (
-            <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+            <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
                 Nenhuma fase definida para esta competição.
             </div>
         );
     }
 
     return (
-        <div className="bg-white shadow-sm rounded-lg p-4 flex-1 flex flex-col gap-3">
+        <div className="bg-card shadow-sm rounded-lg p-4 flex-1 flex flex-col gap-3">
             <h2 className="text-xl font-bold">{currentStage}</h2>
-            <p className="text-sm text-gray-600">{stageDescriptions[currentStage]}</p>
+            <p className="text-sm text-muted-foreground">{stageDescriptions[currentStage]}</p>
         </div>
     );
 };

@@ -35,7 +35,7 @@ export const SumulaDetail = () => {
     if (carregando) {
         return (
             <div className="p-8">
-                <div className="bg-white shadow-sm rounded-lg p-4">Carregando partida...</div>
+                <div className="bg-card shadow-sm rounded-lg p-4">Carregando partida...</div>
             </div>
         );
     }
@@ -43,7 +43,7 @@ export const SumulaDetail = () => {
     if (!partida) {
         return (
             <div className="p-8">
-                <div className="bg-white shadow-sm rounded-lg p-4">
+                <div className="bg-card shadow-sm rounded-lg p-4">
                     {erro ?? "Partida não encontrada."}
                 </div>
             </div>
@@ -60,7 +60,7 @@ export const SumulaDetail = () => {
                 <Link href={`/campeonatos/${partida.nomeCompeticao}`} onClick={(e) => e.preventDefault()}>
                     <button
                         onClick={() => window.history.back()}
-                        className="text-sm text-gray-500 hover:text-black transition-colors"
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                         ← Voltar
                     </button>
@@ -68,9 +68,9 @@ export const SumulaDetail = () => {
             </div>
 
             {/* Header */}
-            <div className="bg-white shadow-sm rounded-lg p-6 flex flex-col gap-2">
+            <div className="bg-card shadow-sm rounded-lg p-6 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                         {partida.nomeCompeticao} · {partida.fase}
                     </p>
                     <Badge variant={partida.realizada ? "secondary" : "outline"}>
@@ -86,7 +86,7 @@ export const SumulaDetail = () => {
                 </div>
 
                 {partida.realizada && partida.vencedor && (
-                    <p className="text-center text-sm text-gray-500">
+                    <p className="text-center text-sm text-muted-foreground">
                         Vencedor: <span className="font-medium text-black">{partida.vencedor}</span>
                     </p>
                 )}
@@ -96,19 +96,19 @@ export const SumulaDetail = () => {
             {sumula ? (
                 <>
                     {/* Árbitro e status */}
-                    <div className="bg-white shadow-sm rounded-lg p-5 flex flex-col gap-3">
+                    <div className="bg-card shadow-sm rounded-lg p-5 flex flex-col gap-3">
                         <h2 className="text-base font-semibold">Dados da Súmula</h2>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <p className="text-gray-500">Árbitro</p>
+                                <p className="text-muted-foreground">Árbitro</p>
                                 <p className="font-medium">{sumula.arbitro}</p>
                             </div>
                             <div>
-                                <p className="text-gray-500">Data de Fechamento</p>
+                                <p className="text-muted-foreground">Data de Fechamento</p>
                                 <p className="font-medium">{sumula.dataFechamento ?? "—"}</p>
                             </div>
                             <div>
-                                <p className="text-gray-500">Status</p>
+                                <p className="text-muted-foreground">Status</p>
                                 <Badge variant={sumula.assinada ? "secondary" : "outline"}>
                                     {sumula.assinada ? "Assinada" : "Pendente"}
                                 </Badge>
@@ -118,11 +118,11 @@ export const SumulaDetail = () => {
 
                     {/* Ocorrências */}
                     {sumula.ocorrencias.length > 0 && (
-                        <div className="bg-white shadow-sm rounded-lg p-5 flex flex-col gap-3">
+                        <div className="bg-card shadow-sm rounded-lg p-5 flex flex-col gap-3">
                             <h2 className="text-base font-semibold">Ocorrências</h2>
                             <ul className="flex flex-col gap-1.5">
                                 {sumula.ocorrencias.map((ocorrencia, i) => (
-                                    <li key={i} className="text-sm text-gray-700 border-l-2 border-gray-200 pl-3">
+                                    <li key={i} className="text-sm text-foreground border-l-2 border-border pl-3">
                                         {ocorrencia}
                                     </li>
                                 ))}
@@ -132,14 +132,14 @@ export const SumulaDetail = () => {
 
                     {/* Observações */}
                     {sumula.observacoes && (
-                        <div className="bg-white shadow-sm rounded-lg p-5 flex flex-col gap-2">
+                        <div className="bg-card shadow-sm rounded-lg p-5 flex flex-col gap-2">
                             <h2 className="text-base font-semibold">Observações do Árbitro</h2>
-                            <p className="text-sm text-gray-700">{sumula.observacoes}</p>
+                            <p className="text-sm text-foreground">{sumula.observacoes}</p>
                         </div>
                     )}
                 </>
             ) : (
-                <div className="bg-white shadow-sm rounded-lg p-6 flex flex-col items-center gap-2 text-gray-400">
+                <div className="bg-card shadow-sm rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground">
                     <p className="text-lg font-medium">Súmula não disponível</p>
                     <p className="text-sm">
                         {partida.realizada

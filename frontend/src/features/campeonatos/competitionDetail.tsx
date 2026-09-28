@@ -108,7 +108,7 @@ export const CompetitionDetail = () => {
     if (carregando) {
         return (
             <div className="p-8">
-                <div className="border border-gray-300 p-4 rounded-md">Carregando competição...</div>
+                <div className="border border-border p-4 rounded-md">Carregando competição...</div>
             </div>
         );
     }
@@ -116,7 +116,7 @@ export const CompetitionDetail = () => {
     if (!competicao) {
         return (
             <div className="p-8">
-                <div className="border border-gray-300 p-4 rounded-md">
+                <div className="border border-border p-4 rounded-md">
                     {erro ?? "Competição não encontrada."}
                 </div>
             </div>
@@ -152,7 +152,7 @@ export const CompetitionDetail = () => {
                     ) : bracket ? (
                         <KnockoutBracket {...bracket} />
                     ) : (
-                        <p className="text-gray-400 text-sm">Chaveamento não disponível.</p>
+                        <p className="text-muted-foreground text-sm">Chaveamento não disponível.</p>
                     ),
                 },
                 {

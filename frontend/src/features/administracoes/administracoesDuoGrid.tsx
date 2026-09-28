@@ -89,12 +89,12 @@ export const AdministracoesDuoGrid = () => {
                             )}
                         </div>
                         {erro && (
-                            <div role="alert" className="p-4 text-red-600 border border-red-300 rounded-md">
+                            <div role="alert" className="p-4 text-destructive border border-destructive/40 rounded-md">
                                 {erro}
                             </div>
                         )}
                         {carregando ? (
-                            <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+                            <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
                                 Carregando administrações...
                             </div>
                         ) : (

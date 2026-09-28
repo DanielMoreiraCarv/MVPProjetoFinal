@@ -97,16 +97,16 @@ export const AddAdministrationDialog = ({ administracao, onSaved }: AddAdministr
                         />
                     </div>
                     {erro && (
-                        <p role="alert" className="text-sm text-red-600">{erro}</p>
+                        <p role="alert" className="text-sm text-destructive">{erro}</p>
                     )}
                     <DialogFooter>
-                        <DialogClose render={<Button className="border border-gray-300 bg-white text-gray-800 hover:bg-gray-50" />}>
+                        <DialogClose render={<Button className="border border-border bg-card text-foreground hover:bg-muted" />}>
                             Cancelar
                         </DialogClose>
                         <Button
                             type="submit"
                             disabled={salvando}
-                            className="bg-green-700 text-white hover:bg-green-600 disabled:opacity-60"
+                            className="bg-primary text-primary-foreground hover:bg-primary/85 disabled:opacity-60"
                         >
                             {salvando ? "Salvando..." : editando ? "Salvar" : "Criar"}
                         </Button>

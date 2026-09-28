@@ -42,7 +42,7 @@ export const AddTeamDialog = ({ onAdd }: AddTeamDialogProps) => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button className="w-full bg-green-700 text-white hover:bg-green-600" />}>
+            <DialogTrigger render={<Button className="w-full bg-primary text-primary-foreground hover:bg-primary/85" />}>
                 + Adicionar Time
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -64,10 +64,10 @@ export const AddTeamDialog = ({ onAdd }: AddTeamDialogProps) => {
                         />
                     </div>
                     <DialogFooter>
-                        <DialogClose render={<Button className="border border-gray-300 bg-white text-gray-800 hover:bg-gray-50" />}>
+                        <DialogClose render={<Button className="border border-border bg-card text-foreground hover:bg-muted" />}>
                             Cancelar
                         </DialogClose>
-                        <Button type="submit" className="bg-green-700 text-white hover:bg-green-600">Adicionar</Button>
+                        <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/85">Adicionar</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

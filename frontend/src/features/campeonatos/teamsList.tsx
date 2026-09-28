@@ -22,7 +22,7 @@ export const TeamsList = ({ equipes = [] }: TeamsListProps) => {
     if (!validationResult.success) {
         console.error("Invalid equipe data provided:", validationResult.error);
         return (
-            <div className="p-4 text-red-500 border border-red-300 rounded-md">
+            <div className="p-4 text-destructive border border-destructive/40 rounded-md">
                 Ops! Algum tipo incorreto de dados foram fornecidos. Verificar detalhes no console.
             </div>
         );
@@ -32,18 +32,18 @@ export const TeamsList = ({ equipes = [] }: TeamsListProps) => {
 
     if (validTeams.length === 0) {
         return (
-            <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+            <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
                 Nenhum time encontrado
             </div>
         );
     }
 
     return (
-        <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
+        <div className="bg-card shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
                 {validTeams.map((equipe) => (
                     <Link key={equipe.id} href={`/times/${equipe.id}`}>
-                        <Card className="cursor-pointer hover:border-gray-400 transition-colors">
+                        <Card className="cursor-pointer hover:border-ring transition-colors">
                             <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
                                     {equipe.nome}

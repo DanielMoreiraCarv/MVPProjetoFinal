@@ -37,14 +37,14 @@ function MatchCard({ partida }: { partida: BracketMatchData }) {
     return (
         <Link
             href={`/partidas/${partida.id}`}
-            className="block w-40 border border-gray-200 rounded-md bg-white p-2 text-xs shadow-sm hover:border-green-500 hover:shadow transition-all"
+            className="block w-40 border border-border rounded-md bg-card p-2 text-xs shadow-sm hover:border-primary hover:shadow transition-all"
         >
-            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeMandante ? "font-semibold text-black" : "text-gray-500"}`}>
+            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeMandante ? "font-semibold text-black" : "text-muted-foreground"}`}>
                 <span className="truncate">{partida.equipeMandante}</span>
                 <span className="shrink-0 font-mono w-4 text-right">{partida.realizada ? partida.placarMandante : "–"}</span>
             </div>
-            <div className="my-0.5 border-t border-gray-100" />
-            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeVisitante ? "font-semibold text-black" : "text-gray-500"}`}>
+            <div className="my-0.5 border-t border-border" />
+            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeVisitante ? "font-semibold text-black" : "text-muted-foreground"}`}>
                 <span className="truncate">{partida.equipeVisitante}</span>
                 <span className="shrink-0 font-mono w-4 text-right">{partida.realizada ? partida.placarVisitante : "–"}</span>
             </div>
@@ -56,7 +56,7 @@ function RoundHalf({ matches, height }: { matches: BracketMatchData[]; height: n
     return (
         <div className="flex flex-col justify-around" style={{ height }}>
             {matches.map((partida) => (
-                <div key={partida.id} className="border-r-2 border-gray-200 pr-2">
+                <div key={partida.id} className="border-r-2 border-border pr-2">
                     <MatchCard partida={partida} />
                 </div>
             ))}
@@ -70,13 +70,13 @@ export function KnockoutBracket({ topHalf, bottomHalf, final }: KnockoutBracketP
     const totalHeight = halfHeight * 2 + HALF_GAP;
 
     return (
-        <div className="overflow-x-auto rounded-lg bg-gray-50 p-4">
+        <div className="overflow-x-auto rounded-lg bg-muted/40 p-4">
             <div className="inline-flex gap-1 min-w-max">
                 {topHalf.map((topRound, idx) => {
                     const bottomRound = bottomHalf[idx];
                     return (
                         <div key={topRound.fase} className="flex flex-col w-44">
-                            <p className="text-center text-[10px] font-semibold tracking-widest uppercase text-gray-400 pb-2">
+                            <p className="text-center text-[10px] font-semibold tracking-widest uppercase text-muted-foreground pb-2">
                                 {topRound.fase}
                             </p>
                             <RoundHalf matches={topRound.matches} height={halfHeight} />
@@ -87,7 +87,7 @@ export function KnockoutBracket({ topHalf, bottomHalf, final }: KnockoutBracketP
                 })}
 
                 <div className="flex flex-col w-44">
-                    <p className="text-center text-[10px] font-semibold tracking-widest uppercase text-gray-400 pb-2">
+                    <p className="text-center text-[10px] font-semibold tracking-widest uppercase text-muted-foreground pb-2">
                         Final
                     </p>
                     <div className="flex items-center" style={{ height: totalHeight }}>

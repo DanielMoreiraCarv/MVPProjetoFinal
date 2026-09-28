@@ -35,14 +35,14 @@ const TorneiosPage = () => {
     return (
         <div className="p-8 flex-1 flex flex-col text-black">
             {erro && (
-                <div role="alert" className="mb-4 p-4 text-red-600 border border-red-300 rounded-md">
+                <div role="alert" className="mb-4 p-4 text-destructive border border-destructive/40 rounded-md">
                     {erro}
                 </div>
             )}
             <div className="grid grid-cols-3 gap-8 flex-1">
                 <div className="col-span-2 flex flex-col">
                     <h1 className="text-2xl font-bold mb-4"> Campeonatos </h1>
-                    <div className="border border-gray-300 p-4 rounded-md flex-1">
+                    <div className="border border-border p-4 rounded-md flex-1">
                         <div className="flex flex-col gap-0.75">
                             {carregando && <p>Carregando campeonatos...</p>}
                             {!carregando && competitions.length === 0 && <p>Nenhum campeonato encontrado.</p>}
@@ -65,7 +65,7 @@ const TorneiosPage = () => {
                 </div>
                 <div className="col-span-1 flex flex-col">
                     <h1 className="text-2xl font-bold mb-4">Próximos Jogos</h1>
-                    <div className="border border-gray-300 p-4 rounded-md flex-1">
+                    <div className="border border-border p-4 rounded-md flex-1">
                         <div className="flex flex-col gap-0.75">
                             {!carregando && matches.length === 0 && <p>Nenhum jogo agendado.</p>}
                             {matches.map((partida) => (
