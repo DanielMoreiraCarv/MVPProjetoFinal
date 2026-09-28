@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { ConteudoDoMenu } from "@/src/components/layout/MenuLateral";
+import { PaletaDeCompeticoes } from "@/src/components/layout/PaletaDeCompeticoes";
+import { ProvedorDeEscopo } from "@/src/lib/escopo";
 
 const CHAVE_RECOLHIDO = "tcc.menu.recolhido";
 
@@ -37,6 +39,7 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <ToastProvider>
+        <ProvedorDeEscopo>
             <div className="flex min-h-svh bg-background">
                 {/* Mesa: menu fixo, recolhível para uma trilha de ícones. */}
                 <aside
@@ -72,7 +75,9 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
                     <main className="flex min-w-0 flex-1 flex-col">{children}</main>
                 </div>
             </div>
+            <PaletaDeCompeticoes />
             <ToastViewport />
+        </ProvedorDeEscopo>
         </ToastProvider>
     );
 };

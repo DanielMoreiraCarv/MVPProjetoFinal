@@ -55,15 +55,8 @@ export const secoesDaCompeticao = (idCompeticao: number): SecaoDeMenu[] => {
             titulo: "Competição",
             itens: [
                 { rotulo: "Visão geral", href: raiz, conceito: "competicao" },
-                { rotulo: "Equipes inscritas", href: `${raiz}/equipe`, conceito: "elenco", prefixo: true },
-                { rotulo: "Fases", href: `${raiz}/fase`, conceito: "fase", prefixo: true },
-                {
-                    rotulo: "Classificação",
-                    href: `${raiz}/classificacao`,
-                    conceito: "classificacao",
-                },
-                { rotulo: "Chaveamento", href: `${raiz}/chaveamento`, conceito: "chaveamento" },
-                { rotulo: "Calendário", href: `${raiz}/partida`, conceito: "calendario", prefixo: true },
+                // Equipes inscritas, Fases, Classificação, Chaveamento e
+                // Calendário entram aqui junto com as próprias páginas.
             ],
         },
     ];

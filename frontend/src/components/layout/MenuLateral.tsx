@@ -8,11 +8,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlternarTema } from "@/src/components/AlternarTema";
 import { ICONES } from "@/src/lib/icones";
+import { useEscopo } from "@/src/lib/escopo";
+import { SeletorDeEscopo } from "@/src/components/layout/SeletorDeEscopo";
 import {
     ItemDeMenu,
     SECOES_GLOBAIS,
     SecaoDeMenu,
     itemAtivo,
+    secoesDaCompeticao,
 } from "@/src/components/layout/navegacao";
 
 const Item = ({
@@ -83,15 +86,19 @@ const Secao = ({
 
 export const ConteudoDoMenu = ({
     recolhido = false,
-    secoesDoEscopo = [],
     aoNavegar,
     aoRecolher,
 }: {
     recolhido?: boolean;
-    secoesDoEscopo?: SecaoDeMenu[];
     aoNavegar?: () => void;
     aoRecolher?: () => void;
-}) => (
+}) => {
+    const { atual } = useEscopo();
+    // A seção da competição só existe com competição escolhida: metade destas
+    // telas não tem o que mostrar sem escopo.
+    const secoesDoEscopo: SecaoDeMenu[] = atual ? secoesDaCompeticao(atual.id) : [];
+
+    return (
     <div className="flex h-full flex-col gap-1 bg-sidebar text-sidebar-foreground">
         <div
             className={cn(
@@ -109,6 +116,10 @@ export const ConteudoDoMenu = ({
                 </span>
                 {!recolhido && <span className="text-sm">Meu Torneio</span>}
             </Link>
+        </div>
+
+        <div className={cn("px-3 pb-2", recolhido && "px-2")}>
+            <SeletorDeEscopo recolhido={recolhido} />
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
@@ -143,4 +154,5 @@ export const ConteudoDoMenu = ({
             )}
         </div>
     </div>
-);
+    );
+};

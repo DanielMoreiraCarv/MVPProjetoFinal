@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { CarregandoCartoes, Erro } from "@/src/components/estado/Estados";
 import { ToggledGrid } from "@/src/components/ToggledGrid";
 import { TeamsList } from "@/src/features/campeonatos/teamsList";
 import { MatchCalendar } from "@/src/features/campeonatos/matchCalendar";
@@ -107,20 +108,12 @@ export const CompetitionDetail = () => {
 
     if (carregando) {
         return (
-            <div className="p-8">
-                <div className="border border-border p-4 rounded-md">Carregando competição...</div>
-            </div>
+            <CarregandoCartoes cartoes={3} />
         );
     }
 
     if (!competicao) {
-        return (
-            <div className="p-8">
-                <div className="border border-border p-4 rounded-md">
-                    {erro ?? "Competição não encontrada."}
-                </div>
-            </div>
-        );
+        return <Erro causa={erro ?? "Competição não encontrada."} />;
     }
 
     const isPontosCorridos = !competicao.isMataMata;
@@ -134,7 +127,7 @@ export const CompetitionDetail = () => {
     return (
         <ToggledGrid
             left={{
-                title: competicao.nome,
+                title: "Equipes",
                 content: (
                     <div className="flex flex-col gap-2">
                         <div className="flex justify-end">
