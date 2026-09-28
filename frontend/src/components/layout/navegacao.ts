@@ -60,6 +60,7 @@ export const secoesDaCompeticao = (idCompeticao: number): SecaoDeMenu[] => {
                     href: `${raiz}/classificacao`,
                     conceito: "classificacao",
                 },
+                { rotulo: "Sanções", href: `${raiz}/sancao`, conceito: "sancao" },
                 {
                     rotulo: "Calendário",
                     href: `${raiz}/partida`,
