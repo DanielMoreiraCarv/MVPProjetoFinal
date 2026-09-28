@@ -551,6 +551,25 @@ os ramos `C2→C3→C4`, `C6→C7` e `C14` são independentes entre si.
 4. Uma competição montada do zero pelo construtor, misturando fases de tipos
    diferentes, com confrontos gerados e classificação calculada pelo servidor.
 
+## Achados de domínio para a equipe decidir
+
+Coisas que apareceram durante a implementação, não são defeito claro, e a
+decisão é de domínio — não de código.
+
+**`tamanhoDoGrupo` é pista, não tamanho.** `EstrategiaDeGrupos` usa o atributo
+para derivar a quantidade de grupos (`ceil(equipes / tamanho)`) e depois valida
+a divisão por essa quantidade. Com 4 equipes e `tamanhoDoGrupo = 3`, ela forma
+**2 grupos de 2** — e passa na validação. Quem pediu grupos de 3 recebe grupos
+de 2 sem aviso. As opções são recusar quando o tamanho pedido não fecha, exigir
+`permiteGruposDesiguais` nesse caso, ou documentar que o atributo é uma
+preferência. Enquanto não se decide, o comportamento está coberto por teste,
+para não mudar sem alguém notar.
+
+**A estratégia de pontos corridos delega para a de grupos com um grupo só.**
+São a mesma disputa, e o comentário da própria `EstrategiaDeGrupos` já dizia
+isso. O que não se delega é a lista de atributos: quem monta tabela única não
+escolhe número nem tamanho de grupo.
+
 ## Fora desta sprint (registrado)
 
 Autenticação e papéis (Fase 4 do backlog), entidade `Evento` e o motor de

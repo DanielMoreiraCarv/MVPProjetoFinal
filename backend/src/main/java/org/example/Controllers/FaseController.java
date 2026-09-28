@@ -1,5 +1,10 @@
 package org.example.Controllers;
 
+import org.example.Mapper.AtributoFaseMapper;
+import org.example.Models.Response.AtributoFaseResponse;
+import org.example.Models.Request.ValorDeAtributoRequest;
+import org.example.Models.EnumFasePartida;
+import jakarta.validation.Valid;
 import org.example.Exception.NaoEncontradoException;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
@@ -170,6 +175,60 @@ public class FaseController
         {
             return ResponseEntity.badRequest().body( erro.getMessage() );
         }
+    }
+
+    /**
+     * O catálogo de configuração de um tipo de fase: quais campos ele aceita,
+     * de que tipo, obrigatórios ou não, com o valor padrão e a descrição.
+     *
+     * É o que o construtor usa para montar o formulário sozinho. Sem esta
+     * rota, cada tipo de fase precisaria dos seus campos escritos à mão na
+     * tela — e o modelo de atributos existe justamente para evitar isso.
+     */
+    @GetMapping("/atributo")
+    public ResponseEntity<List<AtributoFaseResponse>> atributosDoTipo (
+            @RequestParam EnumFasePartida tipoFase
+    )
+    {
+        return ResponseEntity.ok( faseService.atributosDoTipo( tipoFase ).stream()
+                                             .map( AtributoFaseMapper::toResponse )
+                                             .toList() );
+    }
+
+    /** O catálogo do tipo desta fase, já com o valor que ela tem em cada campo. */
+    @GetMapping("/{id}/atributo")
+    public ResponseEntity<List<AtributoFaseResponse>> atributosDaFase (
+            @PathVariable("id") Long id
+    )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        return ResponseEntity.ok( faseService.atributosDaFase( fase ) );
+    }
+
+    /** Grava um campo de configuração da fase. */
+    @PutMapping("/{id}/atributo/{codigo}")
+    public ResponseEntity<List<AtributoFaseResponse>> definirAtributo (
+            @PathVariable("id") Long id,
+            @PathVariable("codigo") String codigo,
+            @Valid @RequestBody ValorDeAtributoRequest request
+    )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        faseService.definirAtributo( fase, codigo, request.valor() );
+
+        return ResponseEntity.ok( faseService.atributosDaFase( fase ) );
     }
 
     @GetMapping("/{id}/classificacao")

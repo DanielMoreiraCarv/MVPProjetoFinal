@@ -1,10 +1,16 @@
 package org.example.Services;
 
+import org.example.Fases.ConfiguracaoDaFase;
 import org.example.Fases.OrquestradorDeFases;
+import org.example.Fases.RegistroDeEstrategias;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
 import org.example.Models.Competicao;
 import org.example.Models.Classificado;
+import org.example.Models.AtributoFase;
+import org.example.Models.EnumFasePartida;
+import org.example.Models.Response.AtributoFaseResponse;
+import org.example.Mapper.AtributoFaseMapper;
 import org.example.Models.Fase;
 import org.example.Models.Partida;
 import org.example.Models.Request.FaseCreateRequest;
@@ -29,6 +35,9 @@ public class FaseService
 
     @Autowired
     private OrquestradorDeFases orquestrador;
+
+    @Autowired
+    private RegistroDeEstrategias registro;
 
     @Autowired
     private PartidaRepository partidaRepository;
@@ -107,5 +116,32 @@ public class FaseService
     public List<Classificado> classificacaoDe ( Fase fase )
     {
         return orquestrador.classificacaoDe( fase );
+    }
+
+    /** O catálogo que a estratégia do tipo declara. */
+    public List<AtributoFase> atributosDoTipo ( EnumFasePartida tipoFase )
+    {
+        if ( !registro.conhece( tipoFase ) )
+        {
+            throw new IllegalArgumentException(
+                    "Não há estratégia registrada para o tipo de fase " + tipoFase + "." );
+        }
+        return registro.para( tipoFase ).atributosSuportados();
+    }
+
+    /** O catálogo do tipo desta fase, com o valor gravado em cada campo. */
+    public List<AtributoFaseResponse> atributosDaFase ( Fase fase )
+    {
+        ConfiguracaoDaFase configuracao = orquestrador.configuracaoDe( fase );
+
+        return atributosDoTipo( fase.getFasePartida() ).stream()
+                .map( atributo -> AtributoFaseMapper.toResponse( atributo,
+                        configuracao.texto( atributo.getCodigo() ) ) )
+                .toList();
+    }
+
+    public void definirAtributo ( Fase fase, String codigo, String valor )
+    {
+        orquestrador.definirAtributo( fase, codigo, valor );
     }
 }
