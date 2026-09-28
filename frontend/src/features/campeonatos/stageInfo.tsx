@@ -1,8 +1,8 @@
 "use client"
 
-import { CompetitionStageNames } from "@/src/lib/types/competitionStage";
+import { FaseNome } from "@/src/lib/types/fase";
 
-const stageDescriptions: Record<CompetitionStageNames, string> = {
+const stageDescriptions: Record<FaseNome, string> = {
     "Pontos Corridos": "Todos os times se enfrentam em turno e returno. A classificação final é determinada por pontos acumulados.",
     "Grupo": "Os times são divididos em grupos e se enfrentam entre si. Os melhores de cada grupo avançam para a próxima fase.",
     "16 de finais": "Fase eliminatória com 32 times. Os vencedores avançam para as oitavas de final.",
@@ -13,7 +13,7 @@ const stageDescriptions: Record<CompetitionStageNames, string> = {
 };
 
 interface StageInfoProps {
-    currentStage?: CompetitionStageNames;
+    currentStage?: FaseNome;
 }
 
 export const StageInfo = ({ currentStage }: StageInfoProps) => {

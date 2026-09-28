@@ -176,16 +176,21 @@ podman play kube deploy/postgres-local.yaml
 ./deploy/carregar-dados-de-teste.sh
 ```
 
-Aplica as migrações e carrega 2 administrações, 6 competições, 96 times,
+Aplica as migrações e carrega 2 administrações, 6 competições, 96 equipes,
 1440 atletas e 78 partidas — os mesmos registros, com os mesmos nomes, que
-estavam em `frontend/src/features/administracoes/mocks/`.
+alimentavam as telas quando elas eram mockadas.
 
 O script **apaga os dados existentes** antes de carregar. É idempotente: rode
 quantas vezes quiser para voltar ao estado conhecido.
 
-Os arquivos em `frontend/src/features/administracoes/mocks/` **não alimentam
-mais as telas** — elas leem da API. Eles continuam no repositório por serem a
-fonte do gerador descrito abaixo.
+Os arquivos de mock **não alimentam mais as telas** — elas leem da API.
+Continuam no repositório por serem a fonte do gerador descrito abaixo, e por
+isso moraram em `frontend/src/features/administracoes/mocks/` até o renome do
+vocabulário: como são escritos em inglês (`Team`, `players`, `homeTeam`, que é
+o que as expressões do gerador procuram), mantê-los dentro do front exigiria
+uma segunda cópia dos tipos em inglês lá. Foram para
+`backend/tools/dados-de-origem/`, ao lado de quem os lê, com as formas
+declaradas no próprio diretório.
 
 ### De onde o SQL vem
 
@@ -196,8 +201,8 @@ escrito à mão:
 python3 backend/tools/gerar_dados_de_teste.py
 ```
 
-O gerador lê os arquivos de mock e emite o SQL. Se os mocks mudarem, regere em
-vez de editar o `.sql`.
+O gerador lê `backend/tools/dados-de-origem/` e emite o SQL. Se a origem
+mudar, regere em vez de editar o `.sql`.
 
 ### Por que não é uma migração
 

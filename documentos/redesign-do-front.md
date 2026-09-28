@@ -400,10 +400,16 @@ não reescritos. O que muda:
 
 O que é **apagado**: `app/` inteiro exceto `layout.tsx` (reescrito) e
 `globals.css` (reescrito), `src/components/` (`Header`, `DuoGrid`,
-`ToggledGrid`), e `src/features/` inteiro. Os mocks em
-`src/features/administracoes/mocks/` **ficam onde estão** — são a fonte do
-gerador `backend/tools/gerar_dados_de_teste.py`, apagá-los quebra os dados de
-teste.
+`ToggledGrid`), e `src/features/` inteiro.
+
+Os mocks **saíram do front** no trilho 0, para
+`backend/tools/dados-de-origem/`. Eles são a fonte do gerador
+`gerar_dados_de_teste.py`, que os lê por expressão regular procurando os
+identificadores em inglês em que foram escritos (`Team`, `players`,
+`homeTeam`). Mantê-los dentro do front obrigaria a conservar uma cópia dos
+tipos em inglês só para eles — dois vocabulários no mesmo projeto, que é o que
+o renome existe para acabar. Do lado de quem os lê, ficam com as formas
+declaradas no próprio diretório e não são compilados por ninguém.
 
 ---
 
@@ -421,7 +427,15 @@ Uma PR — `refactor/vocabulario-do-glossario` — com três commits:
 |---|---|
 | Z1 | `V7__vocabulario_do_glossario.sql` com os renomes de tabela, coluna, sequência e índice. Gerador de dados de teste, `dados_de_teste.sql` regerado e o script de carga. |
 | Z2 | Renome das classes, mapeamentos, DTOs e rotas. `PUT /recurso/{id}` uniforme. |
-| Z3 | Renome dos schemas Zod, tipos, módulos de API e chamadas do front. Zero mudança visual. |
+| Z3 | Renome dos schemas Zod, tipos e módulos de API do front, e saída dos mocks para `backend/tools/dados-de-origem/`. Zero mudança visual. |
+
+O Z3 renomeia o que **sobrevive** ao redesign: `src/lib/types/` e
+`src/lib/api/`. Os identificadores em inglês que ainda há dentro de `app/` e de
+`src/features/` (`TeamDetail`, `CompetitionDetail`, `PlayerDialog`, `matchId`,
+as pastas de rota `/campeonatos` e `/times/[teamId]`) ficam como estão: esses
+arquivos são apagados em A2 e reescritos em C, e renomear identificador em
+arquivo condenado é trabalho jogado fora. As rotas passam ao vocabulário novo em
+A2/A3, junto com o mapa de navegação.
 
 Verificação no fim da branch, não por commit: `mvn test` e `yarn build` verdes,
 ambiente subindo do zero (`limpar` + `subir`) e as seis telas atuais carregando

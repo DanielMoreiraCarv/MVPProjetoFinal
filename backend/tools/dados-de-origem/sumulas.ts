@@ -1,4 +1,4 @@
-import { Sumula } from "@/src/lib/types/sumula";
+import { Sumula } from "./tipos";
 
 export const mockSumulas: Sumula[] = [
     // ── COMP 1 — FundII Masc ──────────────────────────────────────────

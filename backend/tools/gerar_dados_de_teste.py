@@ -9,16 +9,22 @@ e novo em cima do mesmo cenário.
 
 Regenera backend/src/main/resources/db/seed/dados_de_teste.sql.
 
-Os mocks são a entrada e continuam em inglês (`Team`, `players`, `homeTeam`):
-é o formato em que foram escritos e é o que as expressões daqui leem. A saída
-segue o vocabulário do glossário — competição, equipe, atleta.
+A entrada vive em `dados-de-origem/`, ao lado deste arquivo, e continua em
+inglês (`Team`, `players`, `homeTeam`): é o formato em que foi escrita e é o que
+as expressões daqui leem. A saída segue o vocabulário do glossário — competição,
+equipe, atleta.
+
+Esses arquivos moravam em `frontend/src/features/administracoes/mocks/`, onde
+alimentavam as telas antes de elas lerem da API. Vieram para cá quando o front
+passou ao vocabulário do glossário: manter uma cópia dos tipos em inglês dentro
+do front só para eles seria carregar dois vocabulários no mesmo projeto.
 """
 import json
 import re
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
-MOCKS = RAIZ / "frontend/src/features/administracoes/mocks"
+ORIGEM = Path(__file__).resolve().parent / "dados-de-origem"
 SAIDA = RAIZ / "backend/src/main/resources/db/seed/dados_de_teste.sql"
 
 CATEGORIA = {"Masculino": "Masculino", "Feminino": "Feminino"}
@@ -38,7 +44,7 @@ ESTAGIO = {
 
 
 def texto(caminho):
-    return (MOCKS / caminho).read_text()
+    return (ORIGEM / caminho).read_text()
 
 
 def aspas(valor):
@@ -179,7 +185,7 @@ def gerar():
 
 begin;
 
-delete from sumula_ocorrencias;
+delete from sumula_ocorrencia;
 delete from sumula;
 delete from partida;
 delete from competicao_equipe;

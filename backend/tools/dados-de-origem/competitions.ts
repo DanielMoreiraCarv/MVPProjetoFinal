@@ -1,6 +1,5 @@
-import { Competition } from "@/src/lib/types/competition";
-import { competitionStageNamesSchema } from "@/src/lib/types/competitionStage";
-import { mockTeams } from "@/src/features/administracoes/mocks/teams";
+import { Competition, competitionStageNamesSchema } from "./tipos";
+import { mockTeams } from "./teams";
 
 const football = "Futebol";
 

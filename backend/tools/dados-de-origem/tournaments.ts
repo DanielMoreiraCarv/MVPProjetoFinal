@@ -1,5 +1,5 @@
-import { Tournaments } from "@/src/lib/types/tournaments";
-import { mockCompetitions } from "@/src/features/administracoes/mocks/competitions";
+import { Tournaments } from "./tipos";
+import { mockCompetitions } from "./competitions";
 
 export const mockTournaments: Tournaments[] = [
     {

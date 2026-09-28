@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/card";
 import { listarCompeticoes } from "@/src/lib/api/competicoes";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
-import { Competition } from "@/src/lib/types/competition";
-import { Match } from "@/src/lib/types/match";
+import { Competicao } from "@/src/lib/types/competicao";
+import { Partida } from "@/src/lib/types/partida";
 
 const TorneiosPage = () => {
-    const [competitions, setCompetitions] = useState<Competition[]>([]);
-    const [matches, setMatches] = useState<Match[]>([]);
+    const [competitions, setCompetitions] = useState<Competicao[]>([]);
+    const [matches, setMatches] = useState<Partida[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<string | null>(null);
 
@@ -23,9 +23,9 @@ const TorneiosPage = () => {
             .then(async (todas) => {
                 setCompetitions(todas);
                 const porCompeticao = await Promise.all(
-                    todas.map((competition) => listarPartidasDaCompeticao(competition.id)),
+                    todas.map((competicao) => listarPartidasDaCompeticao(competicao.id)),
                 );
-                setMatches(porCompeticao.flat().filter((match) => !match.finished));
+                setMatches(porCompeticao.flat().filter((partida) => !partida.realizada));
             })
             .catch((causa) =>
                 setErro(causa instanceof Error ? causa.message : "Não foi possível carregar os campeonatos."))
@@ -46,16 +46,16 @@ const TorneiosPage = () => {
                         <div className="flex flex-col gap-0.75">
                             {carregando && <p>Carregando campeonatos...</p>}
                             {!carregando && competitions.length === 0 && <p>Nenhum campeonato encontrado.</p>}
-                            {competitions.map((competition) => (
-                                <Card key={competition.id}>
+                            {competitions.map((competicao) => (
+                                <Card key={competicao.id}>
                                     <CardHeader>
                                         <CardTitle>
-                                            {competition.name}
+                                            {competicao.nome}
                                         </CardTitle>
                                         <CardDescription className="whitespace-pre-wrap">
-                                            {competition.description}
+                                            {competicao.descricao}
                                             {"\n"}
-                                            {competition.sport} - {competition.modality}
+                                            {competicao.modalidade} - {competicao.categoria}
                                         </CardDescription>
                                     </CardHeader>
                                 </Card>
@@ -68,17 +68,17 @@ const TorneiosPage = () => {
                     <div className="border border-gray-300 p-4 rounded-md flex-1">
                         <div className="flex flex-col gap-0.75">
                             {!carregando && matches.length === 0 && <p>Nenhum jogo agendado.</p>}
-                            {matches.map((match) => (
-                                <Card key={match.id}>
+                            {matches.map((partida) => (
+                                <Card key={partida.id}>
                                     <CardHeader>
                                         <CardTitle>
-                                            {match.homeTeam} vs {match.awayTeam}
+                                            {partida.equipeMandante} vs {partida.equipeVisitante}
                                         </CardTitle>
                                         <CardDescription>
-                                            {match.competitionName}
+                                            {partida.nomeCompeticao}
                                         </CardDescription>
                                         <CardDescription>
-                                            {match.stageName}
+                                            {partida.fase}
                                         </CardDescription>
                                     </CardHeader>
                                 </Card>

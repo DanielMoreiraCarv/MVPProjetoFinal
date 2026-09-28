@@ -14,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Team } from "@/src/lib/types/team";
+import { Equipe } from "@/src/lib/types/equipe";
 
 interface AddTeamDialogProps {
-    onAdd: (team: Team) => void;
+    onAdd: (equipe: Equipe) => void;
 }
 
-const football = { id: 1, name: "Futebol" as const, description: "Futebol associação" };
+const football = { id: 1, nome: "Futebol" as const, atletasEmQuadra: 0 };
 
 export const AddTeamDialog = ({ onAdd }: AddTeamDialogProps) => {
     const [open, setOpen] = useState(false);
@@ -29,11 +29,11 @@ export const AddTeamDialog = ({ onAdd }: AddTeamDialogProps) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) return;
-        const newTeam: Team = {
+        const newTeam: Equipe = {
             id: Date.now(),
-            name: name.trim(),
-            sport: football,
-            players: [],
+            nome: name.trim(),
+            modalidade: football,
+            atletas: [],
         };
         onAdd(newTeam);
         setName("");
@@ -54,9 +54,9 @@ export const AddTeamDialog = ({ onAdd }: AddTeamDialogProps) => {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="team-name">Nome do time *</Label>
+                        <Label htmlFor="equipe-name">Nome do time *</Label>
                         <Input
-                            id="team-name"
+                            id="equipe-name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Ex: Leões do Norte"

@@ -13,19 +13,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Player } from "@/src/lib/types/player";
+import { Atleta } from "@/src/lib/types/atleta";
 import { criarAtleta, atualizarAtleta } from "@/src/lib/api/atletas";
 
 interface PlayerDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    player?: Player;
-    idTime: number;
-    onSubmit: (player: Player) => void;
+    atleta?: Atleta;
+    idEquipe: number;
+    onSubmit: (atleta: Atleta) => void;
 }
 
-export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: PlayerDialogProps) => {
-    const isEditing = !!player;
+export const PlayerDialog = ({ open, onOpenChange, atleta, idEquipe, onSubmit }: PlayerDialogProps) => {
+    const isEditing = !!atleta;
 
     const [name, setName] = useState("");
     const [number, setNumber] = useState("");
@@ -36,11 +36,11 @@ export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: P
     useEffect(() => {
         if (open) {
             setErro(null);
-            setName(player?.name ?? "");
-            setNumber(player?.number?.toString() ?? "");
-            setAge(player?.age?.toString() ?? "");
+            setName(atleta?.nome ?? "");
+            setNumber(atleta?.numCamisa?.toString() ?? "");
+            setAge(atleta?.idade?.toString() ?? "");
         }
-    }, [open, player]);
+    }, [open, atleta]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,11 +52,11 @@ export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: P
                 nome: name.trim(),
                 numCamisa: number ? Number(number) : undefined,
                 idade: age ? Number(age) : undefined,
-                idTime,
+                idEquipe,
             };
 
             const salvo = isEditing
-                ? await atualizarAtleta(player.id, entrada)
+                ? await atualizarAtleta(atleta.id, entrada)
                 : await criarAtleta(entrada);
 
             onSubmit(salvo);
@@ -79,9 +79,9 @@ export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: P
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="player-name">Nome *</Label>
+                        <Label htmlFor="atleta-name">Nome *</Label>
                         <Input
-                            id="player-name"
+                            id="atleta-name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Nome do jogador"
@@ -89,9 +89,9 @@ export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: P
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="player-number">Número da camisa</Label>
+                        <Label htmlFor="atleta-number">Número da camisa</Label>
                         <Input
-                            id="player-number"
+                            id="atleta-number"
                             type="number"
                             value={number}
                             onChange={(e) => setNumber(e.target.value)}
@@ -101,9 +101,9 @@ export const PlayerDialog = ({ open, onOpenChange, player, idTime, onSubmit }: P
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="player-age">Idade</Label>
+                        <Label htmlFor="atleta-age">Idade</Label>
                         <Input
-                            id="player-age"
+                            id="atleta-age"
                             type="number"
                             value={age}
                             onChange={(e) => setAge(e.target.value)}

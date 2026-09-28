@@ -12,23 +12,23 @@ import { StandingsTable, StandingEntry } from "@/src/features/campeonatos/Standi
 import { KnockoutBracket, KnockoutBracketProps, BracketMatchData } from "@/src/features/campeonatos/KnockoutBracket";
 import { buscarCompeticao } from "@/src/lib/api/competicoes";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
-import { Match } from "@/src/lib/types/match";
-import { Team } from "@/src/lib/types/team";
-import { Competition } from "@/src/lib/types/competition";
+import { Partida } from "@/src/lib/types/partida";
+import { Equipe } from "@/src/lib/types/equipe";
+import { Competicao } from "@/src/lib/types/competicao";
 
 const BRACKET_STAGE_ORDER = ["16 de finais", "Oitavas", "Quartas", "Semi-finais"] as const;
 
-function computeStandings(matches: Match[]): StandingEntry[] {
+function computeStandings(matches: Partida[]): StandingEntry[] {
     const stats: Record<string, { wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number }> = {};
 
-    for (const match of matches) {
-        if (!match.finished) continue;
-        const home = match.homeTeam;
-        const away = match.awayTeam;
+    for (const partida of matches) {
+        if (!partida.realizada) continue;
+        const home = partida.equipeMandante;
+        const away = partida.equipeVisitante;
         if (!stats[home]) stats[home] = { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
         if (!stats[away]) stats[away] = { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
-        const hg = match.homeScore ?? 0;
-        const ag = match.awayScore ?? 0;
+        const hg = partida.placarMandante ?? 0;
+        const ag = partida.placarVisitante ?? 0;
         stats[home].goalsFor += hg;
         stats[home].goalsAgainst += ag;
         stats[away].goalsFor += ag;
@@ -55,19 +55,19 @@ function computeStandings(matches: Match[]): StandingEntry[] {
     return entries.map((e, i) => ({ ...e, position: i + 1 }));
 }
 
-function toBracketMatch(m: Match): BracketMatchData {
-    return { id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, homeScore: m.homeScore, awayScore: m.awayScore, winner: m.winner, date: m.date, finished: m.finished };
+function toBracketMatch(m: Partida): BracketMatchData {
+    return { id: m.id, homeTeam: m.equipeMandante, awayTeam: m.equipeVisitante, homeScore: m.placarMandante, awayScore: m.placarVisitante, winner: m.vencedor, date: "", finished: m.realizada };
 }
 
-function computeBracket(matches: Match[]): KnockoutBracketProps | null {
-    const finalMatch = matches.find(m => m.stageName === "Final");
+function computeBracket(matches: Partida[]): KnockoutBracketProps | null {
+    const finalMatch = matches.find(m => m.fase === "Final");
     if (!finalMatch) return null;
 
     const topHalf: KnockoutBracketProps["topHalf"] = [];
     const bottomHalf: KnockoutBracketProps["bottomHalf"] = [];
 
     for (const stageName of BRACKET_STAGE_ORDER) {
-        const stageMatches = matches.filter(m => m.stageName === stageName).sort((a, b) => a.id - b.id);
+        const stageMatches = matches.filter(m => m.fase === stageName).sort((a, b) => a.id - b.id);
         if (stageMatches.length === 0) continue;
         const mid = Math.ceil(stageMatches.length / 2);
         topHalf.push({ stageName, matches: stageMatches.slice(0, mid).map(toBracketMatch) });
@@ -81,9 +81,9 @@ export const CompetitionDetail = () => {
     const params = useParams<{ id: string }>();
     const competitionId = Number(params?.id);
 
-    const [competition, setCompetition] = useState<Competition | null>(null);
-    const [teams, setTeams] = useState<Team[]>([]);
-    const [competitionMatches, setCompetitionMatches] = useState<Match[]>([]);
+    const [competicao, setCompetition] = useState<Competicao | null>(null);
+    const [equipes, setTeams] = useState<Equipe[]>([]);
+    const [competitionMatches, setCompetitionMatches] = useState<Partida[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<string | null>(null);
 
@@ -97,7 +97,7 @@ export const CompetitionDetail = () => {
         ])
             .then(([encontrada, partidas]) => {
                 setCompetition(encontrada);
-                setTeams(encontrada.teams);
+                setTeams(encontrada.equipes);
                 setCompetitionMatches(partidas);
             })
             .catch((causa) =>
@@ -113,7 +113,7 @@ export const CompetitionDetail = () => {
         );
     }
 
-    if (!competition) {
+    if (!competicao) {
         return (
             <div className="p-8">
                 <div className="border border-gray-300 p-4 rounded-md">
@@ -123,24 +123,24 @@ export const CompetitionDetail = () => {
         );
     }
 
-    const isPontosCorridos = competition.currentStage === "Pontos Corridos";
+    const isPontosCorridos = !competicao.isMataMata;
     const standings = isPontosCorridos ? computeStandings(competitionMatches) : [];
     const bracket = !isPontosCorridos ? computeBracket(competitionMatches) : null;
 
-    const handleAddTeam = (team: Team) => {
-        setTeams((prev) => [...prev, team]);
+    const handleAddTeam = (equipe: Equipe) => {
+        setTeams((prev) => [...prev, equipe]);
     };
 
     return (
         <ToggledGrid
             left={{
-                title: competition.name,
+                title: competicao.nome,
                 content: (
                     <div className="flex flex-col gap-2">
                         <div className="flex justify-end">
                             <AddTeamDialog onAdd={handleAddTeam} />
                         </div>
-                        <TeamsList teams={teams} />
+                        <TeamsList equipes={equipes} />
                     </div>
                 ),
             }}
@@ -161,11 +161,11 @@ export const CompetitionDetail = () => {
                 },
                 {
                     title: "Dados",
-                    content: <EditCompetitionForm competition={competition} />,
+                    content: <EditCompetitionForm competicao={competicao} />,
                 },
                 {
                     title: "Fase Atual",
-                    content: <StageInfo currentStage={competition.currentStage} />,
+                    content: <StageInfo currentStage={competicao.isMataMata ? undefined : "Pontos Corridos"} />,
                 },
             ]}
         />

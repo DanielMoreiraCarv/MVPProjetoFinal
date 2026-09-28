@@ -6,15 +6,15 @@ import { AdministrationsList } from "@/src/features/administracoes/administatrio
 import { CompetitionsList } from "@/src/features/administracoes/competitionsList";
 import { AddAdministrationDialog } from "@/src/features/administracoes/addAdministrationDialog";
 import { AddCompetitionDialog } from "@/src/features/administracoes/addCompetitionDialog";
-import { Tournaments } from "@/src/lib/types/tournaments";
-import { Competition } from "@/src/lib/types/competition";
+import { Administracao } from "@/src/lib/types/administracao";
+import { Competicao } from "@/src/lib/types/competicao";
 import { listarAdministracoes } from "@/src/lib/api/administracoes";
 import { listarCompeticoes } from "@/src/lib/api/competicoes";
 
 export const AdministracoesDuoGrid = () => {
-    const [tournaments, setTournaments] = useState<Tournaments[]>([]);
-    const [selecionada, setSelecionada] = useState<Tournaments | null>(null);
-    const [competitions, setCompetitions] = useState<Competition[]>([]);
+    const [tournaments, setTournaments] = useState<Administracao[]>([]);
+    const [selecionada, setSelecionada] = useState<Administracao | null>(null);
+    const [competitions, setCompetitions] = useState<Competicao[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<string | null>(null);
 
@@ -26,9 +26,9 @@ export const AdministracoesDuoGrid = () => {
         }
     }, []);
 
-    const selecionar = (tournament: Tournaments) => {
-        setSelecionada(tournament);
-        carregarCompeticoes(tournament.id);
+    const selecionar = (administracao: Administracao) => {
+        setSelecionada(administracao);
+        carregarCompeticoes(administracao.id);
     };
 
     const carregar = useCallback(async () => {
@@ -56,7 +56,7 @@ export const AdministracoesDuoGrid = () => {
         carregar();
     }, [carregar]);
 
-    const aoSalvar = (salva: Tournaments) => {
+    const aoSalvar = (salva: Administracao) => {
         setTournaments((atuais) => {
             const jaExiste = atuais.some((a) => a.id === salva.id);
             return jaExiste ? atuais.map((a) => (a.id === salva.id ? salva : a)) : [...atuais, salva];
@@ -65,7 +65,7 @@ export const AdministracoesDuoGrid = () => {
         carregarCompeticoes(salva.id);
     };
 
-    const aoSalvarCompeticao = (salva: Competition) => {
+    const aoSalvarCompeticao = (salva: Competicao) => {
         setCompetitions((atuais) => {
             const jaExiste = atuais.some((c) => c.id === salva.id);
             return jaExiste ? atuais.map((c) => (c.id === salva.id ? salva : c)) : [...atuais, salva];

@@ -11,11 +11,17 @@ export interface BracketMatchData {
     winner?: string;
     date: string;
     finished: boolean;
+    equipeMandante?: string;
+    equipeVisitante?: string;
+    placarMandante?: number;
+    placarVisitante?: number;
+    realizada?: boolean;
 }
 
 export interface BracketRound {
     stageName: string;
     matches: BracketMatchData[];
+    fase?: string;
 }
 
 export interface KnockoutBracketProps {
@@ -27,20 +33,20 @@ export interface KnockoutBracketProps {
 const SLOT_HEIGHT = 88;
 const HALF_GAP = 48;
 
-function MatchCard({ match }: { match: BracketMatchData }) {
+function MatchCard({ partida }: { partida: BracketMatchData }) {
     return (
         <Link
-            href={`/partidas/${match.id}`}
+            href={`/partidas/${partida.id}`}
             className="block w-40 border border-gray-200 rounded-md bg-white p-2 text-xs shadow-sm hover:border-green-500 hover:shadow transition-all"
         >
-            <div className={`flex items-center justify-between gap-1 ${match.winner === match.homeTeam ? "font-semibold text-black" : "text-gray-500"}`}>
-                <span className="truncate">{match.homeTeam}</span>
-                <span className="shrink-0 font-mono w-4 text-right">{match.finished ? match.homeScore : "–"}</span>
+            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeMandante ? "font-semibold text-black" : "text-gray-500"}`}>
+                <span className="truncate">{partida.equipeMandante}</span>
+                <span className="shrink-0 font-mono w-4 text-right">{partida.realizada ? partida.placarMandante : "–"}</span>
             </div>
             <div className="my-0.5 border-t border-gray-100" />
-            <div className={`flex items-center justify-between gap-1 ${match.winner === match.awayTeam ? "font-semibold text-black" : "text-gray-500"}`}>
-                <span className="truncate">{match.awayTeam}</span>
-                <span className="shrink-0 font-mono w-4 text-right">{match.finished ? match.awayScore : "–"}</span>
+            <div className={`flex items-center justify-between gap-1 ${partida.winner === partida.equipeVisitante ? "font-semibold text-black" : "text-gray-500"}`}>
+                <span className="truncate">{partida.equipeVisitante}</span>
+                <span className="shrink-0 font-mono w-4 text-right">{partida.realizada ? partida.placarVisitante : "–"}</span>
             </div>
         </Link>
     );
@@ -49,9 +55,9 @@ function MatchCard({ match }: { match: BracketMatchData }) {
 function RoundHalf({ matches, height }: { matches: BracketMatchData[]; height: number }) {
     return (
         <div className="flex flex-col justify-around" style={{ height }}>
-            {matches.map((match) => (
-                <div key={match.id} className="border-r-2 border-gray-200 pr-2">
-                    <MatchCard match={match} />
+            {matches.map((partida) => (
+                <div key={partida.id} className="border-r-2 border-gray-200 pr-2">
+                    <MatchCard partida={partida} />
                 </div>
             ))}
         </div>
@@ -69,9 +75,9 @@ export function KnockoutBracket({ topHalf, bottomHalf, final }: KnockoutBracketP
                 {topHalf.map((topRound, idx) => {
                     const bottomRound = bottomHalf[idx];
                     return (
-                        <div key={topRound.stageName} className="flex flex-col w-44">
+                        <div key={topRound.fase} className="flex flex-col w-44">
                             <p className="text-center text-[10px] font-semibold tracking-widest uppercase text-gray-400 pb-2">
-                                {topRound.stageName}
+                                {topRound.fase}
                             </p>
                             <RoundHalf matches={topRound.matches} height={halfHeight} />
                             <div style={{ height: HALF_GAP }} />
@@ -85,7 +91,7 @@ export function KnockoutBracket({ topHalf, bottomHalf, final }: KnockoutBracketP
                         Final
                     </p>
                     <div className="flex items-center" style={{ height: totalHeight }}>
-                        <MatchCard match={final} />
+                        <MatchCard partida={final} />
                     </div>
                 </div>
             </div>

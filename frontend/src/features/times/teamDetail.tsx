@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Player } from "@/src/lib/types/player";
+import { Atleta } from "@/src/lib/types/atleta";
 import {
     Table,
     TableBody,
@@ -27,17 +27,17 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { PlayerDialog } from "@/src/features/times/PlayerDialog";
-import { listarAtletasDoTime, removerAtleta } from "@/src/lib/api/atletas";
-import { buscarTime } from "@/src/lib/api/times";
-import { Team } from "@/src/lib/types/team";
+import { listarAtletasDaEquipe, removerAtleta } from "@/src/lib/api/atletas";
+import { buscarEquipe } from "@/src/lib/api/equipes";
+import { Equipe } from "@/src/lib/types/equipe";
 
 export const TeamDetail = () => {
     const params = useParams<{ teamId: string }>();
     const teamId = Number(params?.teamId);
 
-    const [team, setTeam] = useState<Team | null>(null);
+    const [equipe, setTeam] = useState<Equipe | null>(null);
 
-    const [players, setPlayers] = useState<Player[]>([]);
+    const [players, setPlayers] = useState<Atleta[]>([]);
     const [carregandoAtletas, setCarregandoAtletas] = useState(true);
     const [erroAtletas, setErroAtletas] = useState<string | null>(null);
     const [teamName, setTeamName] = useState("");
@@ -46,17 +46,17 @@ export const TeamDetail = () => {
     const [renameValue, setRenameValue] = useState("");
 
     const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
-    const [editingPlayer, setEditingPlayer] = useState<Player | undefined>(undefined);
+    const [editingPlayer, setEditingPlayer] = useState<Atleta | undefined>(undefined);
 
     useEffect(() => {
         if (!Number.isFinite(teamId)) return;
 
         setCarregandoAtletas(true);
-        buscarTime(teamId)
+        buscarEquipe(teamId)
             .then((encontrado) => {
                 setTeam(encontrado);
-                setTeamName(encontrado.name);
-                return listarAtletasDoTime(teamId);
+                setTeamName(encontrado.nome);
+                return listarAtletasDaEquipe(teamId);
             })
             .then(setPlayers)
             .catch((causa) =>
@@ -64,7 +64,7 @@ export const TeamDetail = () => {
             .finally(() => setCarregandoAtletas(false));
     }, [teamId]);
 
-    if (carregandoAtletas && !team) {
+    if (carregandoAtletas && !equipe) {
         return (
             <div className="p-8">
                 <div className="bg-white shadow-sm rounded-lg p-4">Carregando time...</div>
@@ -72,7 +72,7 @@ export const TeamDetail = () => {
         );
     }
 
-    if (!team) {
+    if (!equipe) {
         return (
             <div className="p-8">
                 <div className="bg-white shadow-sm rounded-lg p-4">
@@ -87,12 +87,12 @@ export const TeamDetail = () => {
         setPlayerDialogOpen(true);
     };
 
-    const handleOpenEditPlayer = (player: Player) => {
-        setEditingPlayer(player);
+    const handleOpenEditPlayer = (atleta: Atleta) => {
+        setEditingPlayer(atleta);
         setPlayerDialogOpen(true);
     };
 
-    const handlePlayerSubmit = (updated: Player) => {
+    const handlePlayerSubmit = (updated: Atleta) => {
         if (editingPlayer) {
             setPlayers((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
         } else {
@@ -134,7 +134,7 @@ export const TeamDetail = () => {
                 <div>
                     <h1 className="text-2xl font-bold">{teamName}</h1>
                     <p className="text-gray-500 text-sm mt-1">
-                        {team.sport.name} · {players.length} jogador{players.length !== 1 ? "es" : ""}
+                        {equipe.modalidade.nome} · {players.length} jogador{players.length !== 1 ? "es" : ""}
                     </p>
                 </div>
                 <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
@@ -148,9 +148,9 @@ export const TeamDetail = () => {
                         </DialogHeader>
                         <form onSubmit={handleRenameSubmit} className="flex flex-col gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <Label htmlFor="team-rename">Nome do time *</Label>
+                                <Label htmlFor="equipe-rename">Nome do time *</Label>
                                 <Input
-                                    id="team-rename"
+                                    id="equipe-rename"
                                     value={renameValue}
                                     onChange={(e) => setRenameValue(e.target.value)}
                                     placeholder="Novo nome"
@@ -190,14 +190,14 @@ export const TeamDetail = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                players.map((player) => (
-                                    <TableRow key={player.id}>
-                                        <TableCell className="text-gray-500">{player.number ?? "—"}</TableCell>
-                                        <TableCell className="font-medium">{player.name}</TableCell>
-                                        <TableCell className="text-gray-500">{player.age ?? "—"}</TableCell>
+                                players.map((atleta) => (
+                                    <TableRow key={atleta.id}>
+                                        <TableCell className="text-gray-500">{atleta.numCamisa ?? "—"}</TableCell>
+                                        <TableCell className="font-medium">{atleta.nome}</TableCell>
+                                        <TableCell className="text-gray-500">{atleta.idade ?? "—"}</TableCell>
                                         <TableCell>
-                                            <Badge variant={player.suspended ? "destructive" : "secondary"}>
-                                                {player.suspended ? "Suspenso" : "Ativo"}
+                                            <Badge variant="secondary">
+                                                Ativo
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
@@ -205,7 +205,7 @@ export const TeamDetail = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => handleOpenEditPlayer(player)}
+                                                    onClick={() => handleOpenEditPlayer(atleta)}
                                                     className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                                                 >
                                                     Editar
@@ -213,7 +213,7 @@ export const TeamDetail = () => {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={() => handleRemovePlayer(player.id)}
+                                                    onClick={() => handleRemovePlayer(atleta.id)}
                                                     className="text-red-500 hover:text-red-700 hover:bg-red-50"
                                                 >
                                                     Remover
@@ -229,10 +229,10 @@ export const TeamDetail = () => {
             </div>
 
             <PlayerDialog
-                idTime={teamId}
+                idEquipe={teamId}
                 open={playerDialogOpen}
                 onOpenChange={setPlayerDialogOpen}
-                player={editingPlayer}
+                atleta={editingPlayer}
                 onSubmit={handlePlayerSubmit}
             />
         </div>

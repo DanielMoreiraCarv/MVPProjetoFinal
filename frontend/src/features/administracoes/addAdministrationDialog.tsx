@@ -15,27 +15,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tournaments } from "@/src/lib/types/tournaments";
+import { Administracao } from "@/src/lib/types/administracao";
 import { criarAdministracao, atualizarAdministracao } from "@/src/lib/api/administracoes";
 
 interface AddAdministrationDialogProps {
-    administracao?: Tournaments;
-    onSaved?: (administracao: Tournaments) => void;
+    administracao?: Administracao;
+    onSaved?: (administracao: Administracao) => void;
 }
 
 export const AddAdministrationDialog = ({ administracao, onSaved }: AddAdministrationDialogProps) => {
     const editando = !!administracao;
     const [open, setOpen] = useState(false);
-    const [name, setName] = useState(administracao?.name ?? "");
-    const [description, setDescription] = useState(administracao?.description ?? "");
+    const [name, setName] = useState(administracao?.nome ?? "");
+    const [description, setDescription] = useState(administracao?.descricao ?? "");
     const [salvando, setSalvando] = useState(false);
     const [erro, setErro] = useState<string | null>(null);
 
     const aoAbrir = (aberto: boolean) => {
         setOpen(aberto);
         if (aberto) {
-            setName(administracao?.name ?? "");
-            setDescription(administracao?.description ?? "");
+            setName(administracao?.nome ?? "");
+            setDescription(administracao?.descricao ?? "");
             setErro(null);
         }
     };

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Competition } from "@/src/lib/types/competition";
+import { Competicao } from "@/src/lib/types/competicao";
 import { listarModalidades, Modalidade } from "@/src/lib/api/modalidades";
 import { criarCompeticao, atualizarCompeticao } from "@/src/lib/api/competicoes";
 
@@ -25,8 +25,8 @@ const TIPOS = ["Pontos Corridos", "Mata-Mata"];
 
 interface AddCompetitionDialogProps {
     idAdministracao?: number;
-    competicao?: Competition;
-    onSaved?: (competicao: Competition) => void;
+    competicao?: Competicao;
+    onSaved?: (competicao: Competicao) => void;
 }
 
 export const AddCompetitionDialog = ({ idAdministracao, competicao, onSaved }: AddCompetitionDialogProps) => {
@@ -57,10 +57,10 @@ export const AddCompetitionDialog = ({ idAdministracao, competicao, onSaved }: A
     const aoAbrir = (aberto: boolean) => {
         setOpen(aberto);
         if (aberto) {
-            setName(competicao?.name ?? "");
-            setDescription(competicao?.description ?? "");
-            setCategoria([competicao?.modality || "Masculino"]);
-            setTipo([competicao?.currentStage === "Pontos Corridos" || !editando ? "Pontos Corridos" : "Mata-Mata"]);
+            setName(competicao?.nome ?? "");
+            setDescription(competicao?.descricao ?? "");
+            setCategoria([competicao?.categoria || "Masculino"]);
+            setTipo([!competicao?.isMataMata || !editando ? "Pontos Corridos" : "Mata-Mata"]);
             setModalidadeId(competicao?.modalidadeId ? [String(competicao.modalidadeId)] : []);
             setErro(null);
         }
@@ -69,7 +69,7 @@ export const AddCompetitionDialog = ({ idAdministracao, competicao, onSaved }: A
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const administracaoAlvo = competicao?.administracaoId ?? idAdministracao;
+        const administracaoAlvo = competicao?.idAdministracao ?? idAdministracao;
         if (!administracaoAlvo) {
             setErro("Selecione uma administração antes de criar a competição.");
             return;

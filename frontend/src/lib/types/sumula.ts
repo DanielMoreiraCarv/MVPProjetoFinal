@@ -2,12 +2,12 @@ import { z } from "zod";
 
 export const sumulaSchema = z.object({
     id: z.number(),
-    matchId: z.number(),
+    idPartida: z.number(),
     arbitro: z.string(),
-    golsMandante: z.number(),
-    golsVisitante: z.number(),
+    placarMandante: z.number(),
+    placarVisitante: z.number(),
     ocorrencias: z.array(z.string()),
-    observacoesRelatadas: z.string(),
+    observacoes: z.string(),
     dataFechamento: z.string().optional(),
     assinada: z.boolean(),
 });

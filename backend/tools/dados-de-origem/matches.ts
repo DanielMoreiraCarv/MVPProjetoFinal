@@ -1,5 +1,4 @@
-import { Match } from "@/src/lib/types/match";
-import { competitionStageNamesSchema } from "@/src/lib/types/competitionStage";
+import { Match, competitionStageNamesSchema } from "./tipos";
 
 const s = competitionStageNamesSchema.enum;
 

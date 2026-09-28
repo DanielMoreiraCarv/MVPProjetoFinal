@@ -7,19 +7,19 @@ import {
     CardDescription
 } from "@/components/ui/card";
 import Link from "next/link";
-import { Competition, competitionSchema } from "@/src/lib/types/competition";
+import { Competicao, competicaoSchema } from "@/src/lib/types/competicao";
 import { z } from "zod";
 
 interface CompetitionsListProps {
-    competitions?: Competition[];
+    competitions?: Competicao[];
 }
 
 export const CompetitionsList =({ competitions = [] }: CompetitionsListProps) => {
-    const listSchema = z.array(competitionSchema);
+    const listSchema = z.array(competicaoSchema);
     const validationResult = listSchema.safeParse(competitions);
 
     if (!validationResult.success) {
-        console.error("Invalid competition data provided:", validationResult.error);
+        console.error("Invalid competicao data provided:", validationResult.error);
         return (
             <div className="p-4 text-red-500 border border-red-300 rounded-md">
                 Ops! Algum tipo incorreto de dados foram fornecidos. Verificar detalhes no console.
@@ -41,18 +41,18 @@ export const CompetitionsList =({ competitions = [] }: CompetitionsListProps) =>
         <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
                 {
-                    validCompetitions.map((competition) => (
-                        <Card key={competition.id}>
+                    validCompetitions.map((competicao) => (
+                        <Card key={competicao.id}>
                             <CardHeader>
                                 <CardTitle>
-                                    <Link href={`/campeonatos/${competition.id}`}>
-                                        {competition.name}
+                                    <Link href={`/campeonatos/${competicao.id}`}>
+                                        {competicao.nome}
                                     </Link>
                                 </CardTitle>
                                 <CardDescription className="whitespace-pre-wrap">
-                                    {competition.description}
+                                    {competicao.descricao}
                                     {"\n"}
-                                    {competition.sport} - {competition.modality}
+                                    {competicao.modalidade} - {competicao.categoria}
                                 </CardDescription>
                             </CardHeader>
                         </Card>

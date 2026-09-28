@@ -1,15 +1,15 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
-import { Match } from "@/src/lib/types/match";
+import { FaseNome, Partida } from "@/src/lib/types/partida";
 
-const timeAninhadoSchema = z.object({ id: z.number(), nome: z.string() }).nullable();
+const equipeAninhadaSchema = z.object({ id: z.number(), nome: z.string() }).nullable();
 
 const partidaResponseSchema = z.object({
     id: z.number(),
-    timeMandante: timeAninhadoSchema,
-    timeVisitante: timeAninhadoSchema,
-    nomeCampeonato: z.string().nullable(),
-    idCampeonato: z.number().nullable(),
+    equipeMandante: equipeAninhadaSchema,
+    equipeVisitante: equipeAninhadaSchema,
+    nomeCompeticao: z.string().nullable(),
+    idCompeticao: z.number().nullable(),
     vencedor: z.string().nullable(),
     realizada: z.boolean().nullable(),
     fase: z.string().nullable(),
@@ -19,7 +19,7 @@ const partidaResponseSchema = z.object({
 
 type PartidaResponse = z.infer<typeof partidaResponseSchema>;
 
-const ESTAGIO_POR_FORMATO: Record<string, Match["stageName"]> = {
+const FASE_POR_FORMATO: Record<string, FaseNome> = {
     PONTOS_CORRIDOS: "Pontos Corridos",
     GRUPOS: "Grupo",
     ELIMINATORIA: "Final",
@@ -30,29 +30,27 @@ const placar = (resultado: string | null) => {
     return partes.length === 2 && partes.every(Number.isFinite) ? partes : [undefined, undefined];
 };
 
-const paraMatch = (resposta: PartidaResponse): Match => {
+const paraPartida = (resposta: PartidaResponse): Partida => {
     const [mandante, visitante] = placar(resposta.resultado);
 
     return {
         id: resposta.id,
-        homeTeam: resposta.timeMandante?.nome ?? "A definir",
-        awayTeam: resposta.timeVisitante?.nome ?? "A definir",
-        homeScore: mandante,
-        awayScore: visitante,
-        winner: resposta.vencedor ?? undefined,
-        // a partida ainda não tem data nem local no modelo
-        date: "",
-        tournament: "",
-        competitionName: resposta.nomeCampeonato ?? "",
-        stageName: ESTAGIO_POR_FORMATO[resposta.fase ?? ""] ?? "Pontos Corridos",
-        finished: resposta.realizada ?? false,
+        equipeMandante: resposta.equipeMandante?.nome ?? "A definir",
+        equipeVisitante: resposta.equipeVisitante?.nome ?? "A definir",
+        placarMandante: mandante,
+        placarVisitante: visitante,
+        vencedor: resposta.vencedor ?? undefined,
+        nomeCompeticao: resposta.nomeCompeticao ?? "",
+        idCompeticao: resposta.idCompeticao ?? 0,
+        realizada: resposta.realizada ?? false,
+        fase: FASE_POR_FORMATO[resposta.fase ?? ""] ?? "Pontos Corridos",
     };
 };
 
-export const listarPartidasDaCompeticao = async (idCampeonato: number): Promise<Match[]> =>
+export const listarPartidasDaCompeticao = async (idCompeticao: number): Promise<Partida[]> =>
     z.array(partidaResponseSchema)
-     .parse(await apiFetch<unknown>(`/partidas/campeonato/${idCampeonato}`))
-     .map(paraMatch);
+     .parse(await apiFetch<unknown>(`/partida/competicao/${idCompeticao}`))
+     .map(paraPartida);
 
-export const buscarPartida = async (id: number): Promise<Match> =>
-    paraMatch(partidaResponseSchema.parse(await apiFetch<unknown>(`/partidas/${id}`)));
+export const buscarPartida = async (id: number): Promise<Partida> =>
+    paraPartida(partidaResponseSchema.parse(await apiFetch<unknown>(`/partida/${id}`)));

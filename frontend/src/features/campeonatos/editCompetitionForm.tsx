@@ -5,17 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Competition } from "@/src/lib/types/competition";
+import { Competicao } from "@/src/lib/types/competicao";
 import { atualizarCompeticao } from "@/src/lib/api/competicoes";
 
 interface EditCompetitionFormProps {
-    competition: Competition;
-    onSaved?: (competition: Competition) => void;
+    competicao: Competicao;
+    onSaved?: (competicao: Competicao) => void;
 }
 
-export const EditCompetitionForm = ({ competition, onSaved }: EditCompetitionFormProps) => {
-    const [name, setName] = useState(competition.name);
-    const [description, setDescription] = useState(competition.description);
+export const EditCompetitionForm = ({ competicao, onSaved }: EditCompetitionFormProps) => {
+    const [name, setName] = useState(competicao.nome);
+    const [description, setDescription] = useState(competicao.descricao);
 
     const [salvando, setSalvando] = useState(false);
     const [erro, setErro] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export const EditCompetitionForm = ({ competition, onSaved }: EditCompetitionFor
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!competition.administracaoId) {
+        if (!competicao.idAdministracao) {
             setErro("Competição sem administração vinculada. Recarregue a página.");
             return;
         }
@@ -34,13 +34,13 @@ export const EditCompetitionForm = ({ competition, onSaved }: EditCompetitionFor
         setSalvo(false);
 
         try {
-            const atualizada = await atualizarCompeticao(competition.id, {
+            const atualizada = await atualizarCompeticao(competicao.id, {
                 nome: name.trim(),
                 descricao: description.trim(),
-                categoria: competition.modality,
-                idAdministracao: competition.administracaoId,
-                modalidadesIds: competition.modalidadeId ? [competition.modalidadeId] : [],
-                isMataMata: competition.currentStage !== "Pontos Corridos",
+                categoria: competicao.categoria ?? "",
+                idAdministracao: competicao.idAdministracao,
+                modalidadesIds: competicao.modalidadeId ? [competicao.modalidadeId] : [],
+                isMataMata: competicao.isMataMata ?? false,
             });
 
             onSaved?.(atualizada);

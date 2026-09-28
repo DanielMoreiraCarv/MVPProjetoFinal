@@ -1,16 +1,19 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
-import { Player } from "@/src/lib/types/player";
+import { Atleta } from "@/src/lib/types/atleta";
 
-const jogadorResponseSchema = z.object({
+const atletaResponseSchema = z.object({
     id: z.number(),
     nome: z.string(),
     idade: z.number().nullable(),
     numCamisa: z.number().nullable(),
     cpf: z.string().nullable(),
+    pontos: z.number().optional(),
+    gols: z.number().optional(),
+    assistencias: z.number().optional(),
 });
 
-type JogadorResponse = z.infer<typeof jogadorResponseSchema>;
+type AtletaResponse = z.infer<typeof atletaResponseSchema>;
 
 export interface AtletaInput {
     nome: string;
@@ -18,39 +21,40 @@ export interface AtletaInput {
     numCamisa?: number;
     cpf?: string;
     idModalidade?: number;
-    idTime: number;
+    idEquipe: number;
 }
 
-const paraPlayer = (resposta: JogadorResponse): Player => ({
+const paraAtleta = (resposta: AtletaResponse): Atleta => ({
     id: resposta.id,
-    name: resposta.nome,
-    number: resposta.numCamisa ?? undefined,
-    age: resposta.idade ?? undefined,
-    // suspensão ainda não é derivada de eventos; ver Sancao no backend
-    suspended: false,
+    nome: resposta.nome,
+    numCamisa: resposta.numCamisa ?? undefined,
+    idade: resposta.idade ?? undefined,
+    pontos: resposta.pontos,
+    gols: resposta.gols,
+    assistencias: resposta.assistencias,
 });
 
-export const listarAtletasDoTime = async (idTime: number): Promise<Player[]> => {
-    const resposta = await apiFetch<unknown>(`/jogador?idTime=${idTime}`);
-    return z.array(jogadorResponseSchema.passthrough()).parse(resposta).map(paraPlayer);
+export const listarAtletasDaEquipe = async (idEquipe: number): Promise<Atleta[]> => {
+    const resposta = await apiFetch<unknown>(`/atleta?idEquipe=${idEquipe}`);
+    return z.array(atletaResponseSchema.passthrough()).parse(resposta).map(paraAtleta);
 };
 
-export const criarAtleta = async (entrada: AtletaInput): Promise<Player> => {
-    const resposta = await apiFetch<unknown>("/jogador", {
+export const criarAtleta = async (entrada: AtletaInput): Promise<Atleta> => {
+    const resposta = await apiFetch<unknown>("/atleta", {
         method: "POST",
         body: JSON.stringify(entrada),
     });
-    return paraPlayer(jogadorResponseSchema.passthrough().parse(resposta));
+    return paraAtleta(atletaResponseSchema.passthrough().parse(resposta));
 };
 
-export const atualizarAtleta = async (id: number, entrada: AtletaInput): Promise<Player> => {
-    const resposta = await apiFetch<unknown>("/jogador", {
+export const atualizarAtleta = async (id: number, entrada: AtletaInput): Promise<Atleta> => {
+    const resposta = await apiFetch<unknown>(`/atleta/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ id, ...entrada }),
+        body: JSON.stringify(entrada),
     });
-    return paraPlayer(jogadorResponseSchema.passthrough().parse(resposta));
+    return paraAtleta(atletaResponseSchema.passthrough().parse(resposta));
 };
 
 export const removerAtleta = async (id: number): Promise<void> => {
-    await apiFetch<void>(`/jogador/${id}`, { method: "DELETE" });
+    await apiFetch<void>(`/atleta/${id}`, { method: "DELETE" });
 };

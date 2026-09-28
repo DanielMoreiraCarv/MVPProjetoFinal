@@ -8,19 +8,19 @@ import {
     CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Team, teamSchema } from "@/src/lib/types/team";
+import { Equipe, equipeSchema } from "@/src/lib/types/equipe";
 import { z } from "zod";
 
 interface TeamsListProps {
-    teams?: Team[];
+    equipes?: Equipe[];
 }
 
-export const TeamsList = ({ teams = [] }: TeamsListProps) => {
-    const listSchema = z.array(teamSchema);
-    const validationResult = listSchema.safeParse(teams);
+export const TeamsList = ({ equipes = [] }: TeamsListProps) => {
+    const listSchema = z.array(equipeSchema);
+    const validationResult = listSchema.safeParse(equipes);
 
     if (!validationResult.success) {
-        console.error("Invalid team data provided:", validationResult.error);
+        console.error("Invalid equipe data provided:", validationResult.error);
         return (
             <div className="p-4 text-red-500 border border-red-300 rounded-md">
                 Ops! Algum tipo incorreto de dados foram fornecidos. Verificar detalhes no console.
@@ -41,17 +41,17 @@ export const TeamsList = ({ teams = [] }: TeamsListProps) => {
     return (
         <div className="bg-white shadow-sm rounded-lg p-4 flex-1">
             <div className="flex flex-col gap-0.75">
-                {validTeams.map((team) => (
-                    <Link key={team.id} href={`/times/${team.id}`}>
+                {validTeams.map((equipe) => (
+                    <Link key={equipe.id} href={`/times/${equipe.id}`}>
                         <Card className="cursor-pointer hover:border-gray-400 transition-colors">
                             <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
-                                    {team.name}
+                                    {equipe.nome}
                                     <Badge variant="secondary">
-                                        {team.players.length} jogador{team.players.length !== 1 ? "es" : ""}
+                                        {equipe.atletas.length} jogador{equipe.atletas.length !== 1 ? "es" : ""}
                                     </Badge>
                                 </CardTitle>
-                                <CardDescription>{team.sport.name}</CardDescription>
+                                <CardDescription>{equipe.modalidade.nome}</CardDescription>
                             </CardHeader>
                         </Card>
                     </Link>
