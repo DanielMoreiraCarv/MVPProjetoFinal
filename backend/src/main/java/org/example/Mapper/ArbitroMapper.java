@@ -22,18 +22,32 @@ public class ArbitroMapper
         Arbitro arbitro = new Arbitro();
         arbitro.setNome( arbitroRequest.nome() );
         arbitro.setCategoria( arbitroRequest.categoria() );
-        arbitro.setFederacao( arbitro.getFederacao() );
+        // Lia do próprio objeto recém-criado, então nascia sempre nulo: a
+        // federação escolhida era descartada em silêncio.
+        arbitro.setFederacao( arbitroRequest.federacao() );
 
         return arbitro;
     }
 
+    /** Campo ausente é campo que não muda. */
     public static Arbitro toEntity ( ArbitroUpdateResquest updateResquest, Arbitro arbitro )
-            throws ArbitroUpdateRequest
     {
-        arbitro.setNome( updateResquest.nome() );
-        arbitro.setCategoria( updateResquest.categoria() );
-        arbitro.setFederacao( updateResquest.federacao() );
-        arbitro.setPartidasApitadas( updateResquest.partidasApitadas() );
+        if ( updateResquest.nome() != null && !updateResquest.nome().isBlank() )
+        {
+            arbitro.setNome( updateResquest.nome() );
+        }
+        if ( updateResquest.categoria() != null )
+        {
+            arbitro.setCategoria( updateResquest.categoria() );
+        }
+        if ( updateResquest.federacao() != null )
+        {
+            arbitro.setFederacao( updateResquest.federacao() );
+        }
+        if ( updateResquest.partidasApitadas() != null )
+        {
+            arbitro.setPartidasApitadas( updateResquest.partidasApitadas() );
+        }
 
         return arbitro;
     }
@@ -46,7 +60,8 @@ public class ArbitroMapper
         }
 
         return new ArbitroResponse( arbitro.getId(), arbitro.getNome(),
-                arbitro.getFederacao(), arbitro.getPartidasApitadas() );
+                arbitro.getFederacao(), arbitro.getCategoria(),
+                arbitro.getPartidasApitadas() );
     }
 
     public static List<ArbitroResponse> toResponse ( List<Arbitro> arbitros )
