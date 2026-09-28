@@ -5,6 +5,7 @@ import org.example.Exception.NaoEncontradoException;
 import org.example.Exception.CompeticaoUpdateException;
 import org.example.Mapper.CompeticaoMapper;
 import org.example.Models.Competicao;
+import org.example.Models.EnumEstadoCompeticao;
 import org.example.Models.Request.CompeticaoCreateRequest;
 import org.example.Models.Request.CompeticaoUpdateRequest;
 import org.example.Models.Equipe;
@@ -80,10 +81,33 @@ public class CompeticaoService {
         competicaoRepository.deleteById(id);
     }
     
+    public Competicao mudarEstado(Long id, EnumEstadoCompeticao destino) {
+        Competicao competicao = competicaoRepository.findById(id)
+                .orElseThrow(() -> NaoEncontradoException.de("Competição", id));
+
+        if (destino == EnumEstadoCompeticao.EM_ANDAMENTO
+                && (competicao.getLstEquipes() == null || competicao.getLstEquipes().size() < 2)) {
+            throw new IllegalArgumentException(
+                    "Uma competição precisa de ao menos duas equipes inscritas para começar.");
+        }
+
+        competicao.mudarEstadoPara(destino);
+        return competicaoRepository.save(competicao);
+    }
+
+    /** Recusa alteração em competição que não aceita mais mudança. */
+    public void exigirEditavel(Competicao competicao) {
+        if (competicao.getEstado().estaEncerrada()) {
+            throw new IllegalArgumentException(
+                    "A competição está " + competicao.getEstado() + " e não aceita alteração.");
+        }
+    }
+
     public Competicao adicionarEquipeACompeticao(Long idCompeticao, Equipe equipe) {
         Competicao competicao = competicaoRepository.findById(idCompeticao)
                 .orElseThrow(() -> NaoEncontradoException.de("Competição", idCompeticao));
 
+        exigirEditavel(competicao);
         competicao.adicionarEquipe(equipe);
         return competicaoRepository.save(competicao);
     }
@@ -91,6 +115,8 @@ public class CompeticaoService {
     public Competicao removerEquipeDaCompeticao(Long idCompeticao, Long idEquipe) {
         Competicao competicao = competicaoRepository.findById(idCompeticao)
                 .orElseThrow(() -> NaoEncontradoException.de("Competição", idCompeticao));
+
+        exigirEditavel(competicao);
 
         if (!competicao.removerEquipe(idEquipe)) {
             throw new IllegalArgumentException(

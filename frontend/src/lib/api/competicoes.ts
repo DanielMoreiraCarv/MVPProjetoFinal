@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
-import { Competicao } from "@/src/lib/types/competicao";
+import { Competicao, EstadoDaCompeticao } from "@/src/lib/types/competicao";
 
 const modalidadeAninhadaSchema = z.object({
     id: z.number(),
@@ -27,6 +27,7 @@ const competicaoResponseSchema = z.object({
     idAdministracao: z.number().nullable(),
     modalidades: z.array(modalidadeAninhadaSchema).nullable(),
     isMataMata: z.boolean().nullable(),
+    estado: z.string().nullable(),
     equipes: z.array(equipeAninhadaSchema).nullable(),
 });
 
@@ -67,6 +68,7 @@ const paraCompeticao = (resposta: CompeticaoResponse): Competicao => {
         })),
         isMataMata: resposta.isMataMata ?? false,
         categoria: resposta.categoria ?? "",
+        estado: (resposta.estado as Competicao["estado"]) ?? undefined,
     };
 };
 
@@ -126,6 +128,20 @@ export const removerEquipeDaCompeticao = async (
         competicaoResponseSchema.parse(
             await apiFetch<unknown>(`/competicao/${idCompeticao}/equipe/${idEquipe}`, {
                 method: "DELETE",
+            }),
+        ),
+    );
+
+/** Publica, encerra ou cancela (RF18). Transição inválida é recusada com o motivo. */
+export const mudarEstadoDaCompeticao = async (
+    id: number,
+    estado: EstadoDaCompeticao,
+): Promise<Competicao> =>
+    paraCompeticao(
+        competicaoResponseSchema.parse(
+            await apiFetch<unknown>(`/competicao/${id}/estado`, {
+                method: "PUT",
+                body: JSON.stringify({ estado }),
             }),
         ),
     );

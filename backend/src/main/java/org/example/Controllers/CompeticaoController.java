@@ -8,6 +8,7 @@ import org.example.Mapper.CompeticaoMapper;
 import org.example.Models.Competicao;
 import org.example.Models.Equipe;
 import org.example.Models.Request.CompeticaoCreateRequest;
+import org.example.Models.Request.CompeticaoEstadoRequest;
 import org.example.Models.Request.CompeticaoUpdateRequest;
 import org.example.Models.Response.CompeticaoResponse;
 import org.example.Services.CompeticaoService;
@@ -118,6 +119,25 @@ public class CompeticaoController
         return ResponseEntity
                 .status( HttpStatus.OK )
                 .body( CompeticaoMapper.toResponse( competicaoAtualizado ) );
+    }
+
+    /**
+     * Publica, encerra ou cancela a competição (RF18).
+     *
+     * A máquina de estados vive na entidade e recusa transição que ela não
+     * prevê, dizendo para onde dá para ir. Estado não é um campo como outro
+     * qualquer: deixá-lo no PUT geral permitiria voltar de ENCERRADA para
+     * EM_ANDAMENTO editando a descrição.
+     */
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<CompeticaoResponse> mudarEstado (
+            @PathVariable Long id,
+            @Valid @RequestBody CompeticaoEstadoRequest request
+    )
+    {
+        Competicao competicao = competicaoService.mudarEstado( id, request.estado() );
+
+        return ResponseEntity.ok( CompeticaoMapper.toResponse( competicao ) );
     }
 
     /**

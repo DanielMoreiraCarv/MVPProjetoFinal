@@ -1,5 +1,7 @@
 package org.example.Models.Response;
 
+import org.example.Models.EnumEstadoCompeticao;
+
 import java.util.List;
 
 public record CompeticaoResponse(
@@ -17,7 +19,9 @@ public record CompeticaoResponse(
 
         String categoria,
 
-        Long idAdministracao
+        Long idAdministracao,
+
+        EnumEstadoCompeticao estado
 )
 {
 }

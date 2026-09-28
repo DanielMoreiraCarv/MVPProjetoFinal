@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ import { StandingsTable } from "@/src/features/campeonatos/StandingsTable";
 import { TeamsList } from "@/src/features/campeonatos/teamsList";
 import { buscarCompeticao, removerEquipeDaCompeticao } from "@/src/lib/api/competicoes";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
-import { Competicao } from "@/src/lib/types/competicao";
+import { Competicao, ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
 import { Equipe } from "@/src/lib/types/equipe";
 import { Partida } from "@/src/lib/types/partida";
 import { computeStandings } from "@/src/features/campeonatos/calculos";
@@ -99,6 +100,21 @@ const CompeticaoDetalhePage = () => {
                     { rotulo: "Competições", href: "/competicao" },
                     ...(atual ? [{ rotulo: atual.nomeDaAdministracao }] : []),
                 ]}
+                acoes={
+                    competicao?.estado && (
+                        <Badge
+                            variant={
+                                competicao.estado === "EM_ANDAMENTO"
+                                    ? "default"
+                                    : competicao.estado === "CANCELADA"
+                                      ? "destructive"
+                                      : "secondary"
+                            }
+                        >
+                            {ROTULO_DO_ESTADO[competicao.estado]}
+                        </Badge>
+                    )
+                }
             />
             <CorpoDaPagina>
                 {erro ? (

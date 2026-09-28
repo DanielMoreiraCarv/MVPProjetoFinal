@@ -71,7 +71,7 @@ public class CompeticaoMapper
         return new CompeticaoResponse( competicao.getId(), competicao.getNome(),
                 ModalidadeMapper.toResponse( competicao.getLstModalidades() ), equipes,
                 competicao.isMataMata(), competicao.getDescricao(), competicao.getCategoria(),
-                idAdministracao );
+                idAdministracao, competicao.getEstado() );
     }
 
     public static List<CompeticaoResponse> toResponse ( List<Competicao> competicoes )

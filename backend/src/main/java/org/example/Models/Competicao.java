@@ -58,6 +58,10 @@ public class Competicao {
     @Column(name = "descricao", length = 500)
     private String descricao;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false, length = 20)
+    private EnumEstadoCompeticao estado = EnumEstadoCompeticao.RASCUNHO;
+
     @Column(name = "categoria", length = 20)
     private String categoria;
 
@@ -136,6 +140,14 @@ public class Competicao {
         return categoria;
     }
 
+    public EnumEstadoCompeticao getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EnumEstadoCompeticao estado) {
+        this.estado = estado;
+    }
+
     public void setCategoria(String categoria) {
         this.categoria = categoria;
     }
@@ -196,5 +208,29 @@ public class Competicao {
         return this.lstEquipes.stream()
                             .filter(e -> idModalidade.equals(e.getIdModalidade()))
                             .toList();
+    }
+
+    /**
+     * Troca o estado, recusando transição que a máquina não prevê.
+     *
+     * A mensagem diz para onde dá para ir, em vez de só negar: quem chamou
+     * precisa saber qual é o caminho, não que o caminho pedido não serve.
+     */
+    public void mudarEstadoPara(EnumEstadoCompeticao destino) {
+        if (this.estado == destino) {
+            return;
+        }
+
+        if (!this.estado.podeIrPara(destino)) {
+            String saidas = this.estado.saidas().isEmpty()
+                    ? "nenhum outro estado"
+                    : this.estado.saidas().toString();
+
+            throw new IllegalArgumentException(
+                    "Uma competição " + this.estado + " não pode passar para " + destino
+                            + ". Daqui só dá para ir para " + saidas + ".");
+        }
+
+        this.estado = destino;
     }
 }
