@@ -77,5 +77,14 @@ export const apiFetch = async <T>(caminho: string, init?: RequestInit): Promise<
         return undefined as T;
     }
 
-    return resposta.json() as Promise<T>;
+    // Há rota que responde 200 com corpo vazio — `GET /arbitro` faz isso
+    // quando não existe nenhum árbitro. `resposta.json()` estoura com erro de
+    // sintaxe nesse caso, e a tela mostrava "Unexpected end of JSON input" no
+    // lugar de uma lista vazia. Quem chama resolve o vazio com `?? []`.
+    const texto = await resposta.text();
+    if (!texto) {
+        return undefined as T;
+    }
+
+    return JSON.parse(texto) as T;
 };
