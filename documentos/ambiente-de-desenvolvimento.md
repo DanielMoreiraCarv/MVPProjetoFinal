@@ -130,6 +130,26 @@ Os dois manifestos publicam a porta 5433, então rode **um de cada vez**.
 | ambos | os dois | ~11 s |
 | só `documentos/`, `deploy/` | nada | instantâneo |
 
+### As três verificações do front
+
+| Comando | O que garante |
+|---|---|
+| `yarn build` | compila e os tipos batem |
+| `yarn cores` | nenhuma cor fora dos tokens |
+| `yarn contrato` | a API no ar responde a forma que as telas esperam |
+
+`yarn contrato` é o que `yarn build` não cobre: build verde prova que o código
+compila, não que a resposta do servidor tem a forma que a tela lê. Cada caso
+pede uma rota de verdade e valida o corpo com o mesmo Zod das telas. Foi ele
+que pegou o dia em que o placar parou de ser extraído e a tabela de
+classificação passou a calcular tudo zero — com o build passando.
+
+Ele confere também duas coisas derivadas: que o placar vem em toda partida, e
+que as duas leituras do elenco concordam entre si.
+
+Precisa do ambiente no ar, então não está no pre-commit — rode antes de abrir
+PR que mexa em contrato.
+
 `yarn cores` recusa cor fixa em `app/` e `src/` — `bg-red-500`, `text-black`,
 `text-[#1a1a1a]`. Toda cor tem que sair de um token de `app/globals.css`, senão
 o tema escuro fica com texto preto sobre fundo preto. Não é regra de ESLint
