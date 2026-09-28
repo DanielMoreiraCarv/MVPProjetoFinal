@@ -53,10 +53,12 @@ const CampoDoAtributo = ({
     atributo,
     valor,
     aoMudar,
+    editavel,
 }: {
     atributo: AtributoDeFase;
     valor: string;
     aoMudar: (valor: string) => void;
+    editavel: boolean;
 }) => {
     const id = `atributo-${atributo.codigo}`;
 
@@ -64,9 +66,12 @@ const CampoDoAtributo = ({
         return (
             <ToggleGroup
                 value={[valor === "true" ? "true" : "false"]}
-                onValueChange={(escolhido) => escolhido.length > 0 && aoMudar(escolhido[0])}
+                onValueChange={(escolhido) =>
+                    editavel && escolhido.length > 0 && aoMudar(escolhido[0])
+                }
                 spacing={0}
                 variant="outline"
+                disabled={!editavel}
                 aria-labelledby={id}
             >
                 <ToggleGroupItem value="true">Sim</ToggleGroupItem>
@@ -86,6 +91,7 @@ const CampoDoAtributo = ({
                 placeholder={atributo.valorPadrao}
                 onChange={(evento) => aoMudar(evento.target.value)}
                 required={atributo.obrigatorio}
+                disabled={!editavel}
             />
         );
     }
@@ -104,15 +110,22 @@ const CampoDoAtributo = ({
             }
             onChange={(evento) => aoMudar(evento.target.value)}
             required={atributo.obrigatorio}
+            disabled={!editavel}
         />
     );
 };
 
 export const ConfiguracaoDaFase = ({
     idFase,
+    editavel = true,
     aoGravar,
 }: {
     idFase: number;
+    /**
+     * Falso na competição já publicada: a estrutura vira leitura, porque
+     * mexer nela invalidaria confrontos gerados e classificação calculada.
+     */
+    editavel?: boolean;
     /** Configuração mudou: a validação da fase precisa ser refeita. */
     aoGravar?: () => void;
 }) => {
@@ -200,6 +213,7 @@ export const ConfiguracaoDaFase = ({
                     )}
                     <CampoDoAtributo
                         atributo={atributo}
+                        editavel={editavel}
                         valor={rascunho[atributo.codigo] ?? ""}
                         aoMudar={(valor) =>
                             setRascunho((anterior) => ({ ...anterior, [atributo.codigo]: valor }))
@@ -208,6 +222,7 @@ export const ConfiguracaoDaFase = ({
                 </div>
             ))}
 
+            {editavel && (
             <div className="flex items-center justify-end gap-3 pt-1">
                 {alterados.length > 0 && (
                     <p className="text-xs text-muted-foreground">
@@ -220,6 +235,7 @@ export const ConfiguracaoDaFase = ({
                     {salvando ? "Gravando…" : "Gravar configuração"}
                 </Button>
             </div>
+            )}
         </div>
     );
 };

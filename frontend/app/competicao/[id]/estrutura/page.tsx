@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoCartoes, Erro, Vazio } from "@/src/components/estado/Estados";
-import { ConfiguracaoDaFase } from "@/src/features/estrutura/ConfiguracaoDaFase";
+import { ConfiguracaoDaFase } from "@/src/features/fases/ConfiguracaoDaFase";
 import { MODELOS, ModeloDeCompeticao } from "@/src/features/estrutura/modelos";
 import { buscarCompeticao, mudarEstadoDaCompeticao } from "@/src/lib/api/competicoes";
 import {
@@ -593,7 +593,7 @@ const EstruturaPage = () => {
                                                         <ConfiguracaoDaFase
                                                             idFase={fase.id}
                                                             editavel={editavel}
-                                                            aoMudar={() => revalidar(fases)}
+                                                            aoGravar={() => revalidar(fases)}
                                                         />
                                                     </CardContent>
                                                 </Card>
