@@ -41,7 +41,7 @@ então o front não tem como alcançá-los:
 | `TimeService` | `listarPorModalidade(idModalidade)` | filtro `?idModalidade=` em `GET /equipe` |
 | `FaseService` | `buscarFasePorCampeonato(idCampeonato)` | filtro `?idCompeticao=` em `GET /fase` |
 | `OrquestradorDeFases` | `definirAtributo(fase, codigo, valor)` | `PUT /fase/{id}/atributo/{codigo}` |
-| `FederacaoService` | CRUD completo + DTOs + exceptions | **controller inteiro** |
+| `FederacaoService` | só `buscarPorId` — mas entidade, repositório, mapper, DTOs e exceptions prontos | **controller inteiro e o resto do CRUD** |
 | `AtributoFaseRepository` | `findByTipoFase(tipo)` | `GET /fase/atributo?tipoFase=` |
 | `TabelaService` | `buscarPorCampeonato`, `listarPartidas` | escritas não expostas |
 

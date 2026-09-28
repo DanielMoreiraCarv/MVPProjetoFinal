@@ -50,26 +50,36 @@ public class EquipeService {
         return equipeRepository.findByModalidadeId(idModalidade);
     }
 
+    /**
+     * Campo ausente no pedido é campo que não muda.
+     *
+     * O que havia aqui montava uma `Federacao` e uma `Modalidade` vazias e as
+     * atribuía sempre — inclusive quando o pedido não citava nenhuma das duas,
+     * e inclusive descartando o resultado da busca da federação, que era
+     * chamada e jogada fora. Renomear uma equipe apagava a federação e a
+     * modalidade dela, e gravava entidades transientes no lugar.
+     */
     public Equipe atualizarEquipe(Long id, EquipeUpdateRequest request) {
-        Optional<Equipe> equipeExistente = equipeRepository.findById(id);
-        Federacao federacao = new Federacao();
-        Modalidade modalidade = new Modalidade();
-        if (equipeExistente.isPresent()) {
-            if(request.idFederacao()!=null){
-                federacaoService.buscarPorId(request.idFederacao());
-            }
+        Equipe equipe = equipeRepository.findById(id)
+                .orElseThrow(() -> NaoEncontradoException.de("Equipe", id));
 
-            if(request.idModalidade()!=null){
-                modalidade = modalidadeService.buscarPorId(request.idModalidade());
-            }
-
-            Equipe equipe = equipeExistente.get();
+        if (request.nome() != null && !request.nome().isBlank()) {
             equipe.setNome(request.nome());
-            equipe.setModalidade(modalidade);
-            equipe.setFederacao( federacao );
-            return equipeRepository.save(equipe);
         }
-        return null;
+
+        if (request.idFederacao() != null) {
+            equipe.setFederacao(federacaoService.exigirPorId(request.idFederacao()));
+        }
+
+        if (request.idModalidade() != null) {
+            Modalidade modalidade = modalidadeService.buscarPorId(request.idModalidade());
+            if (modalidade == null) {
+                throw NaoEncontradoException.de("Modalidade", request.idModalidade());
+            }
+            equipe.setModalidade(modalidade);
+        }
+
+        return equipeRepository.save(equipe);
     }
 
     public void deletarEquipe(Long id) {
