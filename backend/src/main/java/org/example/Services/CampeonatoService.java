@@ -8,9 +8,11 @@ import org.example.Models.Request.CampeonatoCreateRequest;
 import org.example.Models.Request.CampeonatoUpdateRequest;
 import org.example.Models.Time;
 import org.example.Repositories.CampeonatoRepository;
+import org.example.Repositories.TimeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +21,10 @@ public class CampeonatoService {
     
     @Autowired
     private CampeonatoRepository campeonatoRepository;
-    
+
+    @Autowired
+    private TimeRepository timeRepository;
+
     public Campeonato criarCampeonato(Campeonato campeonato) {
         campeonato.setId(null);
         return campeonatoRepository.save(campeonato);
@@ -36,7 +41,21 @@ public class CampeonatoService {
             return null;
         }
         Campeonato atualizado = CampeonatoMapper.toEntity(updateRequest, campeonato);
+        // Sem timesIds a inscrição atual é mantida: o formulário de edição não envia os times.
+        if (updateRequest.timesIds() != null) {
+            atualizado.setLstTimes(buscarTimes(updateRequest.timesIds()));
+        }
         return campeonatoRepository.save(atualizado);
+    }
+
+    /** Carrega os times inscritos; um id inexistente recusa a atualização inteira. */
+    private List<Time> buscarTimes(List<Long> timesIds) throws CampeonatoUpdateException {
+        List<Long> distintos = timesIds.stream().distinct().toList();
+        List<Time> times = new ArrayList<>(timeRepository.findAllById(distintos));
+        if (times.size() != distintos.size()) {
+            throw new CampeonatoUpdateException();
+        }
+        return times;
     }
 
     public Campeonato buscarPorId(Long id) {

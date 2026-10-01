@@ -29,9 +29,17 @@ public class ArbitroController
     @PostMapping
     public ResponseEntity<?> criarArbitro ( @RequestBody ArbitroCreateRequest request )
     {
+        Federacao federacao = request.federacao() == null
+                ? null
+                : federacaoService.buscarPorId( request.federacao() );
+
+        if ( federacao == null )
+        {
+            return ResponseEntity.badRequest().body( "Federação não encontrada" );
+        }
 
         Arbitro arbitro =
-                arbitroService.criarArbitro( ArbitroMapper.toEntity( request ) );
+                arbitroService.criarArbitro( ArbitroMapper.toEntity( request, federacao ) );
 
         return ResponseEntity.status( HttpStatus.CREATED )
                              .body( ArbitroMapper.toResponse( arbitro ) );
