@@ -16,13 +16,13 @@ public class ArbitroMapper
     {
     }
 
-    public static Arbitro toEntity ( ArbitroCreateRequest arbitroRequest )
+    public static Arbitro toEntity ( ArbitroCreateRequest arbitroRequest, Federacao federacao )
             throws ArbitroCreateException
     {
         Arbitro arbitro = new Arbitro();
         arbitro.setNome( arbitroRequest.nome() );
         arbitro.setCategoria( arbitroRequest.categoria() );
-        arbitro.setFederacao( arbitro.getFederacao() );
+        arbitro.setFederacao( federacao.getNomeFederacao() );
 
         return arbitro;
     }

@@ -1,6 +1,5 @@
 package org.example.Models;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -41,7 +40,7 @@ public class Campeonato {
     )
     private List<Modalidade> lstModalidades;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany
     @JoinTable(
             name = "CAMPEONATO_TIMES",
             joinColumns = @JoinColumn(name = "CAMPEONATO_ID"),

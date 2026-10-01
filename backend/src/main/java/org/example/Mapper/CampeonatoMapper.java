@@ -7,12 +7,9 @@ import org.example.Models.Request.CampeonatoCreateRequest;
 import org.example.Models.Request.CampeonatoUpdateRequest;
 import org.example.Models.Response.CampeonatoResponse;
 import org.example.Models.Response.TimeResponse;
-import org.example.Models.Time;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class CampeonatoMapper
 {
@@ -44,7 +41,6 @@ public class CampeonatoMapper
     {
         campeonato.setNome( updateRequest.nome() );
         campeonato.setLstModalidades( ModalidadeMapper.toReferencias( updateRequest.modalidadesIds() ) );
-        campeonato.setLstTimes( toTimes( updateRequest.timesIds() ) );
         campeonato.setMataMata( Boolean.TRUE.equals( updateRequest.isMataMata() ) );
         campeonato.setDescricao( updateRequest.descricao() );
         campeonato.setCategoria( updateRequest.categoria() );
@@ -82,19 +78,5 @@ public class CampeonatoMapper
         }
 
         return campeonatos.stream().map( CampeonatoMapper::toResponse ).toList();
-    }
-
-    private static List<Time> toTimes ( List<Long> timesIds )
-    {
-        if ( timesIds == null )
-        {
-            return new ArrayList<>();
-        }
-
-        return timesIds.stream().map( id -> {
-            Time time = new Time();
-            time.setId( id );
-            return time;
-        } ).collect( Collectors.toCollection( ArrayList::new ) );
     }
 }

@@ -7,6 +7,9 @@ import org.example.Models.Request.FederacaoCreateRequest;
 import org.example.Models.Request.FederacaoUpdateRequest;
 import org.example.Models.Response.FederacaoResponse;
 
+import java.util.Collections;
+import java.util.List;
+
 public class FederacaoMapper
 {
     private FederacaoMapper ()
@@ -38,5 +41,15 @@ public class FederacaoMapper
         }
 
         return new FederacaoResponse( federacao.getId(), federacao.getNomeFederacao() );
+    }
+
+    public static List<FederacaoResponse> toResponse ( List<Federacao> federacoes )
+    {
+        if ( federacoes == null || federacoes.isEmpty() )
+        {
+            return Collections.emptyList();
+        }
+
+        return federacoes.stream().map( FederacaoMapper::toResponse ).toList();
     }
 }

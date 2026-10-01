@@ -158,6 +158,49 @@ public class FaseController
         }
     }
 
+    /** Os atributos que a fase aceita, com o valor configurado e o padrão de cada um. */
+    @GetMapping("/{id}/atributos")
+    public ResponseEntity<?> atributos ( @PathVariable("id") Long id )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            return ResponseEntity.notFound().build();
+        }
+
+        try
+        {
+            return ResponseEntity.ok( faseService.atributosDe( fase ) );
+        }
+        catch ( IllegalArgumentException erro )
+        {
+            return ResponseEntity.badRequest().body( erro.getMessage() );
+        }
+    }
+
+    /** Configura a fase: {"codigo": "valor"}. Valor null volta o atributo ao padrão. */
+    @PutMapping("/{id}/atributos")
+    public ResponseEntity<?> definirAtributos ( @PathVariable("id") Long id,
+            @RequestBody Map<String, String> valores )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            return ResponseEntity.notFound().build();
+        }
+
+        try
+        {
+            return ResponseEntity.ok( faseService.definirAtributos( fase, valores ) );
+        }
+        catch ( IllegalArgumentException erro )
+        {
+            return ResponseEntity.badRequest().body( erro.getMessage() );
+        }
+    }
+
     @GetMapping("/{id}/classificacao")
     public ResponseEntity<?> classificacao ( @PathVariable("id") Long id )
     {

@@ -3,18 +3,26 @@ package org.example.Services;
 import org.example.Fases.OrquestradorDeFases;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
+import org.example.Models.AtributoFase;
 import org.example.Models.Campeonato;
 import org.example.Models.Classificado;
+import org.example.Models.EnumTipoDeDado;
 import org.example.Models.Fase;
 import org.example.Models.Partida;
 import org.example.Models.Request.FaseCreateRequest;
 import org.example.Models.Request.FaseUpdateRequest;
+import org.example.Models.Response.AtributoFaseResponse;
 import org.example.Models.Response.FaseResponse;
+import org.example.Repositories.AtributoFaseRepository;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.PartidaRepository;
+import org.example.Repositories.ValorAtributoFaseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +40,12 @@ public class FaseService
 
     @Autowired
     private PartidaRepository partidaRepository;
+
+    @Autowired
+    private AtributoFaseRepository atributoRepository;
+
+    @Autowired
+    private ValorAtributoFaseRepository valorAtributoRepository;
 
     public FaseResponse criarFase ( FaseCreateRequest request )
     {
@@ -107,5 +121,82 @@ public class FaseService
     public List<Classificado> classificacaoDe ( Fase fase )
     {
         return orquestrador.classificacaoDe( fase );
+    }
+
+    /** Os atributos que o tipo da fase aceita, com o valor configurado nesta fase. */
+    public List<AtributoFaseResponse> atributosDe ( Fase fase )
+    {
+        exigirTipo( fase );
+
+        Map<Long, String> valores = new HashMap<>();
+        valorAtributoRepository.findByFaseId( fase.getId() )
+                               .forEach( v -> valores.put( v.getAtributo().getId(), v.getValor() ) );
+
+        return atributoRepository.findByTipoFase( fase.getFasePartida() ).stream()
+                .map( atributo -> new AtributoFaseResponse( atributo.getCodigo(),
+                        atributo.getTipoDado(), atributo.isObrigatorio(), atributo.getValorPadrao(),
+                        atributo.getDescricao(), valores.get( atributo.getId() ) ) )
+                .toList();
+    }
+
+    /**
+     * Grava os valores informados. Confere todos antes de gravar qualquer um: um
+     * atributo desconhecido ou com tipo errado recusa a requisição inteira.
+     * Valor null apaga a configuração, e o atributo volta a valer o padrão.
+     */
+    @Transactional
+    public List<AtributoFaseResponse> definirAtributos ( Fase fase, Map<String, String> valores )
+    {
+        exigirTipo( fase );
+
+        if ( valores == null || valores.isEmpty() )
+        {
+            throw new IllegalArgumentException( "informe ao menos um atributo" );
+        }
+
+        Map<String, AtributoFase> aceitos = new HashMap<>();
+        atributoRepository.findByTipoFase( fase.getFasePartida() )
+                          .forEach( atributo -> aceitos.put( atributo.getCodigo(), atributo ) );
+
+        List<String> erros = new ArrayList<>();
+        valores.forEach( ( codigo, valor ) -> {
+            AtributoFase atributo = aceitos.get( codigo );
+            if ( atributo == null )
+            {
+                erros.add( "a fase " + fase.getFasePartida() + " não aceita o atributo " + codigo );
+            }
+            else if ( valor != null && !tipoValido( atributo.getTipoDado(), valor ) )
+            {
+                erros.add( "atributo " + codigo + " espera " + atributo.getTipoDado() + ", veio: " + valor );
+            }
+        } );
+
+        if ( !erros.isEmpty() )
+        {
+            throw new IllegalArgumentException( String.join( "; ", erros ) );
+        }
+
+        valores.forEach( ( codigo, valor ) -> orquestrador.definirAtributo( fase, codigo, valor ) );
+
+        return atributosDe( fase );
+    }
+
+    private void exigirTipo ( Fase fase )
+    {
+        if ( fase.getFasePartida() == null )
+        {
+            throw new IllegalArgumentException( "a fase não tem tipo definido" );
+        }
+    }
+
+    private boolean tipoValido ( EnumTipoDeDado tipo, String valor )
+    {
+        String limpo = valor.trim();
+        return switch ( tipo )
+        {
+            case INTEIRO -> limpo.matches( "-?\\d+" );
+            case BOOLEANO -> limpo.equalsIgnoreCase( "true" ) || limpo.equalsIgnoreCase( "false" );
+            case TEXTO, LISTA_DE_TEXTO -> true;
+        };
     }
 }
