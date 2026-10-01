@@ -26,19 +26,25 @@ com o tráfego já batendo.
 
 Nenhuma credencial no repositório. A aplicação lê três variáveis:
 
-| Variável | Default (desenvolvimento) | Produção |
+| Variável | Default | Produção |
 |---|---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5433/tcc` | connection string do Supabase |
-| `DB_USER` | `tcc` | usuário do Supabase |
-| `DB_PASSWORD` | `tcc` | senha do Supabase |
+| `DB_URL` | Supabase, transaction pooler (`aws-0-sa-east-1.pooler.supabase.com:6543`) | idem |
+| `DB_USER` | `postgres.hiieswbpwrlggryqhtjv` | idem |
+| `DB_PASSWORD` | **sem default** | senha do Supabase |
 | `DB_POOL_SIZE` | `5` | `5` |
 | `JPA_SHOW_SQL` | `false` | `false` |
 | `FLYWAY_MIGRAR_NO_BOOT` | `false` | `false` — quem migra é o pipeline |
 
 O pipeline de deploy usa uma conexão à parte, em `DB_MIGRACAO_URL`. Ver §5.
 
-Os defaults existem só para que `mvn spring-boot:run` funcione contra o pod
-local. Em produção as três são obrigatórias e vêm do ambiente do PaaS.
+Os defaults apontam para o Supabase, para que `mvn spring-boot:run` e a IDE
+conectem sem configuração. A senha nunca vai para o repositório: vem de
+`DB_PASSWORD` ou de `backend/src/main/resources/application-local.properties`
+(uma linha `DB_PASSWORD=...`), arquivo ignorado pelo Git e pela imagem Docker.
+Variável de ambiente prevalece sobre o arquivo.
+
+Para usar o Postgres do pod local, defina as três variáveis
+(`jdbc:postgresql://localhost:5433/tcc`, `tcc`, `tcc`).
 
 A porta 5433 no host evita colisão com um Postgres já instalado na máquina.
 
