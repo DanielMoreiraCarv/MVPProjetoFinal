@@ -12,10 +12,11 @@ public class SancaoMapper
 {
     private SancaoMapper(){}
 
+
     public static Sancao toEntity ( SancaoRequest request, Competicao competicao )
     {
         Sancao sancao = new Sancao();
-        sancao.setEnumTipoEsporte( EnumTipoEsporte.valueOf( request.tipoEsporte() ) );
+        sancao.setEnumTipoEsporte( EnumTipoEsporte.deCodigo( request.tipoEsporte() ) );
         sancao.setCompeticao( competicao );
         sancao.setQuantidadePartidasPadrao( request.qtdPartidas() );
 
@@ -25,7 +26,7 @@ public class SancaoMapper
     public static SancaoResponse toResponse ( Sancao sancao )
     {
         SancaoResponse response = new SancaoResponse( sancao.getId(),
-                sancao.getQuantidadePartidasPadrao(), sancao.getEnumTipoEsporte().getDescricao(),
+                sancao.getQuantidadePartidasPadrao(), sancao.getEnumTipoEsporte().name(),
                 sancao.getCompeticao().getId());
 
         return response;

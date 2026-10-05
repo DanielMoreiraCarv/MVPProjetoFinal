@@ -57,7 +57,7 @@ public class SancaoService
         }
 
         sancao.setCompeticao(  competicao ) ;
-        sancao.setEnumTipoEsporte( EnumTipoEsporte.valueOf( request.tipoEsporte() ) );
+        sancao.setEnumTipoEsporte( EnumTipoEsporte.deCodigo( request.tipoEsporte() ) );
         sancao.setQuantidadePartidasPadrao( request.qtdPartidas() );
 
         return SancaoMapper.toResponse( sancaoRepository.save( sancao ) );
@@ -94,6 +94,6 @@ public class SancaoService
     public Boolean hasSansaoJaCadastrada ( SancaoRequest request )
     {
         return sancaoRepository.countSancoesCompeticoesEEsporte( request.idCompeticao(),
-                EnumTipoEsporte.valueOf( request.tipoEsporte() ) ) > 0;
+                EnumTipoEsporte.deCodigo( request.tipoEsporte() ) ) > 0;
     }
 }

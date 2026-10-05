@@ -10,6 +10,9 @@ import org.example.Models.Request.CompeticaoCreateRequest;
 import org.example.Models.Request.CompeticaoUpdateRequest;
 import org.example.Models.Equipe;
 import org.example.Repositories.CompeticaoRepository;
+import org.example.Repositories.FaseRepository;
+import org.example.Repositories.PartidaRepository;
+import org.example.Repositories.SancaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +24,15 @@ public class CompeticaoService {
     
     @Autowired
     private CompeticaoRepository competicaoRepository;
+
+    @Autowired
+    private PartidaRepository partidaRepository;
+
+    @Autowired
+    private FaseRepository faseRepository;
+
+    @Autowired
+    private SancaoRepository sancaoRepository;
     
     public Competicao criarCompeticao(Competicao competicao) {
         competicao.setId(null);
@@ -77,8 +89,38 @@ public class CompeticaoService {
         return null;
     }
     
+    /**
+     * Só sai do banco a competição que não deixou rastro. Com partida jogada
+     * ou agendada, o caminho é cancelar: o histórico continua valendo.
+     */
     public void deletarCompeticao(Long id) {
-        competicaoRepository.deleteById(id);
+        Competicao competicao = competicaoRepository.findById(id)
+                .orElseThrow(() -> NaoEncontradoException.de("Competição", id));
+
+        int partidas = partidaRepository.findByCompeticaoId(id).size();
+        if (partidas > 0) {
+            throw new IllegalArgumentException(
+                    "A competição " + competicao.getNome() + " tem " + partidas
+                            + (partidas == 1 ? " partida" : " partidas")
+                            + ". Cancele a competição em vez de excluí-la.");
+        }
+
+        int fases = faseRepository.findFaseByCompeticaoId(id).map(List::size).orElse(0);
+        int sancoes = sancaoRepository.findAllByCompeticaoId(id).size();
+        if (fases > 0 || sancoes > 0) {
+            throw new IllegalArgumentException(
+                    "A competição " + competicao.getNome() + " ainda tem "
+                            + quantidade(fases, "fase", "fases")
+                            + (fases > 0 && sancoes > 0 ? " e " : "")
+                            + quantidade(sancoes, "sanção", "sanções")
+                            + ". Remova-as antes de excluir a competição.");
+        }
+
+        competicaoRepository.delete(competicao);
+    }
+
+    private static String quantidade(int total, String singular, String plural) {
+        return total == 0 ? "" : total + " " + (total == 1 ? singular : plural);
     }
     
     public Competicao mudarEstado(Long id, EnumEstadoCompeticao destino) {

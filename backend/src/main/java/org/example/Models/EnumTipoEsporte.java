@@ -1,5 +1,8 @@
 package org.example.Models;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 public enum EnumTipoEsporte
 {
     BASQUETE( 1, "Basquete" ),
@@ -26,4 +29,16 @@ public enum EnumTipoEsporte
     {
         return descricao;
     }
+
+    /** A constante, não a descrição: é o que a resposta devolve e o pedido aceita. */
+    public static EnumTipoEsporte deCodigo ( String codigo )
+    {
+        return Arrays.stream( values() )
+                .filter( esporte -> esporte.name().equals( codigo ) )
+                .findFirst()
+                .orElseThrow( () -> new IllegalArgumentException( "Esporte \"" + codigo
+                        + "\" não existe. Use um de: "
+                        + Arrays.stream( values() ).map( Enum::name ).collect( Collectors.joining( ", " ) )
+                        + "." ) );
     }
+}
