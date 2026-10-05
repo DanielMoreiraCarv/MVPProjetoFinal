@@ -207,6 +207,24 @@ inscritas, o calendário e a tabela de classificação da visão geral, com
 identificadores em inglês e classes escritas à mão — foram reescritos no
 padrão das outras telas.
 
+**Criar fase era descobrir o que faltava depois.** O diálogo pedia nome,
+ordem e formato; os campos do formato ficavam num painel separado, com o código
+do servidor como rótulo (`numeroDeGrupos`), e a validação respondia "informe
+exatamente um entre numeroDeGrupos e tamanhoDoGrupo". Agora o formato escolhido
+traz os campos dele no mesmo diálogo — primeiro o que a fase precisa, depois as
+regras já com o padrão —, os critérios de desempate viram uma lista ordenada, e
+um resumo diz quantas equipes entram e como a fase vai ficar ("4 grupos de 4",
+"8 → 4 → 2 → 1"). As mensagens de validação passaram a ser frases.
+
+Três defeitos do motor de fases apareceram no caminho, cada um coberto por
+teste escrito antes da correção:
+
+| Onde | O que acontecia |
+|---|---|
+| `OrquestradorDeFases.entradaDe` | a quantidade de classificados era gravada e ignorada: a fase seguinte recebia a classificação inteira da anterior |
+| `definirAtributo` | gravar vazio contava como informado, então trocar o número de grupos pelo tamanho deles caía sempre em "não os dois" |
+| validação da fase seguinte | antes de a anterior ter classificação, dizia "precisa de ao menos 2 equipes, recebeu 0"; agora diz de qual fase as equipes vêm e o que fazer |
+
 **Ainda pendente:** a regra de sanção guarda o esporte, não a infração. Para
 "cartão vermelho = 1 jogo" o modelo precisa de um campo de infração, e a
 contagem automática continua dependendo da entidade `Evento`.
