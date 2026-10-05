@@ -66,6 +66,12 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     }
 
     @Override
+    public boolean aceitaEmpateNaEntrada ( ConfiguracaoDaFase configuracao )
+    {
+        return configuracao.booleano( DESCONSIDERAR_EMPATES );
+    }
+
+    @Override
     public ResultadoDaValidacao validar ( ConfiguracaoDaFase configuracao,
             List<Classificado> entrada )
     {

@@ -121,6 +121,30 @@ class FaseDeMataMataTest
                                 .toList();
     }
 
+    /**
+     * Pelo orquestrador, e não semeando à mão: os outros testes contornam o
+     * empate da primeira fase, e por isso nenhum percebeu que o atributo que
+     * o resolve não tinha efeito.
+     */
+    @Test
+    void primeiraFaseDesempatadaPelaOrdemGeraOsConfrontos ()
+    {
+        Fase fase = faseCom( 8, Map.of( EstrategiaDeMataMata.DESCONSIDERAR_EMPATES, "true" ) );
+
+        assertTrue( orquestrador.validar( fase ).ehValido(), orquestrador.validar( fase ).mensagem() );
+        orquestrador.configurar( fase );
+        assertEquals( 4, daRodada( fase, 1 ).size() );
+    }
+
+    @Test
+    void primeiraFaseSemDesempateDizComoResolver ()
+    {
+        ResultadoDaValidacao resultado = orquestrador.validar( faseCom( 8, Map.of() ) );
+
+        assertFalse( resultado.ehValido() );
+        assertTrue( resultado.mensagem().contains( "Aceitar empates na entrada" ), resultado.mensagem() );
+    }
+
     @Test
     void oitoTimesGeramQuatroConfrontosNaPrimeiraRodada ()
     {

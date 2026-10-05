@@ -36,6 +36,17 @@ public interface EstrategiaDeFase
         return false;
     }
 
+    /**
+     * O mesmo, já com a configuração da fase: a eliminatória tolera empate
+     * quando a fase pede para desempatar pela ordem recebida. O orquestrador
+     * consulta esta, e não a de cima — consultar a de cima deixava o atributo
+     * sem efeito.
+     */
+    default boolean aceitaEmpateNaEntrada ( ConfiguracaoDaFase configuracao )
+    {
+        return aceitaEmpateNaClassificacao();
+    }
+
     /** Confere se a configuração e a entrada permitem montar a fase. */
     ResultadoDaValidacao validar ( ConfiguracaoDaFase configuracao, List<Classificado> entrada );
 

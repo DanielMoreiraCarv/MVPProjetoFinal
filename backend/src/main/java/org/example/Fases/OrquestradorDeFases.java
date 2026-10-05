@@ -105,7 +105,7 @@ public class OrquestradorDeFases
         }
 
         ResultadoDaValidacao obrigatorios = conferirObrigatorios( fase, configuracao );
-        ResultadoDaValidacao empates = conferirEmpates( estrategia, entrada );
+        ResultadoDaValidacao empates = conferirEmpates( estrategia, configuracao, entrada );
 
         return obrigatorios.mais( empates ).mais( estrategia.validar( configuracao, entrada ) );
     }
@@ -126,9 +126,9 @@ public class OrquestradorDeFases
     }
 
     private ResultadoDaValidacao conferirEmpates ( EstrategiaDeFase estrategia,
-            List<Classificado> entrada )
+            ConfiguracaoDaFase configuracao, List<Classificado> entrada )
     {
-        if ( estrategia.aceitaEmpateNaClassificacao() )
+        if ( estrategia.aceitaEmpateNaEntrada( configuracao ) )
         {
             return ResultadoDaValidacao.valido();
         }
@@ -137,8 +137,9 @@ public class OrquestradorDeFases
 
         if ( distintas < entrada.size() )
         {
-            return ResultadoDaValidacao.com( "a fase " + estrategia.tipo()
-                    + " não aceita empates na entrada, e a classificação recebida tem posições repetidas" );
+            return ResultadoDaValidacao.com( "As equipes que entram estão empatadas — numa primeira fase"
+                    + " ninguém tem classificação ainda —, e o chaveamento precisa de uma ordem. Ative"
+                    + " \"Aceitar empates na entrada\" nas regras para chavear pela ordem de inscrição." );
         }
 
         return ResultadoDaValidacao.valido();
