@@ -1,5 +1,6 @@
 "use client";
 
+import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,34 +16,34 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { Escolha } from "@/src/components/Escolha";
 import { ApiError } from "@/src/lib/api/client";
-import { criarPartida } from "@/src/lib/api/partidas";
+import { atualizarPartida, criarPartida } from "@/src/lib/api/partidas";
 import { useAvisos } from "@/src/lib/avisos";
 import { Equipe } from "@/src/lib/types/equipe";
 import { Partida } from "@/src/lib/types/partida";
 
-import { paraIsoComFuso } from "./agendamento";
-
-const classeDeEscolha =
-    "h-9 w-full rounded-3xl border border-transparent bg-input/50 px-3 text-sm text-foreground outline-none transition-[color,box-shadow,background-color] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 aria-invalid:border-destructive disabled:opacity-50";
+import { paraCamposDeAgendamento, paraIsoComFuso } from "./agendamento";
 
 /**
- * Uma partida fora do que a fase gerou — amistoso, jogo remarcado em outra
- * chave, confronto acertado à mão.
+ * Criar uma partida fora do que a fase gerou — amistoso, jogo remarcado em
+ * outra chave, confronto acertado à mão — ou corrigir uma que já existe.
  *
  * Só oferece as equipes inscritas: a API recusa quem não está, e a recusa dela
  * é mais útil como último anteparo do que como primeira notícia.
  */
-export const CriarPartidaDialog = ({
+export const PartidaDialog = ({
     idCompeticao,
     equipes,
-    aoCriar,
+    partida,
+    aoSalvar,
 }: {
     idCompeticao: number;
     equipes: Equipe[];
-    aoCriar: (partida: Partida) => void;
+    partida?: Partida;
+    aoSalvar: (partida: Partida) => void;
 }) => {
+    const editando = !!partida;
     const [aberto, setAberto] = useState(false);
     const [mandante, setMandante] = useState("");
     const [visitante, setVisitante] = useState("");
@@ -56,11 +57,12 @@ export const CriarPartidaDialog = ({
     const aoAbrir = (abrindo: boolean) => {
         setAberto(abrindo);
         if (!abrindo) return;
-        setMandante("");
-        setVisitante("");
-        setDia("");
-        setHora("");
-        setLocal("");
+        const campos = paraCamposDeAgendamento(partida?.dataHora);
+        setMandante(partida?.idEquipeMandante ? String(partida.idEquipeMandante) : "");
+        setVisitante(partida?.idEquipeVisitante ? String(partida.idEquipeVisitante) : "");
+        setDia(campos.dia);
+        setHora(campos.hora);
+        setLocal(partida?.local ?? "");
         setErro(null);
     };
 
@@ -73,15 +75,18 @@ export const CriarPartidaDialog = ({
         setSalvando(true);
         setErro(null);
         try {
-            const criada = await criarPartida({
+            const entrada = {
                 idCompeticao,
                 idEquipeMandante: Number(mandante),
                 idEquipeVisitante: Number(visitante),
                 dataHora: paraIsoComFuso(dia, hora) ?? undefined,
                 local: local.trim() || undefined,
-            });
-            aoCriar(criada);
-            avisos.sucesso("Partida criada.");
+            };
+            const salva = editando
+                ? await atualizarPartida(partida.id, entrada)
+                : await criarPartida(entrada);
+            aoSalvar(salva);
+            avisos.sucesso(editando ? "Partida atualizada." : "Partida criada.");
             setAberto(false);
         } catch (causa) {
             // Equipe não inscrita e mandante igual ao visitante chegam aqui
@@ -106,10 +111,13 @@ export const CriarPartidaDialog = ({
 
     return (
         <Dialog open={aberto} onOpenChange={aoAbrir}>
-            <DialogTrigger render={<Button size="sm" />}>Criar partida</DialogTrigger>
+            <DialogTrigger render={<Button size="sm" variant={editando ? "outline" : "default"} />}>
+                {editando ? <Pencil /> : <Plus />}
+                {editando ? "Editar partida" : "Nova partida"}
+            </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Criar partida</DialogTitle>
+                    <DialogTitle>{editando ? "Editar partida" : "Nova partida"}</DialogTitle>
                     <DialogDescription>
                         Escolha as duas equipes inscritas. O dia, a hora e o local podem ficar
                         para depois.
@@ -126,23 +134,14 @@ export const CriarPartidaDialog = ({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="criar-mandante">Mandante</Label>
-                                <select
+                                <Escolha
                                     id="criar-mandante"
-                                    value={mandante}
-                                    onChange={(evento) => setMandante(evento.target.value)}
-                                    className={classeDeEscolha}
-                                    aria-invalid={
-                                        doCampo("idEquipeMandante") ? true : undefined
-                                    }
-                                    required
-                                >
-                                    <option value="">Escolha a equipe…</option>
-                                    {equipes.map((equipe) => (
-                                        <option key={equipe.id} value={equipe.id}>
-                                            {equipe.nome}
-                                        </option>
-                                    ))}
-                                </select>
+                                    valor={mandante}
+                                    aoMudar={setMandante}
+                                    opcoes={equipes.map((equipe) => ({ valor: String(equipe.id), rotulo: equipe.nome }))}
+                                    vazio="Escolha a equipe…"
+                                    invalido={!!doCampo("idEquipeMandante")}
+                                />
                                 {doCampo("idEquipeMandante") && (
                                     <p role="alert" className="text-sm text-destructive">
                                         {doCampo("idEquipeMandante")}
@@ -152,28 +151,14 @@ export const CriarPartidaDialog = ({
 
                             <div className="flex flex-col gap-1.5">
                                 <Label htmlFor="criar-visitante">Visitante</Label>
-                                <select
+                                <Escolha
                                     id="criar-visitante"
-                                    value={visitante}
-                                    onChange={(evento) => setVisitante(evento.target.value)}
-                                    className={cn(
-                                        classeDeEscolha,
-                                        mesmaEquipe && "border-destructive",
-                                    )}
-                                    aria-invalid={
-                                        mesmaEquipe || doCampo("idEquipeVisitante")
-                                            ? true
-                                            : undefined
-                                    }
-                                    required
-                                >
-                                    <option value="">Escolha a equipe…</option>
-                                    {equipes.map((equipe) => (
-                                        <option key={equipe.id} value={equipe.id}>
-                                            {equipe.nome}
-                                        </option>
-                                    ))}
-                                </select>
+                                    valor={visitante}
+                                    aoMudar={setVisitante}
+                                    opcoes={equipes.map((equipe) => ({ valor: String(equipe.id), rotulo: equipe.nome }))}
+                                    vazio="Escolha a equipe…"
+                                    invalido={mesmaEquipe || !!doCampo("idEquipeVisitante")}
+                                />
                                 {(mesmaEquipe || doCampo("idEquipeVisitante")) && (
                                     <p role="alert" className="text-sm text-destructive">
                                         {mesmaEquipe
@@ -230,8 +215,8 @@ export const CriarPartidaDialog = ({
                             <DialogClose render={<Button variant="outline" type="button" />}>
                                 Cancelar
                             </DialogClose>
-                            <Button type="submit" disabled={salvando || mesmaEquipe}>
-                                {salvando ? "Aguarde…" : "Criar partida"}
+                            <Button type="submit" disabled={salvando || mesmaEquipe || !mandante || !visitante}>
+                                {salvando ? "Aguarde…" : editando ? "Salvar partida" : "Criar partida"}
                             </Button>
                         </DialogFooter>
                     </form>

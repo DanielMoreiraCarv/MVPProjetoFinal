@@ -5,41 +5,16 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { FederacaoDialog } from "@/src/features/cadastros/FederacaoDialog";
 import { Federacao, listarFederacoes, removerFederacao } from "@/src/lib/api/federacoes";
 import { Modalidade, listarModalidades } from "@/src/lib/api/modalidades";
 import { useAvisos } from "@/src/lib/avisos";
 import { ICONES } from "@/src/lib/icones";
-
-const Secao = ({
-    titulo,
-    descricao,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    descricao?: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {descricao && <p className="text-sm text-muted-foreground">{descricao}</p>}
-        {children}
-    </section>
-);
 
 /**
  * Os cadastros de apoio numa página só: modalidade e federação não têm tela
@@ -49,7 +24,7 @@ const Secao = ({
 const CadastroPage = () => {
     const avisos = useAvisos();
     const IconeModalidade = ICONES.modalidade;
-    const IconeFederacao = ICONES.administracao;
+    const IconeFederacao = ICONES.federacao;
 
     const [modalidades, setModalidades] = useState<Modalidade[]>([]);
     const [federacoes, setFederacoes] = useState<Federacao[]>([]);
@@ -96,7 +71,7 @@ const CadastroPage = () => {
                     <div className="grid gap-6 lg:grid-cols-2">
                         <Secao
                             titulo="Modalidades"
-                            descricao="Catálogo fixo: as modalidades entram no boot da aplicação e a API só expõe leitura. Não há como criar, editar nem excluir por aqui."
+                            descricao="Catálogo fixo do sistema, só para consulta."
                         >
                             {carregando ? (
                                 <CarregandoLista linhas={6} />
@@ -104,7 +79,7 @@ const CadastroPage = () => {
                                 <Vazio
                                     conceito="modalidade"
                                     titulo="Catálogo vazio"
-                                    descricao="A API não devolveu nenhuma modalidade. Sem elas não é possível cadastrar equipe nem competição."
+                                    descricao="Nenhuma modalidade disponível. Sem elas não é possível cadastrar equipe nem competição."
                                 />
                             ) : (
                                 <div className="space-y-2">
@@ -130,9 +105,6 @@ const CadastroPage = () => {
                                                         </Badge>
                                                     </span>
                                                 </CardTitle>
-                                                <CardDescription>
-                                                    {modalidade.codigo}
-                                                </CardDescription>
                                             </CardHeader>
                                         </Card>
                                     ))}
@@ -156,17 +128,9 @@ const CadastroPage = () => {
                                 <CarregandoLista linhas={4} />
                             ) : federacoes.length === 0 ? (
                                 <Vazio
-                                    conceito="administracao"
+                                    conceito="federacao"
                                     titulo="Nenhuma federação cadastrada"
                                     descricao="A equipe precisa de uma federação para ser cadastrada."
-                                    acao={
-                                        <FederacaoDialog
-                                            aoSalvar={(criada) => {
-                                                setFederacoes((atuais) => [...atuais, criada]);
-                                                avisos.sucesso(`${criada.nome} cadastrada.`);
-                                            }}
-                                        />
-                                    }
                                 />
                             ) : (
                                 <div className="space-y-2">
@@ -211,7 +175,7 @@ const CadastroPage = () => {
                                                                 </Button>
                                                             }
                                                             titulo={`Excluir ${federacao.nome}?`}
-                                                            descricao="As equipes e os árbitros dela não são apagados. Se alguma equipe ainda estiver vinculada, o servidor recusa e diz quantas são."
+                                                            descricao="As equipes e os árbitros dela não são apagados. Com equipe vinculada, a exclusão é recusada e a mensagem diz quantas são."
                                                             rotuloDaAcao="Excluir federação"
                                                             aoConfirmar={() => excluir(federacao)}
                                                         />

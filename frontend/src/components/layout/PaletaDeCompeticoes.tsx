@@ -1,12 +1,13 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { Building2, CornerDownLeft, Search } from "lucide-react";
+import { CornerDownLeft, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Monograma } from "@/src/components/Monograma";
 import { ICONES } from "@/src/lib/icones";
 import {
     CompeticaoComAdministracao,
@@ -74,7 +75,7 @@ export const PaletaDeCompeticoes = () => {
         }
     };
 
-    const IconeCompeticao = ICONES.competicao;
+    const IconeAdministracao = ICONES.administracao;
 
     return (
         <Dialog.Root
@@ -133,16 +134,10 @@ export const PaletaDeCompeticoes = () => {
                                             indice === destacado && "bg-accent text-accent-foreground",
                                         )}
                                     >
-                                        <span
-                                            className={cn(
-                                                "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                                                competicao.id === atual?.id
-                                                    ? "bg-primary text-primary-foreground"
-                                                    : "bg-muted text-muted-foreground",
-                                            )}
-                                        >
-                                            <IconeCompeticao className="size-4" />
-                                        </span>
+                                        <Monograma
+                                            nome={competicao.nome}
+                                            destacado={competicao.id === atual?.id}
+                                        />
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-sm font-medium">
                                                 {competicao.nome}
@@ -151,7 +146,7 @@ export const PaletaDeCompeticoes = () => {
                                                 desempata duas competições de nome
                                                 parecido em ligas diferentes. */}
                                             <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                                                <Building2 className="size-3 shrink-0" />
+                                                <IconeAdministracao className="size-3 shrink-0" />
                                                 {competicao.nomeDaAdministracao}
                                             </span>
                                         </span>

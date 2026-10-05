@@ -19,8 +19,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
+import { Escolha, Opcao } from "@/src/components/Escolha";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { ApiError } from "@/src/lib/api/client";
@@ -39,32 +44,14 @@ import { listarElenco } from "@/src/lib/api/equipes";
 import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
 
-const Secao = ({
-    titulo,
-    descricao,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    descricao?: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-start justify-between gap-3">
-            <div className="space-y-0.5">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    {titulo}
-                </h2>
-                {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
-            </div>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
+const ESPORTES: Opcao[] = [
+    { valor: "FUTEBOL", rotulo: "Futebol" },
+    { valor: "VOLEI", rotulo: "Vôlei" },
+    { valor: "BASQUETE", rotulo: "Basquete" },
+];
+
+const rotuloDoEsporte = (codigo: string) =>
+    ESPORTES.find((esporte) => esporte.valor === codigo)?.rotulo ?? codigo;
 
 /** O formulário da regra de sanção. */
 const DialogoDeRegra = ({
@@ -100,7 +87,7 @@ const DialogoDeRegra = ({
 
         const entrada = {
             qtdPartidas: Number(partidas),
-            tipoEsporte: tipoEsporte.trim(),
+            tipoEsporte,
             idCompeticao,
         };
 
@@ -139,13 +126,17 @@ const DialogoDeRegra = ({
                     </DialogHeader>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="tipo">Infração</Label>
-                        <Input
+                        <Label htmlFor="tipo">Esporte</Label>
+                        {/* O servidor guarda o esporte da regra, não a
+                            infração: era um campo de texto livre, e
+                            "Cartão vermelho" voltava como constante de enum
+                            inexistente. */}
+                        <Escolha
                             id="tipo"
-                            value={tipoEsporte}
-                            onChange={(e) => setTipoEsporte(e.target.value)}
-                            placeholder="Cartão vermelho"
-                            aria-invalid={Boolean(erro?.mensagemDoCampo("tipoEsporte"))}
+                            valor={tipoEsporte}
+                            aoMudar={setTipoEsporte}
+                            opcoes={ESPORTES}
+                            invalido={Boolean(erro?.mensagemDoCampo("tipoEsporte"))}
                         />
                         {erro?.mensagemDoCampo("tipoEsporte") && (
                             <p role="alert" className="text-xs text-destructive">
@@ -245,7 +236,7 @@ const DialogoDeSuspensao = ({
 
     return (
         <Dialog open={aberto} onOpenChange={setAberto}>
-            <DialogTrigger render={<Button size="sm" disabled={regras.length === 0} />}>
+            <DialogTrigger render={<Button size="sm" />}>
                 <Plus />
                 Lançar suspensão
             </DialogTrigger>
@@ -262,57 +253,44 @@ const DialogoDeSuspensao = ({
 
                     <div className="space-y-1.5">
                         <Label htmlFor="regra">Regra</Label>
-                        <select
+                        <Escolha
                             id="regra"
-                            value={idSancao}
-                            onChange={(e) => setIdSancao(e.target.value)}
-                            className="h-9 w-full rounded-3xl border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
-                        >
-                            <option value="">Escolha…</option>
-                            {regras.map((regra) => (
-                                <option key={regra.id} value={regra.id}>
-                                    {regra.tipoEsporte} — {regra.partidasPadrao} partida(s)
-                                </option>
-                            ))}
-                        </select>
+                            valor={idSancao}
+                            aoMudar={setIdSancao}
+                            opcoes={regras.map((regra) => ({
+                                valor: String(regra.id),
+                                rotulo: `${rotuloDoEsporte(regra.tipoEsporte)} — ${regra.partidasPadrao === 1 ? "1 partida" : `${regra.partidasPadrao} partidas`}`,
+                            }))}
+                        />
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label htmlFor="equipe">Equipe</Label>
-                            <select
+                            <Escolha
                                 id="equipe"
-                                value={idEquipe}
-                                onChange={(e) => setIdEquipe(e.target.value)}
-                                className="h-9 w-full rounded-3xl border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
-                            >
-                                <option value="">Escolha…</option>
-                                {equipes.map((equipe) => (
-                                    <option key={equipe.id} value={equipe.id}>
-                                        {equipe.nome}
-                                    </option>
-                                ))}
-                            </select>
+                                valor={idEquipe}
+                                aoMudar={setIdEquipe}
+                                opcoes={equipes.map((equipe) => ({
+                                    valor: String(equipe.id),
+                                    rotulo: equipe.nome,
+                                }))}
+                            />
                         </div>
 
                         <div className="space-y-1.5">
                             <Label htmlFor="atleta">Atleta</Label>
-                            <select
+                            <Escolha
                                 id="atleta"
-                                value={idAtleta}
-                                onChange={(e) => setIdAtleta(e.target.value)}
-                                disabled={elenco.length === 0}
-                                className="h-9 w-full rounded-3xl border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring disabled:opacity-50"
-                            >
-                                <option value="">
-                                    {idEquipe ? "Escolha…" : "Escolha a equipe"}
-                                </option>
-                                {elenco.map((atleta) => (
-                                    <option key={atleta.id} value={atleta.id}>
-                                        {atleta.nome}
-                                    </option>
-                                ))}
-                            </select>
+                                valor={idAtleta}
+                                aoMudar={setIdAtleta}
+                                desabilitado={elenco.length === 0}
+                                vazio={idEquipe ? "Escolha…" : "Escolha a equipe primeiro"}
+                                opcoes={elenco.map((atleta) => ({
+                                    valor: String(atleta.id),
+                                    rotulo: atleta.nome,
+                                }))}
+                            />
                         </div>
                     </div>
 
@@ -379,11 +357,7 @@ const SancaoPage = () => {
                 conceito="sancao"
                 titulo="Sanções"
                 descricao={atual ? `Regras e suspensões de ${atual.nome}` : undefined}
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual ? [{ rotulo: atual.nome, href: `/competicao/${idCompeticao}` }] : []),
-                    { rotulo: "Sanções" },
-                ]}
+                migalhas={migalhasDaCompeticao(atual)}
             />
             <CorpoDaPagina>
                 {erro ? (
@@ -404,12 +378,6 @@ const SancaoPage = () => {
                                     conceito="sancao"
                                     titulo="Nenhuma regra definida"
                                     descricao="Defina quantas partidas cada infração custa nesta competição."
-                                    acao={
-                                        <DialogoDeRegra
-                                            idCompeticao={idCompeticao}
-                                            aoSalvar={carregar}
-                                        />
-                                    }
                                 />
                             ) : (
                                 <div className="space-y-2">
@@ -418,7 +386,7 @@ const SancaoPage = () => {
                                             <CardHeader>
                                                 <CardTitle className="flex items-center justify-between gap-2 text-sm">
                                                     <span className="min-w-0 truncate">
-                                                        {regra.tipoEsporte}
+                                                        {rotuloDoEsporte(regra.tipoEsporte)}
                                                     </span>
                                                     <span className="flex shrink-0 items-center gap-1">
                                                         <Badge variant="secondary">
@@ -468,11 +436,13 @@ const SancaoPage = () => {
                             titulo="Atletas suspensos"
                             descricao="Quem está cumprindo, e quantas partidas faltam."
                             acao={
+                                daCompeticao.length > 0 && (
                                 <DialogoDeSuspensao
                                     regras={daCompeticao}
                                     equipes={atual?.equipes ?? []}
                                     aoSalvar={carregar}
                                 />
+                                )
                             }
                         >
                             {carregando ? (
@@ -481,7 +451,11 @@ const SancaoPage = () => {
                                 <Vazio
                                     conceito="atleta"
                                     titulo="Nenhum atleta suspenso"
-                                    descricao="A suspensão é lançada à mão. Derivá-la da contagem de cartões depende da entidade Evento, que ainda não existe — sem ela a súmula guarda ocorrência como texto livre."
+                                    descricao={
+                                        daCompeticao.length === 0
+                                            ? "Crie uma regra de sanção acima para poder lançar suspensões."
+                                            : "A suspensão é lançada manualmente. A contagem automática de cartões a partir da súmula ainda não está disponível."
+                                    }
                                 />
                             ) : (
                                 <div className="space-y-2">

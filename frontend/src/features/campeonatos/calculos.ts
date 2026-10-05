@@ -1,5 +1,17 @@
-import { StandingEntry } from "@/src/features/campeonatos/StandingsTable";
 import { Partida } from "@/src/lib/types/partida";
+
+export type LinhaDaClassificacao = {
+    posicao: number;
+    equipe: string;
+    jogos: number;
+    vitorias: number;
+    empates: number;
+    derrotas: number;
+    golsPro: number;
+    golsContra: number;
+    saldo: number;
+    pontos: number;
+};
 
 /**
  * Classificação calculada no cliente.
@@ -19,39 +31,48 @@ import { Partida } from "@/src/lib/types/partida";
  * parecia funcionar porque o front rotulava toda eliminatória de "Final".
  */
 
-export function computeStandings(matches: Partida[]): StandingEntry[] {
-    const stats: Record<string, { wins: number; draws: number; losses: number; goalsFor: number; goalsAgainst: number }> = {};
+export const calcularClassificacao = (partidas: Partida[]): LinhaDaClassificacao[] => {
+    const desempenho = new Map<string, Omit<LinhaDaClassificacao, "posicao" | "equipe" | "jogos" | "saldo" | "pontos">>();
+    const de = (equipe: string) => {
+        if (!desempenho.has(equipe)) {
+            desempenho.set(equipe, { vitorias: 0, empates: 0, derrotas: 0, golsPro: 0, golsContra: 0 });
+        }
+        return desempenho.get(equipe)!;
+    };
 
-    for (const partida of matches) {
+    for (const partida of partidas) {
         if (!partida.realizada) continue;
-        const home = partida.equipeMandante;
-        const away = partida.equipeVisitante;
-        if (!stats[home]) stats[home] = { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
-        if (!stats[away]) stats[away] = { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
-        const hg = partida.placarMandante ?? 0;
-        const ag = partida.placarVisitante ?? 0;
-        stats[home].goalsFor += hg;
-        stats[home].goalsAgainst += ag;
-        stats[away].goalsFor += ag;
-        stats[away].goalsAgainst += hg;
-        if (hg > ag) { stats[home].wins++; stats[away].losses++; }
-        else if (hg < ag) { stats[away].wins++; stats[home].losses++; }
-        else { stats[home].draws++; stats[away].draws++; }
+        const mandante = de(partida.equipeMandante);
+        const visitante = de(partida.equipeVisitante);
+        const golsMandante = partida.placarMandante ?? 0;
+        const golsVisitante = partida.placarVisitante ?? 0;
+
+        mandante.golsPro += golsMandante;
+        mandante.golsContra += golsVisitante;
+        visitante.golsPro += golsVisitante;
+        visitante.golsContra += golsMandante;
+
+        if (golsMandante > golsVisitante) {
+            mandante.vitorias++;
+            visitante.derrotas++;
+        } else if (golsMandante < golsVisitante) {
+            visitante.vitorias++;
+            mandante.derrotas++;
+        } else {
+            mandante.empates++;
+            visitante.empates++;
+        }
     }
 
-    const entries = Object.entries(stats).map(([teamName, s]) => ({
-        teamName,
-        played: s.wins + s.draws + s.losses,
-        wins: s.wins,
-        draws: s.draws,
-        losses: s.losses,
-        goalsFor: s.goalsFor,
-        goalsAgainst: s.goalsAgainst,
-        goalDiff: s.goalsFor - s.goalsAgainst,
-        points: s.wins * 3 + s.draws,
-        position: 0,
-    }));
-
-    entries.sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor);
-    return entries.map((e, i) => ({ ...e, position: i + 1 }));
-}
+    return [...desempenho.entries()]
+        .map(([equipe, d]) => ({
+            ...d,
+            equipe,
+            posicao: 0,
+            jogos: d.vitorias + d.empates + d.derrotas,
+            saldo: d.golsPro - d.golsContra,
+            pontos: d.vitorias * 3 + d.empates,
+        }))
+        .sort((a, b) => b.pontos - a.pontos || b.saldo - a.saldo || b.golsPro - a.golsPro)
+        .map((linha, i) => ({ ...linha, posicao: i + 1 }));
+};

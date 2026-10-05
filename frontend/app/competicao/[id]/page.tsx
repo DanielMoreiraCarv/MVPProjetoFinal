@@ -1,57 +1,51 @@
 "use client";
 
+import { Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
+import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
+import { CompeticaoDialog } from "@/src/features/administracoes/CompeticaoDialog";
+import { calcularClassificacao } from "@/src/features/campeonatos/calculos";
 import { InscreverEquipeDialog } from "@/src/features/campeonatos/InscreverEquipeDialog";
-import { EditCompetitionForm } from "@/src/features/campeonatos/editCompetitionForm";
-import { MatchCalendar } from "@/src/features/campeonatos/matchCalendar";
-import { StandingsTable } from "@/src/features/campeonatos/StandingsTable";
-import { TeamsList } from "@/src/features/campeonatos/teamsList";
-import { buscarCompeticao, removerEquipeDaCompeticao } from "@/src/lib/api/competicoes";
+import { ListaDeInscritas } from "@/src/features/campeonatos/ListaDeInscritas";
+import { TabelaDeClassificacao } from "@/src/features/campeonatos/TabelaDeClassificacao";
+import { ListaDePartidas } from "@/src/features/partidas/ListaDePartidas";
+import {
+    buscarCompeticao,
+    mudarEstadoDaCompeticao,
+    removerCompeticao,
+    removerEquipeDaCompeticao,
+} from "@/src/lib/api/competicoes";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
-import { Competicao, ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
-import { Equipe } from "@/src/lib/types/equipe";
-import { Partida } from "@/src/lib/types/partida";
-import { computeStandings } from "@/src/features/campeonatos/calculos";
-import { ICONES } from "@/src/lib/icones";
+import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
 import { formatarDiaEHora, porDataHora } from "@/src/lib/formato";
-import { useAvisos } from "@/src/lib/avisos";
+import { Competicao, EstadoDaCompeticao, ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
+import { Equipe } from "@/src/lib/types/equipe";
+import { Partida } from "@/src/lib/types/partida";
 
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
+const VARIANTE_DO_ESTADO: Record<EstadoDaCompeticao, "default" | "secondary" | "destructive"> = {
+    RASCUNHO: "secondary",
+    EM_ANDAMENTO: "default",
+    ENCERRADA: "secondary",
+    CANCELADA: "destructive",
+};
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 const CompeticaoDetalhePage = () => {
     const params = useParams<{ id: string }>();
     const id = Number(params?.id);
-    const { atual } = useEscopo();
+    const router = useRouter();
+    const { atual, recarregar } = useEscopo();
     const avisos = useAvisos();
 
     const [competicao, setCompeticao] = useState<Competicao | null>(null);
@@ -82,9 +76,38 @@ const CompeticaoDetalhePage = () => {
     );
 
     const pontosCorridos = competicao ? !competicao.isMataMata : false;
-    const classificacao = pontosCorridos ? computeStandings(partidas) : [];
+    const classificacao = pontosCorridos ? calcularClassificacao(partidas) : [];
 
-    const IconePartida = ICONES.partida;
+    const aoSalvar = (salva: Competicao) => {
+        setCompeticao(salva);
+        setEquipes(salva.equipes);
+        recarregar();
+        avisos.sucesso("Competição atualizada.");
+    };
+
+    const mudarEstado = async (destino: EstadoDaCompeticao) => {
+        try {
+            setCompeticao(await mudarEstadoDaCompeticao(id, destino));
+            recarregar();
+            avisos.sucesso(`Competição ${ROTULO_DO_ESTADO[destino].toLowerCase()}.`);
+        } catch (causa) {
+            avisos.erro(causa);
+        }
+    };
+
+    const excluir = async () => {
+        try {
+            await removerCompeticao(id);
+            recarregar();
+            avisos.sucesso(`${competicao?.nome ?? "Competição"} excluída.`);
+            router.push("/competicao");
+        } catch (causa) {
+            avisos.erro(causa, "Não foi possível excluir");
+        }
+    };
+
+    const estado = competicao?.estado;
+    const aberta = estado === "RASCUNHO" || estado === "EM_ANDAMENTO";
 
     return (
         <>
@@ -101,18 +124,44 @@ const CompeticaoDetalhePage = () => {
                     ...(atual ? [{ rotulo: atual.nomeDaAdministracao }] : []),
                 ]}
                 acoes={
-                    competicao?.estado && (
-                        <Badge
-                            variant={
-                                competicao.estado === "EM_ANDAMENTO"
-                                    ? "default"
-                                    : competicao.estado === "CANCELADA"
-                                      ? "destructive"
-                                      : "secondary"
-                            }
-                        >
-                            {ROTULO_DO_ESTADO[competicao.estado]}
-                        </Badge>
+                    competicao && (
+                        <>
+                            {estado && (
+                                <Badge variant={VARIANTE_DO_ESTADO[estado]}>
+                                    {ROTULO_DO_ESTADO[estado]}
+                                </Badge>
+                            )}
+                            <CompeticaoDialog
+                                competicao={competicao}
+                                aoSalvar={aoSalvar}
+                                gatilho={
+                                    <Button variant="outline" size="sm">
+                                        <Pencil />
+                                        Editar
+                                    </Button>
+                                }
+                            />
+                            <Confirmacao
+                                gatilho={
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label="Excluir competição"
+                                        title="Excluir competição"
+                                    >
+                                        <Trash2 />
+                                    </Button>
+                                }
+                                titulo={`Excluir ${competicao.nome}?`}
+                                descricao={
+                                    partidas.length > 0
+                                        ? `Ela tem ${plural(partidas.length, "partida", "partidas")}, e o servidor só exclui competição sem histórico. Para tirá-la de circulação, cancele-a.`
+                                        : "As equipes continuam cadastradas; só a competição sai. Não dá para desfazer."
+                                }
+                                rotuloDaAcao="Excluir competição"
+                                aoConfirmar={excluir}
+                            />
+                        </>
                     )
                 }
             />
@@ -121,7 +170,99 @@ const CompeticaoDetalhePage = () => {
                     <Erro causa={erro} aoTentarDeNovo={carregar} />
                 ) : (
                     <div className="grid gap-6 lg:grid-cols-3">
-                        <div className="space-y-6">
+                        <div className="min-w-0 space-y-6 lg:col-span-2">
+                            {carregando ? (
+                                <CarregandoCartoes cartoes={3} />
+                            ) : (
+                                <Tabs defaultValue="classificacao">
+                                    <TabsList>
+                                        <TabsTrigger value="classificacao">
+                                            {pontosCorridos ? "Classificação" : "Chaveamento"}
+                                        </TabsTrigger>
+                                        <TabsTrigger value="calendario">Calendário</TabsTrigger>
+                                    </TabsList>
+
+                                    <TabsContent value="classificacao" className="pt-4">
+                                        {!pontosCorridos ? (
+                                            <Vazio
+                                                conceito="chaveamento"
+                                                titulo="Chaveamento ainda não disponível"
+                                                descricao="A chave da eliminatória ainda não é desenhada nesta versão. As partidas estão no Calendário."
+                                            />
+                                        ) : classificacao.length === 0 ? (
+                                            <Vazio
+                                                conceito="classificacao"
+                                                titulo="Sem jogos encerrados"
+                                                descricao="A tabela aparece quando a primeira partida terminar."
+                                            />
+                                        ) : (
+                                            <TabelaDeClassificacao linhas={classificacao} />
+                                        )}
+                                    </TabsContent>
+
+                                    <TabsContent value="calendario" className="pt-4">
+                                        {partidas.length === 0 ? (
+                                            <Vazio
+                                                conceito="calendario"
+                                                titulo="Calendário vazio"
+                                                descricao="Nenhuma partida gerada nesta competição."
+                                            />
+                                        ) : (
+                                            <ListaDePartidas partidas={partidas} idCompeticao={id} />
+                                        )}
+                                    </TabsContent>
+                                </Tabs>
+                            )}
+
+                            {aberta && (
+                                <Secao
+                                    titulo="Situação"
+                                    descricao={
+                                        estado === "RASCUNHO"
+                                            ? "Em rascunho: monte as fases na Estrutura e publique por lá."
+                                            : "Encerrar fecha a competição com o resultado atual. Cancelar a tira de circulação sem resultado."
+                                    }
+                                >
+                                    <div className="flex flex-wrap gap-2">
+                                        {estado === "RASCUNHO" ? (
+                                            <Button
+                                                size="sm"
+                                                nativeButton={false}
+                                                render={<Link href={`/competicao/${id}/estrutura`} />}
+                                            >
+                                                Ir para a Estrutura
+                                            </Button>
+                                        ) : (
+                                            <Confirmacao
+                                                gatilho={<Button size="sm">Encerrar competição</Button>}
+                                                titulo="Encerrar a competição?"
+                                                descricao={
+                                                    proximas.length > 0
+                                                        ? `Ainda há ${plural(proximas.length, "partida aberta", "partidas abertas")}. Encerrada, a competição não volta a andamento.`
+                                                        : "Encerrada, a competição não volta a andamento."
+                                                }
+                                                rotuloDaAcao="Encerrar competição"
+                                                destrutiva={false}
+                                                aoConfirmar={() => mudarEstado("ENCERRADA")}
+                                            />
+                                        )}
+                                        <Confirmacao
+                                            gatilho={
+                                                <Button variant="outline" size="sm">
+                                                    Cancelar competição
+                                                </Button>
+                                            }
+                                            titulo="Cancelar a competição?"
+                                            descricao="Cancelar é definitivo. As partidas continuam no histórico, mas a competição não volta a andamento."
+                                            rotuloDaAcao="Cancelar competição"
+                                            aoConfirmar={() => mudarEstado("CANCELADA")}
+                                        />
+                                    </div>
+                                </Secao>
+                            )}
+                        </div>
+
+                        <div className="min-w-0 space-y-6">
                             {/* Os próximos jogos vivem aqui, e não numa lista
                                 geral: fora da competição eles não diziam de
                                 qual competição eram. */}
@@ -135,44 +276,39 @@ const CompeticaoDetalhePage = () => {
                                         descricao="As partidas aparecem quando uma fase gera os confrontos."
                                     />
                                 ) : (
-                                    <div className="space-y-2">
-                                        {proximas.slice(0, 6).map((partida) => (
-                                            <Link
-                                                key={partida.id}
-                                                href={`/competicao/${id}/partida/${partida.id}`}
-                                                className="block"
-                                            >
-                                                <Card className="transition-colors hover:border-ring">
-                                                    <CardHeader>
-                                                        <CardTitle className="flex items-start gap-2 text-sm">
-                                                            <IconePartida className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                                            <span className="min-w-0">
-                                                                {partida.equipeMandante} ×{" "}
-                                                                {partida.equipeVisitante}
-                                                            </span>
-                                                        </CardTitle>
-                                                        <CardDescription>
-                                                            {formatarDiaEHora(partida.dataHora)}
-                                                            {partida.local ? ` · ${partida.local}` : ""}
-                                                        </CardDescription>
-                                                    </CardHeader>
-                                                </Card>
-                                            </Link>
+                                    <ul className="divide-y divide-border overflow-hidden rounded-3xl border border-border">
+                                        {proximas.slice(0, 5).map((partida) => (
+                                            <li key={partida.id}>
+                                                <Link
+                                                    href={`/competicao/${id}/partida/${partida.id}`}
+                                                    className="block px-4 py-2.5 transition-colors hover:bg-muted/50"
+                                                >
+                                                    <span className="block truncate text-sm font-medium">
+                                                        {partida.equipeMandante} × {partida.equipeVisitante}
+                                                    </span>
+                                                    <span className="block truncate text-xs text-muted-foreground">
+                                                        {partida.dataHora
+                                                            ? formatarDiaEHora(partida.dataHora)
+                                                            : "Sem data"}
+                                                        {partida.local ? ` · ${partida.local}` : ""}
+                                                    </span>
+                                                </Link>
+                                            </li>
                                         ))}
-                                    </div>
+                                    </ul>
                                 )}
                             </Secao>
 
                             <Secao
-                                titulo="Equipes inscritas"
+                                titulo={`Equipes inscritas${equipes.length ? ` (${equipes.length})` : ""}`}
                                 acao={
-                                    <InscreverEquipeDialog
-                                        idCompeticao={id}
-                                        jaInscritas={equipes}
-                                        aoInscrever={(atualizada) =>
-                                            setEquipes(atualizada.equipes)
-                                        }
-                                    />
+                                    aberta && (
+                                        <InscreverEquipeDialog
+                                            idCompeticao={id}
+                                            jaInscritas={equipes}
+                                            aoInscrever={(atualizada) => setEquipes(atualizada.equipes)}
+                                        />
+                                    )
                                 }
                             >
                                 {carregando ? (
@@ -184,67 +320,25 @@ const CompeticaoDetalhePage = () => {
                                         descricao="Inscreva as equipes que vão disputar."
                                     />
                                 ) : (
-                                    <TeamsList
+                                    <ListaDeInscritas
                                         equipes={equipes}
-                                        aoRemover={async (equipe) => {
-                                            try {
-                                                const atualizada =
-                                                    await removerEquipeDaCompeticao(id, equipe.id);
-                                                setEquipes(atualizada.equipes);
-                                                avisos.sucesso(
-                                                    `${equipe.nome} saiu da competição.`,
-                                                );
-                                            } catch (causa) {
-                                                avisos.erro(causa);
-                                            }
-                                        }}
+                                        aoRemover={
+                                            aberta
+                                                ? async (equipe) => {
+                                                      try {
+                                                          const atualizada =
+                                                              await removerEquipeDaCompeticao(id, equipe.id);
+                                                          setEquipes(atualizada.equipes);
+                                                          avisos.sucesso(`${equipe.nome} saiu da competição.`);
+                                                      } catch (causa) {
+                                                          avisos.erro(causa);
+                                                      }
+                                                  }
+                                                : undefined
+                                        }
                                     />
                                 )}
                             </Secao>
-                        </div>
-
-                        <div className="lg:col-span-2">
-                            {carregando ? (
-                                <CarregandoCartoes cartoes={3} />
-                            ) : (
-                                <Tabs defaultValue="classificacao">
-                                    <TabsList>
-                                        <TabsTrigger value="classificacao">
-                                            {pontosCorridos ? "Classificação" : "Chaveamento"}
-                                        </TabsTrigger>
-                                        <TabsTrigger value="calendario">Calendário</TabsTrigger>
-                                        <TabsTrigger value="dados">Dados</TabsTrigger>
-                                    </TabsList>
-
-                                    <TabsContent value="classificacao" className="pt-4">
-                                        {pontosCorridos ? (
-                                            <StandingsTable standings={classificacao} />
-                                        ) : (
-                                            <Vazio
-                                                conceito="chaveamento"
-                                                titulo="Chaveamento ainda não disponível"
-                                                descricao="A API informa o formato da fase, mas não em que estágio da eliminatória cada partida está. A chave entra quando a fase vier na resposta da partida."
-                                            />
-                                        )}
-                                    </TabsContent>
-
-                                    <TabsContent value="calendario" className="pt-4">
-                                        {partidas.length === 0 ? (
-                                            <Vazio
-                                                conceito="calendario"
-                                                titulo="Calendário vazio"
-                                                descricao="Nenhuma partida gerada nesta competição."
-                                            />
-                                        ) : (
-                                            <MatchCalendar matches={partidas} />
-                                        )}
-                                    </TabsContent>
-
-                                    <TabsContent value="dados" className="pt-4">
-                                        {competicao && <EditCompetitionForm competicao={competicao} />}
-                                    </TabsContent>
-                                </Tabs>
-                            )}
                         </div>
                     </div>
                 )}

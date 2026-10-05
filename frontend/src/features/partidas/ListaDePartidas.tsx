@@ -24,7 +24,8 @@ export const ListaDePartidas = ({
 }: {
     partidas: Partida[];
     idCompeticao: number;
-    aoAgendar: (partida: Partida) => void;
+    /** Ausente quando a lista é só de leitura, como na visão geral. */
+    aoAgendar?: (partida: Partida) => void;
 }) => (
     <div className="space-y-2">
         {[...partidas].sort(porDataHora).map((partida) => {
@@ -35,10 +36,10 @@ export const ListaDePartidas = ({
             return (
                 <Card key={partida.id} className="transition-colors hover:border-ring">
                     <CardHeader>
-                        <CardTitle className="flex items-center justify-between gap-3 text-sm">
+                        <CardTitle className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                             <Link
                                 href={`/competicao/${idCompeticao}/partida/${partida.id}`}
-                                className="min-w-0 truncate hover:underline"
+                                className="min-w-0 hover:underline sm:truncate"
                             >
                                 {partida.equipeMandante}{" "}
                                 <span className="numero-tabular font-mono text-muted-foreground">
@@ -50,11 +51,15 @@ export const ListaDePartidas = ({
                                 <Badge variant={partida.realizada ? "secondary" : "outline"}>
                                     {partida.realizada ? "Encerrada" : "Agendada"}
                                 </Badge>
-                                <AgendarPartidaDialog
-                                    partida={partida}
-                                    aoAgendar={aoAgendar}
-                                    gatilho={<Button variant="ghost" size="sm" />}
-                                />
+                                {/* Encerrada não se reagenda: o botão sumir diz
+                                    isso antes de a API recusar. */}
+                                {aoAgendar && !partida.realizada && (
+                                    <AgendarPartidaDialog
+                                        partida={partida}
+                                        aoAgendar={aoAgendar}
+                                        gatilho={<Button variant="ghost" size="xs" className="text-primary" />}
+                                    />
+                                )}
                             </span>
                         </CardTitle>
                         <CardDescription>

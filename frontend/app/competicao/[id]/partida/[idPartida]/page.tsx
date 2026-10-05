@@ -1,46 +1,32 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro } from "@/src/components/estado/Estados";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { AgendarPartidaDialog } from "@/src/features/partidas/AgendarPartidaDialog";
 import { EscalarArbitroDialog } from "@/src/features/partidas/EscalarArbitroDialog";
+import { PartidaDialog } from "@/src/features/partidas/PartidaDialog";
 import { RegistrarPlacarDialog } from "@/src/features/partidas/RegistrarPlacarDialog";
-import { buscarPartida, finalizarPartida } from "@/src/lib/api/partidas";
+import { buscarCompeticao } from "@/src/lib/api/competicoes";
+import { buscarPartida, finalizarPartida, removerPartida } from "@/src/lib/api/partidas";
 import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
 import { formatarDataHora, formatarDiaDaSemana } from "@/src/lib/formato";
 import { ICONES } from "@/src/lib/icones";
+import { Equipe } from "@/src/lib/types/equipe";
 import { Partida } from "@/src/lib/types/partida";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const Dado = ({ rotulo, valor }: { rotulo: string; valor: string }) => (
     <div className="space-y-0.5">
@@ -55,8 +41,10 @@ const PartidaPage = () => {
     const idPartida = Number(params?.idPartida);
     const { atual } = useEscopo();
     const avisos = useAvisos();
+    const router = useRouter();
 
     const [partida, setPartida] = useState<Partida | null>(null);
+    const [inscritas, setInscritas] = useState<Equipe[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<unknown>(null);
 
@@ -64,7 +52,13 @@ const PartidaPage = () => {
         if (!Number.isFinite(idPartida)) return;
         setCarregando(true);
         setErro(null);
-        buscarPartida(idPartida).then(setPartida).catch(setErro).finally(() => setCarregando(false));
+        Promise.all([buscarPartida(idPartida), buscarCompeticao(idCompeticao)])
+            .then(([encontrada, competicao]) => {
+                setPartida(encontrada);
+                setInscritas(competicao.equipes);
+            })
+            .catch(setErro)
+            .finally(() => setCarregando(false));
     };
 
     useEffect(carregar, [idPartida]);
@@ -76,6 +70,16 @@ const PartidaPage = () => {
             avisos.sucesso("Partida encerrada.");
         } catch (causa) {
             avisos.erro(causa);
+        }
+    };
+
+    const excluir = async () => {
+        try {
+            await removerPartida(idPartida);
+            avisos.sucesso("Partida excluída.");
+            router.push(`/competicao/${idCompeticao}/partida`);
+        } catch (causa) {
+            avisos.erro(causa, "Não foi possível excluir");
         }
     };
 
@@ -92,15 +96,7 @@ const PartidaPage = () => {
                         : "Partida"
                 }
                 descricao={partida?.nomeCompeticao || undefined}
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual ? [{ rotulo: atual.nomeDaAdministracao }] : []),
-                    ...(atual
-                        ? [{ rotulo: atual.nome, href: `/competicao/${idCompeticao}` }]
-                        : []),
-                    { rotulo: "Calendário", href: `/competicao/${idCompeticao}/partida` },
-                    { rotulo: "Partida" },
-                ]}
+                migalhas={migalhasDaCompeticao(atual, { rotulo: "Calendário", href: `/competicao/${idCompeticao}/partida` })}
                 acoes={
                     partida && (
                         <Badge variant={encerrada ? "secondary" : "outline"}>
@@ -162,31 +158,16 @@ const PartidaPage = () => {
                             </div>
                         </Secao>
 
-                        <Secao titulo="Ações">
+                        <Secao
+                            titulo="Ações"
+                            descricao={
+                                encerrada
+                                    ? "Encerrada, a partida não aceita mais placar nem troca de árbitro."
+                                    : undefined
+                            }
+                        >
                             <div className="flex flex-wrap items-center gap-2 rounded-3xl border border-border px-5 py-3">
-                                {/* Depois de encerrada a API recusa placar e
-                                    troca de árbitro. O botão desabilitado diz
-                                    isso antes de a pessoa tentar. */}
-                                {encerrada ? (
-                                    <>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled
-                                            title="A partida já foi encerrada e não aceita alteração de placar."
-                                        >
-                                            Registrar placar
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled
-                                            title="A partida já foi encerrada e não aceita troca de árbitro."
-                                        >
-                                            Trocar árbitro
-                                        </Button>
-                                    </>
-                                ) : (
+                                {!encerrada && (
                                     <>
                                         <RegistrarPlacarDialog
                                             partida={partida}
@@ -196,38 +177,19 @@ const PartidaPage = () => {
                                             partida={partida}
                                             aoEscalar={setPartida}
                                         />
+                                        <AgendarPartidaDialog partida={partida} aoAgendar={setPartida} />
+                                        <PartidaDialog
+                                            idCompeticao={idCompeticao}
+                                            equipes={inscritas}
+                                            partida={partida}
+                                            aoSalvar={setPartida}
+                                        />
                                     </>
                                 )}
 
-                                <AgendarPartidaDialog partida={partida} aoAgendar={setPartida} />
-
-                                {encerrada ? (
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        disabled
-                                        title="A partida já foi encerrada."
-                                    >
-                                        Encerrar partida
-                                    </Button>
-                                ) : (
-                                    <Confirmacao
-                                        gatilho={
-                                            <Button variant="destructive" size="sm">
-                                                Encerrar partida
-                                            </Button>
-                                        }
-                                        titulo="Encerrar a partida?"
-                                        descricao={`O resultado ${partida.placarMandante ?? 0} × ${partida.placarVisitante ?? 0} fica valendo e entra na classificação. Depois disso o placar não muda mais e o árbitro não pode ser trocado — encerrar é definitivo.`}
-                                        rotuloDaAcao="Encerrar partida"
-                                        aoConfirmar={encerrar}
-                                    />
-                                )}
-
                                 <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    className="ml-auto"
                                     nativeButton={false}
                                     render={
                                         <Link
@@ -236,8 +198,41 @@ const PartidaPage = () => {
                                     }
                                 >
                                     <IconeSumula />
-                                    Ver súmula
+                                    Súmula
                                 </Button>
+
+                                <span className="ml-auto flex items-center gap-2">
+                                    {!encerrada && (
+                                        <Confirmacao
+                                            gatilho={<Button size="sm">Encerrar partida</Button>}
+                                            titulo="Encerrar a partida?"
+                                            descricao={`O resultado ${partida.placarMandante ?? 0} × ${partida.placarVisitante ?? 0} fica valendo e entra na classificação. Depois disso o placar não muda mais e o árbitro não pode ser trocado — encerrar é definitivo.`}
+                                            rotuloDaAcao="Encerrar partida"
+                                            destrutiva={false}
+                                            aoConfirmar={encerrar}
+                                        />
+                                    )}
+                                    <Confirmacao
+                                        gatilho={
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                aria-label="Excluir partida"
+                                                title="Excluir partida"
+                                            >
+                                                <Trash2 />
+                                            </Button>
+                                        }
+                                        titulo="Excluir a partida?"
+                                        descricao={
+                                            encerrada
+                                                ? "O resultado sai da classificação junto com ela. Não dá para desfazer."
+                                                : "A partida sai do calendário. Não dá para desfazer."
+                                        }
+                                        rotuloDaAcao="Excluir partida"
+                                        aoConfirmar={excluir}
+                                    />
+                                </span>
                             </div>
                         </Secao>
                     </div>

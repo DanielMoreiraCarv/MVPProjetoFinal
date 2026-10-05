@@ -1,17 +1,24 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
+import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoCartoes, Erro, Vazio } from "@/src/components/estado/Estados";
-import { AddAdministrationDialog } from "@/src/features/administracoes/addAdministrationDialog";
-import { AddCompetitionDialog } from "@/src/features/administracoes/addCompetitionDialog";
+import { AdministracaoDialog } from "@/src/features/administracoes/AdministracaoDialog";
+import { CompeticaoDialog } from "@/src/features/administracoes/CompeticaoDialog";
+import { removerAdministracao } from "@/src/lib/api/administracoes";
+import { useAvisos } from "@/src/lib/avisos";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
+import { ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
 
 /**
  * Administrações e competições na mesma página.
@@ -20,28 +27,6 @@ import { useEscopo } from "@/src/lib/escopo";
  * administração escolhida não tem o que listar, e com uma escolhida repetia o
  * que a primeira já mostrava ao lado. Escolher à esquerda, ver à direita.
  */
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const CompeticaoPage = () => {
     const {
@@ -53,6 +38,7 @@ const CompeticaoPage = () => {
         administracaoAtual,
         escolherAdministracao,
     } = useEscopo();
+    const avisos = useAvisos();
 
     const IconeAdministracao = ICONES.administracao;
     const IconeCompeticao = ICONES.competicao;
@@ -70,7 +56,7 @@ const CompeticaoPage = () => {
             <CabecalhoDaPagina
                 conceito="competicao"
                 titulo="Competições"
-                descricao="Escolha a administração à esquerda para ver as competições dela."
+                descricao="Escolha a administração para ver as competições que ela organiza."
             />
             <CorpoDaPagina>
                 {erro ? (
@@ -79,7 +65,7 @@ const CompeticaoPage = () => {
                     <div className="grid gap-6 lg:grid-cols-3">
                         <Secao
                             titulo="Administrações"
-                            acao={<AddAdministrationDialog onSaved={recarregar} />}
+                            acao={<AdministracaoDialog aoSalvar={recarregar} />}
                         >
                             {carregando ? (
                                 <CarregandoCartoes cartoes={2} />
@@ -88,7 +74,7 @@ const CompeticaoPage = () => {
                                     conceito="administracao"
                                     titulo="Nenhuma administração ainda"
                                     descricao="Comece criando quem organiza as competições."
-                                    acao={<AddAdministrationDialog onSaved={recarregar} />}
+                                    acao={<AdministracaoDialog aoSalvar={recarregar} />}
                                 />
                             ) : (
                                 <div className="space-y-2">
@@ -129,11 +115,11 @@ const CompeticaoPage = () => {
                                                     )}
                                                 </span>
                                                 <span className="min-w-0 flex-1 space-y-0.5">
-                                                    <span className="block truncate font-medium">
+                                                    <span className="block truncate font-medium" title={administracao.nome}>
                                                         {administracao.nome}
                                                     </span>
                                                     {administracao.descricao && (
-                                                        <span className="block text-sm text-muted-foreground">
+                                                        <span className="line-clamp-2 text-sm text-muted-foreground">
                                                             {administracao.descricao}
                                                         </span>
                                                     )}
@@ -159,10 +145,55 @@ const CompeticaoPage = () => {
                             }
                             acao={
                                 administracaoAtual && (
-                                    <AddCompetitionDialog
-                                        idAdministracao={administracaoAtual.id}
-                                        onSaved={recarregar}
-                                    />
+                                    <>
+                                        <AdministracaoDialog
+                                            administracao={administracaoAtual}
+                                            aoSalvar={recarregar}
+                                            gatilho={
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    aria-label={`Editar ${administracaoAtual.nome}`}
+                                                    title="Editar administração"
+                                                >
+                                                    <Pencil />
+                                                </Button>
+                                            }
+                                        />
+                                        <Confirmacao
+                                            gatilho={
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    aria-label={`Excluir ${administracaoAtual.nome}`}
+                                                    title="Excluir administração"
+                                                >
+                                                    <Trash2 />
+                                                </Button>
+                                            }
+                                            titulo={`Excluir ${administracaoAtual.nome}?`}
+                                            descricao={
+                                                daAdministracao.length > 0
+                                                    ? `Ela organiza ${daAdministracao.length === 1 ? "1 competição" : `${daAdministracao.length} competições`}, e o servidor só exclui administração vazia. Exclua as competições primeiro.`
+                                                    : "A administração não tem competições. Não dá para desfazer."
+                                            }
+                                            rotuloDaAcao="Excluir administração"
+                                            aoConfirmar={async () => {
+                                                try {
+                                                    await removerAdministracao(administracaoAtual.id);
+                                                    escolherAdministracao(null);
+                                                    recarregar();
+                                                    avisos.sucesso(`${administracaoAtual.nome} excluída.`);
+                                                } catch (causa) {
+                                                    avisos.erro(causa, "Não foi possível excluir");
+                                                }
+                                            }}
+                                        />
+                                        <CompeticaoDialog
+                                            idAdministracao={administracaoAtual.id}
+                                            aoSalvar={recarregar}
+                                        />
+                                    </>
                                 )
                             }
                         >
@@ -180,9 +211,9 @@ const CompeticaoPage = () => {
                                     titulo="Nenhuma competição aqui"
                                     descricao={`${administracaoAtual.nome} ainda não tem competições.`}
                                     acao={
-                                        <AddCompetitionDialog
+                                        <CompeticaoDialog
                                             idAdministracao={administracaoAtual.id}
-                                            onSaved={recarregar}
+                                            aoSalvar={recarregar}
                                         />
                                     }
                                 />
@@ -203,15 +234,28 @@ const CompeticaoPage = () => {
                                                         </span>
                                                     </CardTitle>
                                                     {competicao.descricao && (
-                                                        <CardDescription>
+                                                        <CardDescription className="line-clamp-2">
                                                             {competicao.descricao}
                                                         </CardDescription>
                                                     )}
-                                                    <CardDescription>
-                                                        {[competicao.modalidade, competicao.categoria]
-                                                            .filter(Boolean)
-                                                            .join(" · ")}
-                                                    </CardDescription>
+                                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                                        {competicao.estado && (
+                                                            <Badge
+                                                                variant={
+                                                                    competicao.estado === "EM_ANDAMENTO"
+                                                                        ? "default"
+                                                                        : "secondary"
+                                                                }
+                                                            >
+                                                                {ROTULO_DO_ESTADO[competicao.estado]}
+                                                            </Badge>
+                                                        )}
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {[competicao.modalidade, competicao.categoria]
+                                                                .filter(Boolean)
+                                                                .join(" · ")}
+                                                        </span>
+                                                    </div>
                                                 </CardHeader>
                                             </Card>
                                         </Link>

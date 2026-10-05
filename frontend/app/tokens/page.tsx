@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { AmostraDeEstados } from "@/app/tokens/AmostraDeEstados";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { ICONES } from "@/src/lib/icones";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,15 +32,6 @@ const RAIOS = ["rounded-sm", "rounded-md", "rounded-lg", "rounded-xl", "rounded-
 
 const VARIANTES = ["default", "secondary", "outline", "ghost", "destructive", "link"] as const;
 const TAMANHOS = ["xs", "sm", "default", "lg"] as const;
-
-const Secao = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
-    <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {titulo}
-        </h2>
-        {children}
-    </section>
-);
 
 const TokensPage = () => {
     return (

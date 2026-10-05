@@ -128,3 +128,21 @@ export const finalizarPartida = async (id: number): Promise<Partida> =>
             await apiFetch<unknown>(`/partida/${id}/finalizar`, { method: "POST" }),
         ),
     );
+
+/** Campo ausente não muda: o servidor aplica só o que veio. */
+export const atualizarPartida = async (
+    id: number,
+    entrada: Partial<PartidaInput>,
+): Promise<Partida> =>
+    paraPartida(
+        partidaResponseSchema.parse(
+            await apiFetch<unknown>(`/partida/${id}`, {
+                method: "PUT",
+                body: JSON.stringify(entrada),
+            }),
+        ),
+    );
+
+export const removerPartida = async (id: number): Promise<void> => {
+    await apiFetch<void>(`/partida/${id}`, { method: "DELETE" });
+};

@@ -101,6 +101,14 @@ export const atualizarCompeticao = async (
 };
 
 /**
+ * Só sai a competição sem partidas, fases nem sanções; com histórico, o
+ * servidor recusa e diz para cancelar.
+ */
+export const removerCompeticao = async (id: number): Promise<void> => {
+    await apiFetch<void>(`/competicao/${id}`, { method: "DELETE" });
+};
+
+/**
  * Inscreve uma equipe já existente na competição.
  *
  * O caminho anterior era um PUT com a lista `equipesIds` inteira — leitura,

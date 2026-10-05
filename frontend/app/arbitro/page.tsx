@@ -6,37 +6,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { ArbitroDialog } from "@/src/features/cadastros/ArbitroDialog";
 import { Arbitro, listarArbitros, removerArbitro } from "@/src/lib/api/arbitros";
 import { useAvisos } from "@/src/lib/avisos";
 import { normalizar } from "@/src/lib/escopo";
 import { ICONES } from "@/src/lib/icones";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const ArbitroPage = () => {
     const avisos = useAvisos();
@@ -83,7 +61,6 @@ const ArbitroPage = () => {
                 conceito="arbitro"
                 titulo="Árbitros"
                 descricao="Quem pode ser escalado para apitar as partidas."
-                migalhas={[{ rotulo: "Cadastros", href: "/cadastro" }, { rotulo: "Árbitros" }]}
                 acoes={
                     <ArbitroDialog
                         aoSalvar={(criado) => {
@@ -123,14 +100,6 @@ const ArbitroPage = () => {
                                 conceito="arbitro"
                                 titulo="Nenhum árbitro cadastrado"
                                 descricao="Cadastre quem vai apitar antes de escalar alguém numa partida."
-                                acao={
-                                    <ArbitroDialog
-                                        aoSalvar={(criado) => {
-                                            setArbitros((atuais) => [...atuais, criado]);
-                                            avisos.sucesso(`${criado.nome} cadastrado.`);
-                                        }}
-                                    />
-                                }
                             />
                         ) : resultados.length === 0 ? (
                             <Vazio
@@ -186,7 +155,7 @@ const ArbitroPage = () => {
                                                             </Button>
                                                         }
                                                         titulo={`Excluir ${arbitro.nome}?`}
-                                                        descricao="As partidas que ele apitou continuam registradas. Se ele estiver escalado em alguma partida, o servidor recusa a exclusão."
+                                                        descricao="As partidas que ele apitou continuam registradas. Se ele estiver escalado em alguma partida, a exclusão é recusada."
                                                         rotuloDaAcao="Excluir árbitro"
                                                         aoConfirmar={() => excluir(arbitro)}
                                                     />

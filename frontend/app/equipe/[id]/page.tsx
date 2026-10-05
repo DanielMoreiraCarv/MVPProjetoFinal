@@ -7,8 +7,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { AtletaDialog } from "@/src/features/equipes/AtletaDialog";
@@ -37,28 +37,6 @@ import { Partida } from "@/src/lib/types/partida";
  * porque são coisas diferentes: "Cadastrar atleta" cria uma pessoa no
  * cadastro, "Trazer atleta" move para cá alguém que já existe.
  */
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 flex-wrap items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const EquipeDetalhePage = () => {
     const params = useParams<{ id: string }>();
@@ -139,10 +117,7 @@ const EquipeDetalhePage = () => {
                           ].join(" · ")
                         : undefined
                 }
-                migalhas={[
-                    { rotulo: "Equipes", href: "/equipe" },
-                    ...(equipe ? [{ rotulo: equipe.nome }] : []),
-                ]}
+                migalhas={[{ rotulo: "Equipes", href: "/equipe" }]}
                 acoes={
                     equipe && (
                         <>
@@ -265,7 +240,7 @@ const EquipeDetalhePage = () => {
                                                         </span>
                                                         {partida.realizada && (
                                                             <span className="ml-auto shrink-0 font-mono text-sm">
-                                                                {partida.placarMandante ?? 0}–
+                                                                {partida.placarMandante ?? 0} × 
                                                                 {partida.placarVisitante ?? 0}
                                                             </span>
                                                         )}
@@ -275,7 +250,7 @@ const EquipeDetalhePage = () => {
                                                     </CardDescription>
                                                     <CardDescription>
                                                         {partida.realizada
-                                                            ? `Realizada · ${formatarDiaEHora(partida.dataHora, "sem data")}`
+                                                            ? `Encerrada · ${formatarDiaEHora(partida.dataHora, "sem data")}`
                                                             : formatarDiaEHora(partida.dataHora)}
                                                         {partida.local ? ` · ${partida.local}` : ""}
                                                     </CardDescription>

@@ -6,10 +6,12 @@ import {
     ClipboardList,
     Flag,
     GitBranch,
+    Landmark,
     Layers,
     LayoutDashboard,
     ListOrdered,
     Network,
+    PanelsTopLeft,
     Shield,
     Swords,
     Trophy,
@@ -24,7 +26,8 @@ import {
  * direto: importa daqui.
  *
  * É o que garante que competição seja o mesmo troféu no menu, na lista, no
- * cabeçalho da página e no estado vazio. Espalhar a escolha pelos
+ * cabeçalho da página e no estado vazio — e que o troféu seja só dela: a
+ * marca do app e o escopo escolhido usam monograma, não o ícone do conceito. Espalhar a escolha pelos
  * componentes é como a mesma coisa acaba com três ícones diferentes em três
  * telas — que é de onde este arquivo veio.
  *
@@ -33,7 +36,9 @@ import {
 export const ICONES = {
     inicio: LayoutDashboard,
     administracao: Building2,
+    federacao: Landmark,
     competicao: Trophy,
+    visaoGeral: PanelsTopLeft,
     equipe: Shield,
     atleta: User,
     elenco: Users,

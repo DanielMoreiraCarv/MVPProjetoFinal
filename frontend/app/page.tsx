@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { formatarDiaEHora, porDataHora } from "@/src/lib/formato";
@@ -15,28 +16,6 @@ import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
 import { Partida } from "@/src/lib/types/partida";
 import { ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const Numero = ({
     conceito,

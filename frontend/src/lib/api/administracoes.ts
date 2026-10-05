@@ -17,7 +17,7 @@ export interface AdministracaoInput {
 }
 
 // A API entrega a administração sozinha; as competições vêm de outra rota.
-const paraTournament = (resposta: AdministracaoResponse): Administracao => ({
+const paraAdministracao = (resposta: AdministracaoResponse): Administracao => ({
     id: resposta.id,
     nome: resposta.nome,
     descricao: resposta.descricao ?? "",
@@ -26,7 +26,7 @@ const paraTournament = (resposta: AdministracaoResponse): Administracao => ({
 
 export const listarAdministracoes = async (): Promise<Administracao[]> => {
     const resposta = await apiFetch<unknown>("/administracao");
-    return z.array(administracaoResponseSchema).parse(resposta).map(paraTournament);
+    return z.array(administracaoResponseSchema).parse(resposta).map(paraAdministracao);
 };
 
 export const criarAdministracao = async (entrada: AdministracaoInput): Promise<Administracao> => {
@@ -34,7 +34,7 @@ export const criarAdministracao = async (entrada: AdministracaoInput): Promise<A
         method: "POST",
         body: JSON.stringify(entrada),
     });
-    return paraTournament(administracaoResponseSchema.parse(resposta));
+    return paraAdministracao(administracaoResponseSchema.parse(resposta));
 };
 
 export const atualizarAdministracao = async (
@@ -45,5 +45,10 @@ export const atualizarAdministracao = async (
         method: "PUT",
         body: JSON.stringify({ id, ...entrada }),
     });
-    return paraTournament(administracaoResponseSchema.parse(resposta));
+    return paraAdministracao(administracaoResponseSchema.parse(resposta));
+};
+
+/** Recusada, com o motivo, enquanto a administração organizar competições. */
+export const removerAdministracao = async (id: number): Promise<void> => {
+    await apiFetch<void>(`/administracao/${id}`, { method: "DELETE" });
 };

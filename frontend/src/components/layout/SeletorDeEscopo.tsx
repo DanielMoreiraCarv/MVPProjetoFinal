@@ -1,11 +1,11 @@
 "use client";
 
-import { ChevronsUpDown, CornerUpLeft } from "lucide-react";
+import { ChevronsUpDown, CornerUpLeft, Search } from "lucide-react";
 import Link from "next/link";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { ICONES } from "@/src/lib/icones";
+import { Monograma } from "@/src/components/Monograma";
 import { useEscopo } from "@/src/lib/escopo";
 
 /**
@@ -19,7 +19,6 @@ import { useEscopo } from "@/src/lib/escopo";
 export const SeletorDeEscopo = ({ recolhido = false }: { recolhido?: boolean }) => {
     const { atual, carregando, abrirPaleta, competicoes, ultimoId, administracaoAtual } =
         useEscopo();
-    const Icone = ICONES.competicao;
 
     // Sem competição na rota, mas com uma última visitada: oferece a volta em
     // vez de obrigar a buscar de novo o que acabou de ser aberto.
@@ -36,13 +35,16 @@ export const SeletorDeEscopo = ({ recolhido = false }: { recolhido?: boolean }) 
                 title={atual ? `${atual.nome} — trocar` : "Escolher competição"}
                 aria-label={atual ? `Competição ${atual.nome}. Trocar` : "Escolher competição"}
                 className={cn(
-                    "mx-auto flex size-10 items-center justify-center rounded-2xl border transition-colors",
-                    atual
-                        ? "border-transparent bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "border-dashed border-sidebar-border text-muted-foreground hover:text-foreground",
+                    "mx-auto flex size-10 items-center justify-center rounded-2xl transition-colors",
+                    !atual &&
+                        "border border-dashed border-sidebar-border text-muted-foreground hover:text-foreground",
                 )}
             >
-                <Icone className="size-4" />
+                {atual ? (
+                    <Monograma nome={atual.nome} destacado className="size-10 rounded-2xl" />
+                ) : (
+                    <Search className="size-4" />
+                )}
             </button>
         );
     }
@@ -60,16 +62,13 @@ export const SeletorDeEscopo = ({ recolhido = false }: { recolhido?: boolean }) 
                     : "border-dashed border-sidebar-border hover:bg-sidebar-accent/40",
             )}
         >
-            <span
-                className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                    atual
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "bg-muted text-muted-foreground",
-                )}
-            >
-                <Icone className="size-4" />
-            </span>
+            {atual ? (
+                <Monograma nome={atual.nome} destacado />
+            ) : (
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <Search className="size-4" />
+                </span>
+            )}
 
             <span className="min-w-0 flex-1">
                 {carregando && !atual ? (

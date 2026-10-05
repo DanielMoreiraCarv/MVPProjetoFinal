@@ -93,3 +93,22 @@ export const CorpoDaPagina = ({
         {children}
     </div>
 );
+
+/**
+ * A trilha de toda tela dentro de uma competição: competições → administração
+ * → competição → o que vier depois. Só os ancestrais — o título já diz onde
+ * se está —, e escrita uma vez para nenhuma tela pular um nível.
+ */
+export const migalhasDaCompeticao = (
+    atual: { id: number; nome: string; nomeDaAdministracao: string } | null,
+    ...depois: Migalha[]
+): Migalha[] => [
+    { rotulo: "Competições", href: "/competicao" },
+    ...(atual
+        ? [
+              { rotulo: atual.nomeDaAdministracao },
+              { rotulo: atual.nome, href: `/competicao/${atual.id}` },
+          ]
+        : []),
+    ...depois,
+];

@@ -5,36 +5,20 @@ import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
-import { CriarPartidaDialog } from "@/src/features/partidas/CriarPartidaDialog";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
+import { Escolha } from "@/src/components/Escolha";
+import { PartidaDialog } from "@/src/features/partidas/PartidaDialog";
 import { ListaDePartidas } from "@/src/features/partidas/ListaDePartidas";
 import { buscarCompeticao } from "@/src/lib/api/competicoes";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { useEscopo } from "@/src/lib/escopo";
 import { Equipe } from "@/src/lib/types/equipe";
 import { Partida } from "@/src/lib/types/partida";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 type Situacao = "todas" | "agendada" | "encerrada";
 
@@ -44,8 +28,6 @@ const SITUACOES: { valor: Situacao; rotulo: string }[] = [
     { valor: "encerrada", rotulo: "Encerradas" },
 ];
 
-const classeDeEscolha =
-    "h-9 w-full rounded-3xl border border-transparent bg-input/50 px-3 text-sm text-foreground outline-none transition-[color,box-shadow,background-color] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 sm:w-56";
 
 /**
  * O calendário da competição inteira.
@@ -128,17 +110,12 @@ const CalendarioPage = () => {
                 conceito="calendario"
                 titulo="Calendário"
                 descricao="Todas as partidas da competição, das agendadas às encerradas."
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual ? [{ rotulo: atual.nomeDaAdministracao }] : []),
-                    ...(atual ? [{ rotulo: atual.nome, href: `/competicao/${id}` }] : []),
-                    { rotulo: "Calendário" },
-                ]}
+                migalhas={migalhasDaCompeticao(atual)}
                 acoes={
-                    <CriarPartidaDialog
+                    <PartidaDialog
                         idCompeticao={id}
                         equipes={equipesInscritas}
-                        aoCriar={(criada) => setPartidas((todas) => [...todas, criada])}
+                        aoSalvar={(criada) => setPartidas((todas) => [...todas, criada])}
                     />
                 }
             />
@@ -165,19 +142,16 @@ const CalendarioPage = () => {
                                 >
                                     Equipe
                                 </label>
-                                <select
+                                <Escolha
                                     id="filtro-equipe"
-                                    value={equipe}
-                                    onChange={(evento) => setEquipe(evento.target.value)}
-                                    className={classeDeEscolha}
-                                >
-                                    <option value="todas">Todas as equipes</option>
-                                    {equipesNasPartidas.map((nome) => (
-                                        <option key={nome} value={nome}>
-                                            {nome}
-                                        </option>
-                                    ))}
-                                </select>
+                                    valor={equipe}
+                                    aoMudar={setEquipe}
+                                    className="sm:w-64"
+                                    opcoes={[
+                                        { valor: "todas", rotulo: "Todas as equipes" },
+                                        ...equipesNasPartidas.map((nome) => ({ valor: nome, rotulo: nome })),
+                                    ]}
+                                />
                             </div>
 
                             <div
@@ -217,10 +191,10 @@ const CalendarioPage = () => {
                                 titulo="Calendário vazio"
                                 descricao="Nenhuma partida nesta competição ainda. As fases geram os confrontos, e aqui dá para criar uma partida avulsa."
                                 acao={
-                                    <CriarPartidaDialog
+                                    <PartidaDialog
                                         idCompeticao={id}
                                         equipes={equipesInscritas}
-                                        aoCriar={(criada) =>
+                                        aoSalvar={(criada) =>
                                             setPartidas((todas) => [...todas, criada])
                                         }
                                     />

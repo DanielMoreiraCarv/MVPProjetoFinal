@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Search } from "lucide-react";
+import { Check, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,10 @@ export const InscreverEquipeDialog = ({
 
     return (
         <Dialog open={aberto} onOpenChange={setAberto}>
-            <DialogTrigger render={<Button size="sm" />}>Inscrever equipe</DialogTrigger>
+            <DialogTrigger render={<Button size="sm" />}>
+                <Plus />
+                Inscrever equipe
+            </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Inscrever equipe</DialogTitle>

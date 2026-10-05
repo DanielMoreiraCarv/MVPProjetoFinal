@@ -21,7 +21,14 @@ const aplicar = (tema: Tema) => {
     document.documentElement.classList.toggle("dark", escuro);
 };
 
-export const AlternarTema = ({ className }: { className?: string }) => {
+export const AlternarTema = ({
+    className,
+    compacto = false,
+}: {
+    className?: string;
+    /** No menu recolhido não cabem três botões: um só, que alterna em ciclo. */
+    compacto?: boolean;
+}) => {
     // Começa em "sistema" porque é o que o script do layout assume sem escolha
     // salva. O valor real vem do primeiro efeito, já no cliente.
     const [tema, setTema] = useState<Tema>("sistema");
@@ -46,6 +53,25 @@ export const AlternarTema = ({ className }: { className?: string }) => {
         localStorage.setItem(CHAVE_DO_TEMA, novo);
         aplicar(novo);
     };
+
+    if (compacto) {
+        const indice = OPCOES.findIndex((opcao) => opcao.valor === tema);
+        const { rotulo, Icone } = OPCOES[indice];
+        const proxima = OPCOES[(indice + 1) % OPCOES.length];
+
+        return (
+            <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => escolher(proxima.valor)}
+                aria-label={`${rotulo}. Trocar para ${proxima.rotulo.toLowerCase()}`}
+                title={`${rotulo} — clique para ${proxima.rotulo.toLowerCase()}`}
+                className={className}
+            >
+                <Icone />
+            </Button>
+        );
+    }
 
     return (
         <div

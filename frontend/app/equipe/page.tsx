@@ -4,17 +4,15 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
+import { Escolha } from "@/src/components/Escolha";
+import { Monograma } from "@/src/components/Monograma";
 import { CarregandoCartoes, Erro, Vazio } from "@/src/components/estado/Estados";
 import { EquipeDialog } from "@/src/features/equipes/EquipeDialog";
 import { listarEquipes } from "@/src/lib/api/equipes";
 import { listarModalidades, Modalidade } from "@/src/lib/api/modalidades";
 import { normalizar } from "@/src/lib/escopo";
-import { ICONES } from "@/src/lib/icones";
 import { Equipe } from "@/src/lib/types/equipe";
 
 /**
@@ -26,28 +24,6 @@ import { Equipe } from "@/src/lib/types/equipe";
  */
 
 const TODAS = "todas";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const EquipePage = () => {
     const [equipes, setEquipes] = useState<Equipe[]>([]);
@@ -84,7 +60,6 @@ const EquipePage = () => {
             .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
     }, [equipes, busca]);
 
-    const IconeEquipe = ICONES.equipe;
 
     return (
         <>
@@ -92,7 +67,6 @@ const EquipePage = () => {
                 conceito="equipe"
                 titulo="Equipes"
                 descricao="O cadastro das equipes. Cada uma existe fora da competição e pode disputar várias."
-                migalhas={[{ rotulo: "Cadastro" }, { rotulo: "Equipes" }]}
                 acoes={<EquipeDialog aoSalvar={carregar} />}
             />
             <CorpoDaPagina>
@@ -109,21 +83,15 @@ const EquipePage = () => {
                             />
                         </div>
 
-                        <ToggleGroup
-                            value={modalidade}
-                            onValueChange={(valor) => valor.length > 0 && setModalidade(valor)}
-                            spacing={0}
-                            variant="outline"
-                            className="flex-wrap"
-                            aria-label="Filtrar por modalidade"
-                        >
-                            <ToggleGroupItem value={TODAS}>Todas</ToggleGroupItem>
-                            {modalidades.map((m) => (
-                                <ToggleGroupItem key={m.id} value={String(m.id)}>
-                                    {m.nome}
-                                </ToggleGroupItem>
-                            ))}
-                        </ToggleGroup>
+                        <Escolha
+                            valor={modalidade[0]}
+                            aoMudar={(valor) => setModalidade([valor || TODAS])}
+                            className="sm:w-56"
+                            opcoes={[
+                                { valor: TODAS, rotulo: "Todas as modalidades" },
+                                ...modalidades.map((m) => ({ valor: String(m.id), rotulo: m.nome })),
+                            ]}
+                        />
                     </div>
 
                     <Secao
@@ -157,38 +125,32 @@ const EquipePage = () => {
                                 acao={busca ? undefined : <EquipeDialog aoSalvar={carregar} />}
                             />
                         ) : (
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                 {resultados.map((equipe) => (
-                                    <Link
-                                        key={equipe.id}
-                                        href={`/equipe/${equipe.id}`}
-                                        className="block h-full"
-                                    >
-                                        <Card className="h-full transition-colors hover:border-ring">
-                                            <CardHeader>
-                                                <CardTitle className="flex items-start gap-2">
-                                                    <IconeEquipe className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                                    <span className="min-w-0">{equipe.nome}</span>
-                                                </CardTitle>
-                                                <CardDescription>
-                                                    {equipe.modalidade.nome || "Sem modalidade"}
-                                                    {equipe.federacao
-                                                        ? ` · ${equipe.federacao.nome}`
-                                                        : ""}
-                                                </CardDescription>
-                                                <CardDescription>
-                                                    <Badge variant="secondary">
-                                                        {equipe.atletas.length}{" "}
-                                                        {equipe.atletas.length === 1
-                                                            ? "atleta"
-                                                            : "atletas"}
-                                                    </Badge>
-                                                </CardDescription>
-                                            </CardHeader>
-                                        </Card>
-                                    </Link>
+                                    <li key={equipe.id}>
+                                        <Link
+                                            href={`/equipe/${equipe.id}`}
+                                            className="flex items-center gap-3 rounded-2xl border border-border px-3 py-2.5 transition-colors hover:border-ring"
+                                        >
+                                            <Monograma nome={equipe.nome} />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-medium">
+                                                    {equipe.nome}
+                                                </span>
+                                                <span className="block truncate text-xs text-muted-foreground">
+                                                    {[
+                                                        equipe.modalidade.nome || "Sem modalidade",
+                                                        equipe.federacao?.nome,
+                                                        `${equipe.atletas.length} ${equipe.atletas.length === 1 ? "atleta" : "atletas"}`,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(" · ")}
+                                                </span>
+                                            </span>
+                                        </Link>
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
                         )}
                     </Secao>
                 </div>

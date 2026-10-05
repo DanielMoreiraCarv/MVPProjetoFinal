@@ -7,6 +7,7 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlternarTema } from "@/src/components/AlternarTema";
+import { Monograma } from "@/src/components/Monograma";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
 import { SeletorDeEscopo } from "@/src/components/layout/SeletorDeEscopo";
@@ -111,9 +112,7 @@ export const ConteudoDoMenu = ({
                 onClick={aoNavegar}
                 className="flex items-center gap-2 font-semibold tracking-tight"
             >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-                    <ICONES.competicao className="size-4" />
-                </span>
+                <Monograma nome="Meu Torneio" destacado className="size-8" />
                 {!recolhido && <span className="text-sm">Meu Torneio</span>}
             </Link>
         </div>
@@ -139,7 +138,7 @@ export const ConteudoDoMenu = ({
                 recolhido && "flex-col px-1",
             )}
         >
-            <AlternarTema />
+            <AlternarTema compacto={recolhido} />
             {aoRecolher && (
                 <Button
                     variant="ghost"

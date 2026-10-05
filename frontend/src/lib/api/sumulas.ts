@@ -87,3 +87,25 @@ export const encerrarSumula = async (
         ),
         idPartida,
     );
+
+/** Guarda placar e observações sem assinar: a súmula continua aberta. */
+export const salvarSumula = async (
+    idSumula: number,
+    placarMandante: number,
+    placarVisitante: number,
+    observacoes: string,
+    idPartida: number,
+): Promise<Sumula> =>
+    paraSumula(
+        sumulaResponseSchema.passthrough().parse(
+            await apiFetch<unknown>(`/sumula/${idSumula}`, {
+                method: "PUT",
+                body: JSON.stringify({ placarMandante, placarVisitante, observacoes }),
+            }),
+        ),
+        idPartida,
+    );
+
+export const removerSumula = async (idSumula: number): Promise<void> => {
+    await apiFetch<void>(`/sumula/${idSumula}`, { method: "DELETE" });
+};

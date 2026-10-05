@@ -13,9 +13,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
 import { CarregandoTabela, Erro, Vazio } from "@/src/components/estado/Estados";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import {
     Classificado,
     Fase,
@@ -25,30 +29,7 @@ import {
 } from "@/src/lib/api/fases";
 import { useEscopo } from "@/src/lib/escopo";
 
-
 const porOrdem = (a: Fase, b: Fase) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.id - b.id;
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 /**
  * A classificação de cada fase, como o servidor a apura.
@@ -116,17 +97,8 @@ const ClassificacaoPage = () => {
             <CabecalhoDaPagina
                 conceito="classificacao"
                 titulo="Classificação"
-                descricao="A ordem apurada pelo servidor em cada fase."
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual
-                        ? [
-                              { rotulo: atual.nomeDaAdministracao },
-                              { rotulo: atual.nome, href: `/competicao/${idCompeticao}` },
-                          ]
-                        : []),
-                    { rotulo: "Classificação" },
-                ]}
+                descricao="A ordem de classificação em cada fase."
+                migalhas={migalhasDaCompeticao(atual)}
             />
             <CorpoDaPagina>
                 {erro ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,7 @@ export const FaseDialog = ({
             <DialogTrigger
                 render={<Button variant={editando ? "outline" : "default"} size="sm" />}
             >
-                {editando ? "Editar" : "Nova fase"}
+                {editando ? "Editar" : <><Plus />Nova fase</>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>

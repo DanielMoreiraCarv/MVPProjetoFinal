@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { ConfiguracaoDaFase } from "@/src/features/fases/ConfiguracaoDaFase";
 import { ConfrontosDaFase } from "@/src/features/fases/ConfrontosDaFase";
 import { FaseDialog } from "@/src/features/fases/FaseDialog";
@@ -22,28 +27,6 @@ import {
 import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
 import { ICONES } from "@/src/lib/icones";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 /**
  * As fases de uma competição: a lista à esquerda, a fase escolhida à direita.
@@ -112,16 +95,7 @@ const FasesPage = () => {
                 conceito="fase"
                 titulo="Fases"
                 descricao="Cada fase decide como os confrontos são montados e quantas equipes seguem."
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual
-                        ? [
-                              { rotulo: atual.nomeDaAdministracao },
-                              { rotulo: atual.nome, href: `/competicao/${idCompeticao}` },
-                          ]
-                        : []),
-                    { rotulo: "Fases" },
-                ]}
+                migalhas={migalhasDaCompeticao(atual)}
                 acoes={
                     <FaseDialog
                         idCompeticao={idCompeticao}
@@ -143,13 +117,6 @@ const FasesPage = () => {
                                     conceito="fase"
                                     titulo="Nenhuma fase ainda"
                                     descricao="A competição precisa de ao menos uma fase para ter confrontos."
-                                    acao={
-                                        <FaseDialog
-                                            idCompeticao={idCompeticao}
-                                            outrasFases={[]}
-                                            aoSalvar={carregar}
-                                        />
-                                    }
                                 />
                             ) : (
                                 <div className="space-y-2">

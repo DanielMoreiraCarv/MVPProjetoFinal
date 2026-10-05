@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -117,7 +118,7 @@ export const ArbitroDialog = ({
                     )
                 }
             >
-                {editando ? "Editar" : "Novo árbitro"}
+                {editando ? "Editar" : <><Plus />Novo árbitro</>}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
@@ -202,10 +203,6 @@ export const ArbitroDialog = ({
                             required
                             aria-invalid={!!mensagemDoCampo("categoria")}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            A API grava a categoria, mas não a devolve na leitura — por isso
-                            ela vem em branco aqui e precisa ser informada de novo.
-                        </p>
                         {mensagemDoCampo("categoria") && (
                             <p role="alert" className="text-sm text-destructive">
                                 {mensagemDoCampo("categoria")}

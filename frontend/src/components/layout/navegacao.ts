@@ -28,12 +28,9 @@ export const SECOES_GLOBAIS: SecaoDeMenu[] = [
             // Administrações e competições vivem na mesma página: escolher a
             // administração é o que decide quais competições aparecem, e
             // separá-las dava uma tela que não existia sozinha.
-            {
-                rotulo: "Competições",
-                href: "/competicao",
-                conceito: "competicao",
-                prefixo: true,
-            },
+            // Sem prefixo: dentro de uma competição quem fica ativo é o item
+            // da seção dela, e não os dois ao mesmo tempo.
+            { rotulo: "Competições", href: "/competicao", conceito: "competicao" },
             { rotulo: "Equipes", href: "/equipe", conceito: "equipe", prefixo: true },
             { rotulo: "Árbitros", href: "/arbitro", conceito: "arbitro", prefixo: true },
             { rotulo: "Cadastros", href: "/cadastro", conceito: "cadastro", prefixo: true },
@@ -52,7 +49,7 @@ export const secoesDaCompeticao = (idCompeticao: number): SecaoDeMenu[] => {
         {
             titulo: "Competição",
             itens: [
-                { rotulo: "Visão geral", href: raiz, conceito: "competicao" },
+                { rotulo: "Visão geral", href: raiz, conceito: "visaoGeral" },
                 { rotulo: "Estrutura", href: `${raiz}/estrutura`, conceito: "estrutura" },
                 { rotulo: "Fases", href: `${raiz}/fase`, conceito: "fase", prefixo: true },
                 {

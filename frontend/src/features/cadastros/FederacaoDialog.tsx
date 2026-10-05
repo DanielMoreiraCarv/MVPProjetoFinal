@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -78,7 +79,7 @@ export const FederacaoDialog = ({
                     )
                 }
             >
-                {editando ? "Editar" : "Nova federação"}
+                {editando ? "Editar" : <><Plus />Nova federação</>}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>

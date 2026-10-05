@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,44 +10,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { buscarPartida } from "@/src/lib/api/partidas";
 import {
     abrirSumula,
     buscarSumulaDaPartida,
     encerrarSumula,
     registrarOcorrencia,
+    removerSumula,
+    salvarSumula,
 } from "@/src/lib/api/sumulas";
 import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
 import { formatarDataHora } from "@/src/lib/formato";
 import { Partida } from "@/src/lib/types/partida";
 import { Sumula } from "@/src/lib/types/sumula";
-
-const Secao = ({
-    titulo,
-    acao,
-    className,
-    children,
-}: {
-    titulo: string;
-    acao?: React.ReactNode;
-    className?: string;
-    children: React.ReactNode;
-}) => (
-    <section className={cn("space-y-3", className)}>
-        <div className="flex min-h-9 items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {titulo}
-            </h2>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 /**
  * A súmula, pensada para o celular à beira do campo: uma coluna só, alvo de
@@ -147,6 +132,40 @@ const SumulaPage = () => {
         }
     };
 
+    const [salvando, setSalvando] = useState(false);
+
+    const salvarSemAssinar = async () => {
+        if (!sumula) return;
+        setSalvando(true);
+        try {
+            setSumula(
+                await salvarSumula(
+                    sumula.id,
+                    Number(placarMandante),
+                    Number(placarVisitante),
+                    observacoes.trim(),
+                    idPartida,
+                ),
+            );
+            avisos.sucesso("Súmula salva. Ela continua aberta.");
+        } catch (causa) {
+            avisos.erro(causa);
+        } finally {
+            setSalvando(false);
+        }
+    };
+
+    const excluir = async () => {
+        if (!sumula) return;
+        try {
+            await removerSumula(sumula.id);
+            setSumula(null);
+            avisos.sucesso("Súmula excluída.");
+        } catch (causa) {
+            avisos.erro(causa, "Não foi possível excluir");
+        }
+    };
+
     const assinada = sumula?.assinada ?? false;
 
     return (
@@ -159,16 +178,11 @@ const SumulaPage = () => {
                         ? `${partida.equipeMandante} × ${partida.equipeVisitante}`
                         : undefined
                 }
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual ? [{ rotulo: atual.nomeDaAdministracao }] : []),
+                migalhas={migalhasDaCompeticao(
+                    atual,
                     { rotulo: "Calendário", href: `/competicao/${idCompeticao}/partida` },
-                    {
-                        rotulo: "Partida",
-                        href: `/competicao/${idCompeticao}/partida/${idPartida}`,
-                    },
-                    { rotulo: "Súmula" },
-                ]}
+                    { rotulo: "Partida", href: `/competicao/${idCompeticao}/partida/${idPartida}` },
+                )}
                 acoes={
                     sumula && (
                         <Badge variant={assinada ? "secondary" : "outline"}>
@@ -188,7 +202,7 @@ const SumulaPage = () => {
                         titulo="Esta partida ainda não tem súmula"
                         descricao="Abrir a súmula é o que permite registrar ocorrências durante o jogo. Ela herda o árbitro escalado para a partida."
                         acao={
-                            <Button size="lg" className="h-12" disabled={abrindo} onClick={abrir}>
+                            <Button size="lg" disabled={abrindo} onClick={abrir}>
                                 {abrindo ? "Aguarde…" : "Abrir súmula"}
                             </Button>
                         }
@@ -339,20 +353,41 @@ const SumulaPage = () => {
                                             />
                                         </div>
 
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            <Button
+                                                variant="outline"
+                                                size="lg"
+                                                className="h-12"
+                                                disabled={salvando}
+                                                onClick={salvarSemAssinar}
+                                            >
+                                                {salvando ? "Salvando…" : "Salvar sem assinar"}
+                                            </Button>
+                                            <Confirmacao
+                                                gatilho={
+                                                    <Button size="lg" className="h-12">
+                                                        Encerrar e assinar
+                                                    </Button>
+                                                }
+                                                titulo="Encerrar e assinar a súmula?"
+                                                descricao={`Fica valendo ${placarMandante} × ${placarVisitante}. Depois de assinada a súmula não aceita nova ocorrência, nem correção de placar ou de observação — não dá para reabrir.`}
+                                                rotuloDaAcao="Encerrar súmula"
+                                                destrutiva={false}
+                                                aoConfirmar={encerrar}
+                                            />
+                                        </div>
+
                                         <Confirmacao
                                             gatilho={
-                                                <Button
-                                                    variant="destructive"
-                                                    size="lg"
-                                                    className="h-12 w-full"
-                                                >
-                                                    Encerrar súmula
+                                                <Button variant="ghost" size="sm" className="w-full text-destructive">
+                                                    <Trash2 />
+                                                    Excluir súmula
                                                 </Button>
                                             }
-                                            titulo="Encerrar e assinar a súmula?"
-                                            descricao={`Fica valendo ${placarMandante} × ${placarVisitante}. Depois de assinada a súmula não aceita nova ocorrência, nem correção de placar ou de observação — não dá para reabrir.`}
-                                            rotuloDaAcao="Encerrar súmula"
-                                            aoConfirmar={encerrar}
+                                            titulo="Excluir a súmula?"
+                                            descricao="As ocorrências registradas vão junto. A partida continua, e dá para abrir outra súmula depois."
+                                            rotuloDaAcao="Excluir súmula"
+                                            aoConfirmar={excluir}
                                         />
                                     </div>
                                 </Secao>

@@ -18,7 +18,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
+import {
+    CabecalhoDaPagina,
+    CorpoDaPagina,
+    migalhasDaCompeticao,
+} from "@/src/components/layout/CabecalhoDaPagina";
+import { Secao } from "@/src/components/layout/Secao";
 import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoCartoes, Erro, Vazio } from "@/src/components/estado/Estados";
 import { ConfiguracaoDaFase } from "@/src/features/fases/ConfiguracaoDaFase";
@@ -55,31 +60,6 @@ import { Competicao, ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
  * publicada, mexer nela invalidaria confrontos já gerados e classificação já
  * calculada.
  */
-
-const Secao = ({
-    titulo,
-    descricao,
-    acao,
-    children,
-}: {
-    titulo: string;
-    descricao?: string;
-    acao?: React.ReactNode;
-    children: React.ReactNode;
-}) => (
-    <section className="space-y-3">
-        <div className="flex min-h-9 items-start justify-between gap-3">
-            <div className="space-y-0.5">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    {titulo}
-                </h2>
-                {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
-            </div>
-            {acao}
-        </div>
-        {children}
-    </section>
-);
 
 const EstruturaPage = () => {
     const params = useParams<{ id: string }>();
@@ -276,11 +256,7 @@ const EstruturaPage = () => {
                         ? `Como ${competicao.nome} é disputada`
                         : "Monte a sequência de fases da competição."
                 }
-                migalhas={[
-                    { rotulo: "Competições", href: "/competicao" },
-                    ...(atual ? [{ rotulo: atual.nome, href: `/competicao/${idCompeticao}` }] : []),
-                    { rotulo: "Estrutura" },
-                ]}
+                migalhas={migalhasDaCompeticao(atual)}
                 acoes={
                     <>
                         {competicao?.estado && (
