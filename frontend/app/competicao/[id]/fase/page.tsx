@@ -17,7 +17,7 @@ import {
 import { Secao } from "@/src/components/layout/Secao";
 import { ConfiguracaoDaFase } from "@/src/features/fases/ConfiguracaoDaFase";
 import { ConfrontosDaFase } from "@/src/features/fases/ConfrontosDaFase";
-import { FaseDialog } from "@/src/features/fases/FaseDialog";
+import { FaseDialog, equipesQueEntram } from "@/src/features/fases/FaseDialog";
 import {
     Fase,
     ROTULO_DO_FORMATO,
@@ -78,6 +78,7 @@ const FasesPage = () => {
     const nomeDaFase = (id?: number) => fases.find((cada) => cada.id === id)?.nome;
 
     const IconeFase = ICONES.fase;
+    const inscritas = atual?.equipes.length ?? 0;
 
     const excluir = async (alvo: Fase) => {
         try {
@@ -99,7 +100,8 @@ const FasesPage = () => {
                 acoes={
                     <FaseDialog
                         idCompeticao={idCompeticao}
-                        outrasFases={emOrdem}
+                        fases={emOrdem}
+                        equipesInscritas={inscritas}
                         aoSalvar={carregar}
                     />
                 }
@@ -107,17 +109,27 @@ const FasesPage = () => {
             <CorpoDaPagina>
                 {erro ? (
                     <Erro causa={erro} aoTentarDeNovo={carregar} />
+                ) : !carregando && emOrdem.length === 0 ? (
+                    // Sem fase, dois painéis vazios lado a lado não diziam nada
+                    // a mais que um — e desalinhavam, porque só um tinha título.
+                    <Vazio
+                        conceito="fase"
+                        titulo="Nenhuma fase ainda"
+                        descricao={`A competição precisa de ao menos uma fase para ter confrontos. Comece pela primeira: as ${inscritas} equipes inscritas entram nela.`}
+                        acao={
+                            <FaseDialog
+                                idCompeticao={idCompeticao}
+                                fases={emOrdem}
+                                equipesInscritas={inscritas}
+                                aoSalvar={carregar}
+                            />
+                        }
+                    />
                 ) : (
                     <div className="grid gap-6 lg:grid-cols-3">
                         <Secao titulo="Fases da competição">
                             {carregando ? (
                                 <CarregandoLista linhas={3} />
-                            ) : emOrdem.length === 0 ? (
-                                <Vazio
-                                    conceito="fase"
-                                    titulo="Nenhuma fase ainda"
-                                    descricao="A competição precisa de ao menos uma fase para ter confrontos."
-                                />
                             ) : (
                                 <div className="space-y-2">
                                     {emOrdem.map((cada) => {
@@ -165,11 +177,16 @@ const FasesPage = () => {
                                                             : "Formato não informado"}
                                                     </span>
                                                     <span className="block text-xs text-muted-foreground">
+                                                        {`${equipesQueEntram(
+                                                            emOrdem.find((outra) => outra.idFaseSucessora === cada.id),
+                                                            emOrdem,
+                                                            inscritas,
+                                                        )} entram · `}
                                                         {cada.classificados === undefined
-                                                            ? "Classificados não informados"
+                                                            ? "todas seguem"
                                                             : cada.classificados === 1
-                                                              ? "1 equipe avança"
-                                                              : `${cada.classificados} equipes avançam`}
+                                                              ? "1 avança"
+                                                              : `${cada.classificados} avançam`}
                                                     </span>
                                                     {cada.idFaseSucessora && (
                                                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -209,9 +226,8 @@ const FasesPage = () => {
                                                 <FaseDialog
                                                     idCompeticao={idCompeticao}
                                                     fase={fase}
-                                                    outrasFases={emOrdem.filter(
-                                                        (cada) => cada.id !== fase.id,
-                                                    )}
+                                                    fases={emOrdem}
+                                                    equipesInscritas={inscritas}
                                                     aoSalvar={carregar}
                                                 />
                                                 <Confirmacao

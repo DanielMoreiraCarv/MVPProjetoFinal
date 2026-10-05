@@ -3,10 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
+import { CamposDaFase, paraCampo, paraServidor } from "@/src/features/fases/CamposDaFase";
 import {
     AtributoDeFase,
     definirAtributoDaFase,
@@ -24,96 +22,6 @@ import { useAvisos } from "@/src/lib/avisos";
  * por tipo. Escrever os campos à mão por formato seria manter duas listas — e
  * a estratégia nova do servidor não apareceria aqui sem alguém lembrar.
  */
-
-/** O que mostrar no campo, a partir do que o servidor guardou. */
-const paraCampo = (atributo: AtributoDeFase) => {
-    const bruto = atributo.valor ?? atributo.valorPadrao ?? "";
-
-    // Lista chega junta ("SALDO_GOLS,GOLS_PRO") e fica ilegível sem respiro.
-    return atributo.tipoDado === "LISTA_DE_TEXTO"
-        ? bruto
-              .split(",")
-              .map((item) => item.trim())
-              .filter(Boolean)
-              .join(", ")
-        : bruto;
-};
-
-/** O que gravar, a partir do que a pessoa digitou. */
-const paraServidor = (atributo: AtributoDeFase, texto: string) =>
-    atributo.tipoDado === "LISTA_DE_TEXTO"
-        ? texto
-              .split(",")
-              .map((item) => item.trim())
-              .filter(Boolean)
-              .join(",")
-        : texto.trim();
-
-const CampoDoAtributo = ({
-    atributo,
-    valor,
-    aoMudar,
-    editavel,
-}: {
-    atributo: AtributoDeFase;
-    valor: string;
-    aoMudar: (valor: string) => void;
-    editavel: boolean;
-}) => {
-    const id = `atributo-${atributo.codigo}`;
-
-    if (atributo.tipoDado === "BOOLEANO") {
-        return (
-            <ToggleGroup
-                value={[valor === "true" ? "true" : "false"]}
-                onValueChange={(escolhido) =>
-                    editavel && escolhido.length > 0 && aoMudar(escolhido[0])
-                }
-                spacing={0}
-                variant="outline"
-                disabled={!editavel}
-                aria-labelledby={id}
-            >
-                <ToggleGroupItem value="true">Sim</ToggleGroupItem>
-                <ToggleGroupItem value="false">Não</ToggleGroupItem>
-            </ToggleGroup>
-        );
-    }
-
-    if (atributo.tipoDado === "INTEIRO" || atributo.tipoDado === "DECIMAL") {
-        return (
-            <Input
-                id={id}
-                type="number"
-                step={atributo.tipoDado === "INTEIRO" ? 1 : "any"}
-                className="numero-tabular font-mono"
-                value={valor}
-                placeholder={atributo.valorPadrao}
-                onChange={(evento) => aoMudar(evento.target.value)}
-                required={atributo.obrigatorio}
-                disabled={!editavel}
-            />
-        );
-    }
-
-    // TEXTO, LISTA_DE_TEXTO e qualquer tipo que o servidor passe a declarar:
-    // um campo de texto sempre aceita o valor, e a fase não fica sem
-    // configuração só porque a tela não conhece o tipo ainda.
-    return (
-        <Input
-            id={id}
-            value={valor}
-            placeholder={
-                atributo.tipoDado === "LISTA_DE_TEXTO"
-                    ? "Valores separados por vírgula"
-                    : atributo.valorPadrao
-            }
-            onChange={(evento) => aoMudar(evento.target.value)}
-            required={atributo.obrigatorio}
-            disabled={!editavel}
-        />
-    );
-};
 
 export const ConfiguracaoDaFase = ({
     idFase,
@@ -197,30 +105,14 @@ export const ConfiguracaoDaFase = ({
 
     return (
         <div className="space-y-4 rounded-3xl border border-border bg-card px-5 py-4">
-            {atributos.map((atributo) => (
-                <div key={atributo.codigo} className="flex flex-col gap-1.5">
-                    <Label id={`atributo-${atributo.codigo}`} htmlFor={`atributo-${atributo.codigo}`}>
-                        {atributo.codigo}
-                        {atributo.obrigatorio && (
-                            <span className="text-destructive" aria-label="obrigatório">
-                                {" "}
-                                *
-                            </span>
-                        )}
-                    </Label>
-                    {atributo.descricao && (
-                        <p className="text-xs text-muted-foreground">{atributo.descricao}</p>
-                    )}
-                    <CampoDoAtributo
-                        atributo={atributo}
-                        editavel={editavel}
-                        valor={rascunho[atributo.codigo] ?? ""}
-                        aoMudar={(valor) =>
-                            setRascunho((anterior) => ({ ...anterior, [atributo.codigo]: valor }))
-                        }
-                    />
-                </div>
-            ))}
+            <CamposDaFase
+                atributos={atributos}
+                rascunho={rascunho}
+                editavel={editavel}
+                aoMudar={(codigo, valor) =>
+                    setRascunho((anterior) => ({ ...anterior, [codigo]: valor }))
+                }
+            />
 
             {editavel && (
             <div className="flex items-center justify-end gap-3 pt-1">

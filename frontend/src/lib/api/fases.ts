@@ -142,6 +142,40 @@ const paraAtributo = (r: z.infer<typeof atributoResponseSchema>): AtributoDeFase
 });
 
 /**
+ * O nome de tela de cada atributo. O servidor publica o código
+ * (`numeroDeGrupos`), que é identificador, não rótulo; código que ainda não
+ * esteja aqui vira frase a partir do próprio camelCase, para a estratégia
+ * nova aparecer legível sem ninguém lembrar de mexer nesta lista.
+ */
+const ROTULO_DO_ATRIBUTO: Record<string, string> = {
+    numeroDeGrupos: "Número de grupos",
+    tamanhoDoGrupo: "Equipes por grupo",
+    idaEVolta: "Ida e volta",
+    permiteGruposDesiguais: "Permitir grupos de tamanhos diferentes",
+    criteriosDeDesempate: "Critérios de desempate",
+    pontosPorVitoria: "Pontos por vitória",
+    pontosPorEmpate: "Pontos por empate",
+    pontosPorDerrota: "Pontos por derrota",
+    pararEmNTimes: "Equipes ao final",
+    desconsiderarEmpatesNaEntrada: "Aceitar empates na entrada",
+};
+
+export const rotuloDoAtributo = (codigo: string) =>
+    ROTULO_DO_ATRIBUTO[codigo] ??
+    codigo
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .toLowerCase()
+        .replace(/^./, (letra) => letra.toUpperCase());
+
+/** Os critérios que o servidor conhece, na linguagem de quem organiza. */
+export const CRITERIOS_DE_DESEMPATE: { codigo: string; rotulo: string }[] = [
+    { codigo: "SALDO_GOLS", rotulo: "Saldo de gols" },
+    { codigo: "GOLS_PRO", rotulo: "Gols marcados" },
+    { codigo: "VITORIAS", rotulo: "Vitórias" },
+    { codigo: "MENOS_JOGOS", rotulo: "Menos jogos" },
+];
+
+/**
  * Os campos que um tipo de fase aceita.
  *
  * É a partir disto que o formulário de configuração se monta: cada estratégia
