@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Plus, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,24 @@ import {
 import { useAvisos } from "@/src/lib/avisos";
 
 const INSCRITAS = "inscritas";
+const DESEMPATE_PELA_ORDEM = "desconsiderarEmpatesNaEntrada";
+
+/**
+ * Na primeira fase ninguém tem classificação, e a eliminatória precisa de
+ * uma ordem para semear 1 contra o último: chavear pela ordem de inscrição é
+ * o ponto de partida razoável, e a pessoa ainda pode desligar.
+ */
+const comDesempateNaPrimeiraFase = (
+    rascunho: Record<string, string>,
+    formato: FormatoDeFase,
+    anterior: string,
+    atributos: AtributoDeFase[],
+) =>
+    formato === "ELIMINATORIA" &&
+    anterior === INSCRITAS &&
+    atributos.some((a) => a.codigo === DESEMPATE_PELA_ORDEM)
+        ? { ...rascunho, [DESEMPATE_PELA_ORDEM]: "true" }
+        : rascunho;
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
@@ -137,6 +155,9 @@ export const FaseDialog = ({
     const [nome, setNome] = useState("");
     const [formato, setFormato] = useState<FormatoDeFase>(FORMATOS_DE_FASE[0]);
     const [anterior, setAnterior] = useState(INSCRITAS);
+    // O efeito que carrega os campos lê a origem sem depender dela: trocar a
+    // origem não pode recarregar o catálogo e apagar o que já foi digitado.
+    const anteriorAtual = useRef(INSCRITAS);
     const [ordem, setOrdem] = useState("1");
     const [classificados, setClassificados] = useState("");
     const [atributos, setAtributos] = useState<AtributoDeFase[]>([]);
@@ -160,6 +181,7 @@ export const FaseDialog = ({
         setNome(fase?.nome ?? "");
         setFormato(fase?.formato ?? FORMATOS_DE_FASE[0]);
         setAnterior(antes ? String(antes.id) : INSCRITAS);
+        anteriorAtual.current = antes ? String(antes.id) : INSCRITAS;
         setOrdem(String(fase?.ordem ?? (antes?.ordem ?? 0) + 1));
         setClassificados(fase?.classificados ? String(fase.classificados) : "");
         setCarregandoCampos(true);
@@ -186,7 +208,13 @@ export const FaseDialog = ({
             .then((lista) => {
                 if (!vigente) return;
                 setAtributos(lista);
-                setRascunho(Object.fromEntries(lista.map((a) => [a.codigo, paraCampo(a)])));
+                const doServidor = Object.fromEntries(lista.map((a) => [a.codigo, paraCampo(a)]));
+                const mesmaFase = fase && fase.formato === formato;
+                setRascunho(
+                    mesmaFase
+                        ? doServidor
+                        : comDesempateNaPrimeiraFase(doServidor, formato, anteriorAtual.current, lista),
+                );
             })
             .catch((causa) => vigente && setErro(causa))
             .finally(() => vigente && setCarregandoCampos(false));
@@ -206,6 +234,14 @@ export const FaseDialog = ({
     const nClassificados = Number(classificados);
     const pendencias = [
         ...(carregandoCampos ? [] : pendenciasDosCampos(atributos, rascunho)),
+        ...(formato === "ELIMINATORIA" &&
+        !faseAnterior &&
+        atributos.some((a) => a.codigo === DESEMPATE_PELA_ORDEM) &&
+        rascunho[DESEMPATE_PELA_ORDEM] !== "true"
+            ? [
+                  "Na primeira fase as equipes não têm classificação: ative \"Aceitar empates na entrada\" nas regras para chavear pela ordem de inscrição.",
+              ]
+            : []),
         ...(classificados && nClassificados > entram
             ? [`Classificados não podem passar das ${entram} equipes que entram.`]
             : []),
@@ -216,6 +252,8 @@ export const FaseDialog = ({
 
     const escolherAnterior = (valor: string) => {
         setAnterior(valor);
+        anteriorAtual.current = valor;
+        setRascunho((antes) => comDesempateNaPrimeiraFase(antes, formato, valor, atributos));
         const antes = outras.find((outra) => String(outra.id) === valor);
         setOrdem(String((antes?.ordem ?? 0) + 1));
     };
@@ -376,7 +414,13 @@ export const FaseDialog = ({
                                 {entram === 1 ? "equipe" : "equipes"}, {origem}.
                             </p>
                             {!carregandoCampos && (
-                                <p className="text-muted-foreground">{previa(formato, entram, rascunho)}</p>
+                                <p className="text-muted-foreground">
+                                    {previa(formato, entram, rascunho)}
+                                    {formato === "ELIMINATORIA" &&
+                                        !faseAnterior &&
+                                        rascunho[DESEMPATE_PELA_ORDEM] === "true" &&
+                                        " Chaveamento pela ordem de inscrição: 1º contra o último."}
+                                </p>
                             )}
                         </div>
                     </div>
