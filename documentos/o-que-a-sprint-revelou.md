@@ -216,13 +216,14 @@ regras já com o padrão —, os critérios de desempate viram uma lista ordenad
 um resumo diz quantas equipes entram e como a fase vai ficar ("4 grupos de 4",
 "8 → 4 → 2 → 1"). As mensagens de validação passaram a ser frases.
 
-Três defeitos do motor de fases apareceram no caminho, cada um coberto por
+Quatro defeitos do motor de fases apareceram no caminho, cada um coberto por
 teste escrito antes da correção:
 
 | Onde | O que acontecia |
 |---|---|
 | `OrquestradorDeFases.entradaDe` | a quantidade de classificados era gravada e ignorada: a fase seguinte recebia a classificação inteira da anterior |
 | `definirAtributo` | gravar vazio contava como informado, então trocar o número de grupos pelo tamanho deles caía sempre em "não os dois" |
+| eliminatória como primeira fase | era sempre recusada: as inscritas entram empatadas e o orquestrador conferia o empate sem consultar a configuração, então "Aceitar empates na entrada" não tinha efeito. Os testes semeavam à mão e contornavam o orquestrador, por isso não viam |
 | validação da fase seguinte | antes de a anterior ter classificação, dizia "precisa de ao menos 2 equipes, recebeu 0"; agora diz de qual fase as equipes vêm e o que fazer |
 
 **Ainda pendente:** a regra de sanção guarda o esporte, não a infração. Para

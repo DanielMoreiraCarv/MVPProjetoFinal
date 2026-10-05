@@ -203,9 +203,16 @@ podman play kube deploy/postgres-local.yaml
 ./deploy/carregar-dados-de-teste.sh
 ```
 
-Aplica as migrações e carrega 2 administrações, 6 competições, 96 equipes,
-1440 atletas e 78 partidas — os mesmos registros, com os mesmos nomes, que
-alimentavam as telas quando elas eram mockadas.
+Aplica as migrações e carrega 3 administrações, 7 competições, 128 equipes,
+1952 atletas e 78 partidas. Seis das competições são os mesmos registros, com
+os mesmos nomes, que alimentavam as telas quando elas eram mockadas.
+
+A sétima, **Copa Laboratório - 32 equipes** (administração "Laboratório de
+fases"), não vem dos mocks: são 32 equipes de futebol de campo com 16 atletas
+cada, inscritas, em rascunho, **sem fase nem partida**. Serve para montar
+sequências de fases do zero e conferir os confrontos da primeira rodada — as
+competições dos mocks já têm partidas que não pertencem a fase nenhuma, o
+estado que o sistema antigo produzia.
 
 O script **apaga os dados existentes** antes de carregar. É idempotente: rode
 quantas vezes quiser para voltar ao estado conhecido.
