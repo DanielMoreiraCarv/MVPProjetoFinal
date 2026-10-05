@@ -49,7 +49,7 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     {
         return List.of(
                 new AtributoFase( tipo(), PARAR_EM_N_TIMES, EnumTipoDeDado.INTEIRO, false, "1",
-                        "Quantos equipes restam ao final. 1 é o campeão; 4 encerra num quadrangular." ),
+                        "Quantas equipes restam ao final. 1 é o campeão; 4 encerra num quadrangular." ),
                 new AtributoFase( tipo(), IDA_E_VOLTA, EnumTipoDeDado.BOOLEANO, false, "false",
                         "Se cada confronto tem partida de volta" ),
                 new AtributoFase( tipo(), DESCONSIDERAR_EMPATES, EnumTipoDeDado.BOOLEANO, false,
@@ -75,21 +75,21 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
 
         if ( participantes < 2 )
         {
-            erros.add( "um mata-mata precisa de ao menos 2 equipes, recebeu " + participantes );
+            erros.add( "Uma eliminatória precisa de ao menos 2 equipes; entram " + participantes + "." );
         }
         else if ( pararEm < 1 )
         {
-            erros.add( PARAR_EM_N_TIMES + " precisa ser ao menos 1" );
+            erros.add( "As equipes ao final precisam ser ao menos 1." );
         }
         else if ( pararEm >= participantes )
         {
-            erros.add( "parar em " + pararEm + " equipes não elimina ninguém entre os "
-                    + participantes + " participantes" );
+            erros.add( "Terminar com " + pararEm + " equipes não elimina ninguém entre as "
+                    + participantes + " que entram." );
         }
         else if ( participantes % pararEm != 0 || !ehPotenciaDeDois( participantes / pararEm ) )
         {
             erros.add( participantes + " equipes não chegam a " + pararEm
-                    + " por eliminações sucessivas pela metade" );
+                    + " eliminando metade a cada rodada." );
         }
 
         return new ResultadoDaValidacao( erros );

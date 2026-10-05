@@ -48,14 +48,29 @@ public class OrquestradorDeFases
 
     /**
      * A entrada da fase: a classificação da fase anterior, ou — na primeira —
-     * os equipes inscritos no competicao, todos na posição 1, porque ainda não
+     * as equipes inscritas na competição, todos na posição 1, porque ainda não
      * houve nada que os ordenasse.
      */
     public List<Classificado> entradaDe ( Fase fase )
     {
         return faseRepository.findByFaseSucessoraId( fase.getId() )
-                             .map( this::classificacaoDe )
+                             .map( this::classificadosDe )
                              .orElseGet( () -> timesInscritos( fase ) );
+    }
+
+    /**
+     * Só quem avança: a quantidade de classificados era gravada e ignorada, e
+     * a fase seguinte recebia a classificação inteira da anterior. Sem
+     * quantidade informada, todos seguem.
+     */
+    private List<Classificado> classificadosDe ( Fase anterior )
+    {
+        List<Classificado> classificacao = classificacaoDe( anterior );
+        Integer quantos = anterior.getQuantidadeClassificados();
+
+        return quantos == null || quantos <= 0 || quantos >= classificacao.size()
+                ? classificacao
+                : classificacao.subList( 0, quantos );
     }
 
     private List<Classificado> timesInscritos ( Fase fase )
@@ -79,6 +94,16 @@ public class OrquestradorDeFases
         ConfiguracaoDaFase configuracao = configuracaoDe( fase );
         List<Classificado> entrada = entradaDe( fase );
 
+        // Antes de a anterior terminar não há quem entre, e "precisa de ao
+        // menos 2 equipes, recebeu 0" não diz o que fazer.
+        var anterior = faseRepository.findByFaseSucessoraId( fase.getId() );
+        if ( entrada.isEmpty() && anterior.isPresent() )
+        {
+            return conferirObrigatorios( fase, configuracao ).mais( new ResultadoDaValidacao( List.of(
+                    "As equipes desta fase saem de " + anterior.get().getNome()
+                            + ", que ainda não tem classificação. Gere e jogue os confrontos dela primeiro." ) ) );
+        }
+
         ResultadoDaValidacao obrigatorios = conferirObrigatorios( fase, configuracao );
         ResultadoDaValidacao empates = conferirEmpates( estrategia, entrada );
 
@@ -93,7 +118,7 @@ public class OrquestradorDeFases
         {
             if ( atributo.isObrigatorio() && !configuracao.informado( atributo.getCodigo() ) )
             {
-                faltando.add( "atributo obrigatório não informado: " + atributo.getCodigo() );
+                faltando.add( "Falta preencher: " + atributo.getDescricao() );
             }
         }
 
@@ -156,12 +181,21 @@ public class OrquestradorDeFases
                 .orElseThrow( () -> new IllegalArgumentException( "a fase " + fase.getFasePartida()
                         + " não aceita o atributo " + codigo ) );
 
-        valorRepository.findByFaseId( fase.getId() ).stream()
-                       .filter( existente -> existente.getAtributo().getId().equals( atributo.getId() ) )
-                       .findFirst()
-                       .ifPresentOrElse( existente -> {
-                           existente.setValor( valor );
-                           valorRepository.save( existente );
-                       }, () -> valorRepository.save( new ValorAtributoFase( fase, atributo, valor ) ) );
+        var existente = valorRepository.findByFaseId( fase.getId() ).stream()
+                       .filter( valorDele -> valorDele.getAtributo().getId().equals( atributo.getId() ) )
+                       .findFirst();
+
+        // Em branco apaga: gravado vazio contava como informado, e trocar o
+        // número de grupos pelo tamanho deles caía sempre em "não os dois".
+        if ( valor == null || valor.isBlank() )
+        {
+            existente.ifPresent( valorRepository::delete );
+            return;
+        }
+
+        existente.ifPresentOrElse( valorDele -> {
+                     valorDele.setValor( valor );
+                     valorRepository.save( valorDele );
+                 }, () -> valorRepository.save( new ValorAtributoFase( fase, atributo, valor ) ) );
     }
 }

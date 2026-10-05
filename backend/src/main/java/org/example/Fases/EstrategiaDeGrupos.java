@@ -55,7 +55,7 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
                 new AtributoFase( tipo(), NUMERO_DE_GRUPOS, EnumTipoDeDado.INTEIRO, false, null,
                         "Quantos grupos formar. Informe este ou o tamanho do grupo." ),
                 new AtributoFase( tipo(), TAMANHO_DO_GRUPO, EnumTipoDeDado.INTEIRO, false, null,
-                        "Quantos equipes por grupo. Informe este ou o número de grupos." ),
+                        "Quantas equipes por grupo. Informe este ou o número de grupos." ),
                 new AtributoFase( tipo(), IDA_E_VOLTA, EnumTipoDeDado.BOOLEANO, false, "false",
                         "Se cada confronto tem partida de volta" ),
                 new AtributoFase( tipo(), GRUPOS_DESIGUAIS, EnumTipoDeDado.BOOLEANO, false, "false",
@@ -71,7 +71,7 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
                         "Pontos por derrota" ) );
     }
 
-    /** Os equipes só precisam ser distribuídos nos grupos; a ordem exata não importa. */
+    /** As equipes só precisam ser distribuídos nos grupos; a ordem exata não importa. */
     @Override
     public boolean aceitaEmpateNaClassificacao ()
     {
@@ -88,12 +88,14 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
         if ( temNumero == temTamanho )
         {
-            erros.add( "informe exatamente um entre " + NUMERO_DE_GRUPOS + " e " + TAMANHO_DO_GRUPO );
+            erros.add( temNumero
+                    ? "Informe o número de grupos ou o tamanho do grupo, não os dois."
+                    : "Informe o número de grupos ou o tamanho do grupo." );
         }
 
         if ( entrada.size() < 2 )
         {
-            erros.add( "uma fase de grupos precisa de ao menos 2 equipes, recebeu " + entrada.size() );
+            erros.add( "Uma fase de grupos precisa de ao menos 2 equipes; entram " + entrada.size() + "." );
         }
 
         if ( erros.isEmpty() )
@@ -102,16 +104,16 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
             if ( quantidade < 1 )
             {
-                erros.add( "número de grupos precisa ser ao menos 1" );
+                erros.add( "O número de grupos precisa ser ao menos 1." );
             }
             else if ( quantidade > entrada.size() )
             {
-                erros.add( "há mais grupos (" + quantidade + ") do que equipes (" + entrada.size() + ")" );
+                erros.add( "Há mais grupos (" + quantidade + ") do que equipes (" + entrada.size() + ")." );
             }
             else if ( entrada.size() % quantidade != 0 && !configuracao.booleano( GRUPOS_DESIGUAIS ) )
             {
-                erros.add( "os " + entrada.size() + " equipes não se dividem igualmente em "
-                        + quantidade + " grupos; habilite " + GRUPOS_DESIGUAIS + " para permitir" );
+                erros.add( "As " + entrada.size() + " equipes não se dividem igualmente em "
+                        + quantidade + " grupos. Ajuste o número de grupos ou permita grupos de tamanhos diferentes." );
             }
         }
 

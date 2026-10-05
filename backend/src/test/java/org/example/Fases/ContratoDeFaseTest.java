@@ -134,13 +134,70 @@ class ContratoDeFaseTest
         assertTrue( entrada.stream().allMatch( c -> c.posicao() == 1 ) );
     }
 
+    /** Um grupo só, todos contra todos, mandante sempre vence. */
+    private void jogarAteOFim ( Fase fase )
+    {
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "4" );
+        orquestrador.configurar( fase );
+        for ( var partida : partidaRepository.findByFaseId( fase.getId() ) )
+        {
+            partida.setPlacarMandante( 1 );
+            partida.setPlacarVisitante( 0 );
+            partida.setRealizada( true );
+            partidaRepository.save( partida );
+        }
+    }
+
+    @Test
+    void valorEmBrancoApagaOAtributo ()
+    {
+        Fase fase = novaFase();
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "2" );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "" );
+
+        assertTrue( orquestrador.validar( fase ).ehValido(),
+                "trocar de número de grupos para tamanho do grupo ficava impossível" );
+    }
+
+    @Test
+    void sucessoraRecebeSoOsClassificadosDaAnterior ()
+    {
+        Fase sucessora = novaFase();
+        sucessora.setOrdem( 2 );
+        sucessora.setFasePartida( EnumFasePartida.ELIMINATORIA );
+        faseRepository.save( sucessora );
+
+        Fase primeira = novaFase();
+        primeira.setQuantidadeClassificados( 2 );
+        primeira.setFaseSucessora( sucessora );
+        jogarAteOFim( faseRepository.save( primeira ) );
+
+        assertEquals( 2, orquestrador.entradaDe( sucessora ).size(),
+                "a fase seguinte recebeu quem não se classificou" );
+    }
+
+    @Test
+    void semQuantidadeDeClassificadosTodosSeguem ()
+    {
+        Fase sucessora = novaFase();
+        sucessora.setOrdem( 2 );
+        faseRepository.save( sucessora );
+
+        Fase primeira = novaFase();
+        primeira.setFaseSucessora( sucessora );
+        jogarAteOFim( faseRepository.save( primeira ) );
+
+        assertEquals( 4, orquestrador.entradaDe( sucessora ).size() );
+    }
+
     @Test
     void atributoObrigatorioAusenteInvalidaAFase ()
     {
         ResultadoDaValidacao resultado = orquestrador.validar( novaFase() );
 
         assertFalse( resultado.ehValido() );
-        assertTrue( resultado.mensagem().contains( EstrategiaDeGrupos.TAMANHO_DO_GRUPO ) );
+        assertTrue( resultado.mensagem().contains( "tamanho do grupo" ) );
     }
 
     @Test

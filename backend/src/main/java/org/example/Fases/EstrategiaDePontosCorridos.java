@@ -86,7 +86,7 @@ public class EstrategiaDePontosCorridos implements EstrategiaDeFase
 
         if ( entrada.size() < 2 )
         {
-            erros.add( "pontos corridos precisa de ao menos 2 equipes, recebeu " + entrada.size() );
+            erros.add( "Pontos corridos precisa de ao menos 2 equipes; entram " + entrada.size() + "." );
         }
 
         return new ResultadoDaValidacao( erros );

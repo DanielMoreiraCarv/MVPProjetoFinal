@@ -98,7 +98,7 @@ class FaseDeGruposTest
         ResultadoDaValidacao resultado = orquestrador.validar( faseCom( 4, Map.of() ) );
 
         assertFalse( resultado.ehValido() );
-        assertTrue( resultado.mensagem().contains( "exatamente um" ) );
+        assertTrue( resultado.mensagem().contains( "Informe o número de grupos ou o tamanho do grupo" ) );
     }
 
     @Test

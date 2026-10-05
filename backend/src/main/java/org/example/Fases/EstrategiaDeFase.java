@@ -39,7 +39,7 @@ public interface EstrategiaDeFase
     /** Confere se a configuração e a entrada permitem montar a fase. */
     ResultadoDaValidacao validar ( ConfiguracaoDaFase configuracao, List<Classificado> entrada );
 
-    /** Monta a fase a partir da entrada: distribui os equipes e gera as partidas. */
+    /** Monta a fase a partir da entrada: distribui as equipes e gera as partidas. */
     void configurar ( Fase fase, ConfiguracaoDaFase configuracao, List<Classificado> entrada );
 
     /**
