@@ -156,6 +156,65 @@ def ler_partidas():
     return partidas
 
 
+BAIRROS = [
+    "Aldeota", "Meireles", "Benfica", "Messejana", "Parangaba", "Montese", "Fátima", "Papicu",
+    "Varjota", "Mucuripe", "Cocó", "Dionísio Torres", "Joaquim Távora", "Bela Vista", "Pici",
+    "Antônio Bezerra", "Barra do Ceará", "Jacarecanga", "Centro", "Iracema", "Serrinha",
+    "Itaperi", "Cambeba", "Edson Queiroz", "Sapiranga", "Lagoa Redonda", "Passaré", "Mondubim",
+    "Maraponga", "Conjunto Ceará", "Jangurussu", "Henrique Jorge",
+]
+PRENOMES = [
+    "Ana", "Bruno", "Caio", "Davi", "Enzo", "Felipe", "Gabriel", "Heitor", "Igor", "João",
+    "Kauã", "Lucas", "Marcos", "Nicolas", "Otávio", "Pedro", "Rafael", "Samuel", "Thiago",
+    "Vitor", "Wesley", "Yuri", "Arthur", "Bernardo", "Cauã", "Diego", "Eduardo", "Francisco",
+]
+SOBRENOMES = [
+    "Almeida", "Barbosa", "Cavalcante", "Dias", "Esteves", "Farias", "Gomes", "Holanda",
+    "Lima", "Macedo", "Nogueira", "Oliveira", "Pinheiro", "Queiroz", "Rocha", "Sampaio",
+    "Teixeira", "Uchoa", "Vasconcelos", "Xavier",
+]
+ATLETAS_POR_EQUIPE = 16  # onze titulares e cinco no banco
+
+
+def laboratorio_de_fases(primeiro_id_equipe, id_competicao, id_administracao):
+    """Uma competição para montar fases do zero: 32 equipes de futebol de
+    campo inscritas, em rascunho, sem fase nem partida.
+
+    As competições vindas dos mocks já têm partidas sem fase — o estado que o
+    sistema de antes produzia — e por isso não servem para conferir se a
+    primeira rodada de uma estrutura nova sai certa. Esta não vem dos mocks: é
+    gerada aqui, de forma determinística, para o arquivo não mudar a cada
+    execução.
+    """
+    administracao = {
+        "id": id_administracao,
+        "nome": "Laboratório de fases",
+        "descricao": "Competições sem estrutura, para montar sequências de fases e conferir os confrontos gerados.",
+    }
+    competicao = {
+        "id": id_competicao,
+        "nome": "Copa Laboratório - 32 equipes",
+        "descricao": "32 equipes de futebol de campo inscritas, sem fases nem partidas.",
+        "categoria": "Masculino",
+    }
+
+    equipes, atletas = [], []
+    for i, bairro in enumerate(BAIRROS):
+        id_equipe = primeiro_id_equipe + i
+        equipes.append((id_equipe, f"EC {bairro}"))
+        for numero in range(1, ATLETAS_POR_EQUIPE + 1):
+            k = i * ATLETAS_POR_EQUIPE + numero
+            atletas.append({
+                "id": id_equipe * 1000 + numero,
+                "nome": f"{PRENOMES[k % len(PRENOMES)]} {SOBRENOMES[(k * 7) % len(SOBRENOMES)]}",
+                "numero": numero,
+                "idade": 18 + (k * 5) % 18,
+                "equipe_id": id_equipe,
+            })
+
+    return administracao, competicao, equipes, atletas
+
+
 def lote(linhas, por_linha=4):
     """Agrupa tuplas de VALUES para o arquivo não virar uma linha por registro."""
     return ",\n".join(
@@ -171,6 +230,14 @@ def gerar():
     partidas = ler_partidas()
 
     nome_para_equipe = {nome: id_equipe for id_equipe, nome in equipes}
+
+    laboratorio, copa, equipes_da_copa, atletas_da_copa = laboratorio_de_fases(
+        primeiro_id_equipe=max(id_equipe for id_equipe, _ in equipes) + 1,
+        id_competicao=max(c["id"] for c in competicoes) + 1,
+        id_administracao=max(a["id"] for a in administracoes) + 1,
+    )
+    equipes = equipes + equipes_da_copa
+    atletas = atletas + atletas_da_copa
     nome_para_competicao = {c["nome"]: c["id"] for c in competicoes}
 
     partes = [f"""-- Dados de teste, gerados por backend/tools/gerar_dados_de_teste.py
@@ -180,7 +247,7 @@ def gerar():
 --
 -- Só para ambiente local. Não é migração e nunca roda em produção.
 --
--- Conteúdo: {len(administracoes)} administrações, {len(competicoes)} competições,
+-- Conteúdo: {len(administracoes) + 1} administrações, {len(competicoes) + 1} competições,
 -- {len(equipes)} equipes, {len(atletas)} atletas e {len(partidas)} partidas.
 
 begin;
@@ -202,6 +269,7 @@ delete from administracao;
 
     # Administração
     linhas = [f"({a['id']}, {aspas(a['nome'])}, {aspas(a['descricao'])})" for a in administracoes]
+    linhas.append(f"({laboratorio['id']}, {aspas(laboratorio['nome'])}, {aspas(laboratorio['descricao'])})")
     partes.append("insert into administracao (id, nome, descricao) values\n" + lote(linhas, 1) + ";\n")
 
     # Competição — os mocks são todos de futebol de campo
@@ -217,6 +285,13 @@ delete from administracao;
     partes.append(
         "insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata) values\n"
         + lote(linhas, 1) + ";\n"
+    )
+
+    # Em rascunho: é o único estado em que a Estrutura deixa montar as fases.
+    partes.append(
+        "insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata, estado) values\n"
+        f"    ({copa['id']}, {aspas(copa['nome'])}, {aspas(copa['descricao'])}, "
+        f"{aspas(copa['categoria'])}, {laboratorio['id']}, false, 'RASCUNHO');\n"
     )
 
     # O catálogo normalmente é populado no boot da aplicação. O seed insere por
@@ -259,7 +334,7 @@ where m.codigo = 'FUTEBOL_DE_CAMPO';
         f"({c['id']}, {t})"
         for c in competicoes
         for t in range(c["primeira_equipe"], c["ultima_equipe"] + 1)
-    ]
+    ] + [f"({copa['id']}, {id_equipe})" for id_equipe, _ in equipes_da_copa]
     partes.append(
         "insert into competicao_equipe (competicao_id, equipe_id) values\n" + lote(linhas, 8) + ";\n"
     )
@@ -310,8 +385,8 @@ commit;
     SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text("\n".join(partes))
 
-    print(f"{len(administracoes)} administrações")
-    print(f"{len(competicoes)} competições")
+    print(f"{len(administracoes) + 1} administrações")
+    print(f"{len(competicoes) + 1} competições ({copa['nome']}: {len(equipes_da_copa)} equipes, sem fases)")
     print(f"{len(equipes)} equipes")
     print(f"{len(atletas)} atletas")
     print(f"{len(partidas) - ignoradas} partidas ({ignoradas} ignoradas)")
