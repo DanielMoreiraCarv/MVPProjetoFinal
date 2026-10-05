@@ -160,3 +160,53 @@ livre: texto livre viraria "CBF", "C.B.F." e "cbf" como três federações.
 
 **Atleta não tem posição nem data de nascimento.** O modelo tem `idade`, que
 envelhece, quando o RF36 pede data de nascimento. A tela não inventou os campos.
+
+## Revisão da interface
+
+Passagem pela interface no navegador, tela por tela, nos dois temas e no
+celular. O que ela encontrou:
+
+**Ciclo de cadastro que a tela não fechava.** As rotas existiam e nenhuma
+tela as chamava: excluir e editar administração, excluir competição, encerrar
+e cancelar competição (só publicar tinha botão), editar e excluir partida,
+salvar a súmula sem assinar e excluir a súmula. Todas ganharam tela.
+
+**Excluir respondia 409 sem dizer por quê.** Competição com partida e
+administração com competição caíam na violação de chave estrangeira, e a
+mensagem era o genérico "conflita com um vínculo em uso". Agora o serviço
+recusa antes, com a contagem e o que fazer — no mesmo padrão da federação.
+
+**A regra de sanção não podia ser criada.** O campo "Infração" era texto livre
+e ia para `tipoEsporte`, que no servidor é enum: "Cartão vermelho" voltava como
+`No enum constant`. E a resposta devolvia a descrição ("Futebol") enquanto o
+pedido exige a constante (`FUTEBOL`) — o mesmo defeito que a fase já teve. O
+campo virou uma escolha de esporte, a resposta devolve a constante, e o enum
+recusa código inválido dizendo quais existem.
+
+**O mesmo troféu quatro vezes no menu.** Logo, seletor de escopo,
+"Competições" e "Visão geral" usavam o ícone da competição, e os dois últimos
+ficavam ativos ao mesmo tempo. O ícone passou a ser só do conceito; instância
+(o app, a competição escolhida, a equipe) usa monograma. Federação ganhou
+ícone próprio — usava o da administração.
+
+**Menu recolhido.** Os três botões de tema não cabiam nos 72 px e vazavam;
+recolhido, vira um botão só que alterna em ciclo.
+
+**Escolha entre muitos.** Botões lado a lado cortavam "Futebol de campo"; os
+`<select>` nativos traziam o visual do sistema operacional. Os dois viraram
+`Escolha`, sobre o `Select` do design system, que também foi alinhado aos
+tokens do `Input`.
+
+**Rolagem horizontal no celular** em competições e na visão geral: o
+componente de seção estava copiado em dezesseis páginas, e numa das cópias
+faltava `min-w-0`. Virou um componente só.
+
+**Componentes que não tinham passado pelo redesign** — os diálogos de
+administração e competição, o formulário de edição, a lista de equipes
+inscritas, o calendário e a tabela de classificação da visão geral, com
+identificadores em inglês e classes escritas à mão — foram reescritos no
+padrão das outras telas.
+
+**Ainda pendente:** a regra de sanção guarda o esporte, não a infração. Para
+"cartão vermelho = 1 jogo" o modelo precisa de um campo de infração, e a
+contagem automática continua dependendo da entidade `Evento`.
