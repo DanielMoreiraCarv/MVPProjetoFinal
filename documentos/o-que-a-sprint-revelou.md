@@ -296,6 +296,32 @@ Três defeitos do motor apareceram no caminho, cada um com teste escrito antes:
 | Entrada da fase seguinte | era a classificação provisória da anterior: com os grupos gerados e ninguém jogando, os primeiros de uma tabela zerada já entravam, e dava para gerar o mata-mata antes dos grupos. Agora só entra quem se classificou, quando todos os jogos da anterior terminam |
 | `POST /fase` | aceitava `idFaseSucessora` e descartava, como já tinha acontecido com a quantidade de classificados |
 
+## Quem avança da fase de grupos
+
+A fase tinha um número só, "classificados", que valia para o total — e numa
+fase de grupos quem monta pensa por grupo: os dois primeiros de cada um. O
+atributo `classificadosPorGrupo` (padrão 2) entra na fase de grupos, e o total
+passa a ser opcional: sem ele avançam grupos × por grupo. A classificação da
+fase de grupos já vem ordenada por colocação — todos os primeiros, depois os
+segundos, cada leva comparada pelos critérios de desempate —, então um total
+menor leva os primeiros e os melhores segundos, e um maior, os melhores
+terceiros. No diálogo, o campo é "Avançam por grupo", e o total sai calculado
+embaixo ("16 equipes vão avançar: os 1º e 2º de cada grupo"); mudar o total é
+a exceção, atrás de "Ajustar o total", com volta para o cálculo. É o mesmo
+componente no diálogo de fase, no painel de configuração da página de fases e
+na Estrutura — que tinha um campo "Classificados" próprio, de total, na frente
+do "por grupo", e era por ali que se errava. Os modelos de grupos passaram a
+dizer "2 por grupo" em vez de um total. Ele diz como
+os grupos são comparados entre si, avisa quando o total não fecha uma chave,
+e recusa mais classificados por grupo do que o grupo tem.
+
+Apagar a fase seguinte de um encadeamento estourava a chave estrangeira — a
+anterior seguia apontando para ela — e a tela só dizia "conflita com um
+vínculo em uso". Agora a anterior é desencadeada antes, e a confirmação diz
+isso. Quantas equipes entram e saem de
+cada fase vem do servidor (`quantosEntram`, `quantosAvancam`), e a tela não
+refaz a conta.
+
 **Ainda pendente:** empate em eliminatória dá a vaga ao mandante, porque o
 modelo não registra pênaltis. E a regra de sanção guarda o esporte, não a
 infração. Para
