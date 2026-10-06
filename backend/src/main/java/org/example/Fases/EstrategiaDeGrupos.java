@@ -303,6 +303,43 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
         return ordem;
     }
 
+    @Override
+    public boolean temTabelaDePontos ()
+    {
+        return true;
+    }
+
+    @Override
+    public List<LinhaDaTabela> tabela ( Fase fase, ConfiguracaoDaFase configuracao,
+            List<Classificado> entrada )
+    {
+        Map<Integer, List<Desempenho>> porGrupo = desempenhoPorGrupo( fase, configuracao );
+        Comparator<Desempenho> comparador = CriterioDeDesempate.comparadorDe( configuracao.lista( CRITERIOS ) );
+
+        // Sem confrontos gerados ainda não há grupo: a tabela é única, com
+        // quem vai entrar na fase, todos zerados.
+        if ( porGrupo.isEmpty() )
+        {
+            List<LinhaDaTabela> unica = new ArrayList<>();
+            for ( Classificado classificado : entrada )
+            {
+                unica.add( new LinhaDaTabela( null, unica.size() + 1, new Desempenho( classificado.idEquipe() ) ) );
+            }
+            return unica;
+        }
+
+        boolean variosGrupos = porGrupo.size() > 1;
+        List<LinhaDaTabela> linhas = new ArrayList<>();
+        porGrupo.forEach( ( grupo, equipes ) -> {
+            equipes.sort( comparador );
+            for ( int i = 0; i < equipes.size(); i++ )
+            {
+                linhas.add( new LinhaDaTabela( variosGrupos ? grupo : null, i + 1, equipes.get( i ) ) );
+            }
+        } );
+        return linhas;
+    }
+
     private Map<Integer, List<Desempenho>> desempenhoPorGrupo ( Fase fase,
             ConfiguracaoDaFase configuracao )
     {

@@ -179,6 +179,38 @@ class FaseDeGruposTest
     }
 
     @Test
+    void tabelaComecaComTodosZeradosAntesDeGerarOsConfrontos ()
+    {
+        Fase fase = faseCom( 4, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+
+        List<LinhaDaTabela> tabela = orquestrador.tabelaDe( fase );
+
+        assertEquals( 4, tabela.size(), "a tabela esperava o primeiro jogo para mostrar as equipes" );
+        assertTrue( tabela.stream().allMatch( linha -> linha.desempenho().getPontos() == 0
+                && linha.desempenho().getJogos() == 0 ) );
+    }
+
+    @Test
+    void tabelaSeparaPorGrupoEContaOsPontos ()
+    {
+        Fase fase = faseCom( 4, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+        orquestrador.configurar( fase );
+        Partida primeira = partidaRepository.findByFaseId( fase.getId() ).get( 0 );
+        encerrar( primeira, 2, 0 );
+
+        List<LinhaDaTabela> tabela = orquestrador.tabelaDe( fase );
+
+        assertEquals( 4, tabela.size() );
+        assertEquals( 2, tabela.stream().map( LinhaDaTabela::grupo ).distinct().count() );
+        LinhaDaTabela lider = tabela.stream()
+                .filter( linha -> linha.desempenho().getIdTime().equals( primeira.getIdEquipeMandante() ) )
+                .findFirst().orElseThrow();
+        assertEquals( 1, lider.posicao() );
+        assertEquals( 3, lider.desempenho().getPontos() );
+        assertEquals( 2, lider.desempenho().getSaldoDeGols() );
+    }
+
+    @Test
     void timeSemJogoRealizadoApareceZeradoNaClassificacao ()
     {
         Fase fase = faseCom( 4, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "1" ) );

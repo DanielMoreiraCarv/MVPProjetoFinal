@@ -168,6 +168,18 @@ public class OrquestradorDeFases
                         opcoes == null ? Map.of() : opcoes );
     }
 
+    /** A tabela de pontos da fase; vazia na eliminatória, que não se decide por pontos. */
+    public List<LinhaDaTabela> tabelaDe ( Fase fase )
+    {
+        EstrategiaDeFase estrategia = registro.para( fase.getFasePartida() );
+        return estrategia.tabela( fase, configuracaoDe( fase ), entradaDe( fase ) );
+    }
+
+    public boolean temTabelaDePontos ( Fase fase )
+    {
+        return registro.para( fase.getFasePartida() ).temTabelaDePontos();
+    }
+
     public List<Classificado> classificacaoDe ( Fase fase )
     {
         return registro.para( fase.getFasePartida() )

@@ -1,6 +1,7 @@
 package org.example.Controllers;
 
 import org.example.Mapper.AtributoFaseMapper;
+import org.example.Models.Response.LinhaDaTabelaResponse;
 import org.example.Models.Response.AtributoFaseResponse;
 import org.example.Models.Request.ValorDeAtributoRequest;
 import org.example.Models.EnumFasePartida;
@@ -239,6 +240,32 @@ public class FaseController
                 .toList();
 
         return ResponseEntity.ok( resposta );
+    }
+
+    /**
+     * A tabela de pontos das fases que se decidem por pontos — grupos e
+     * pontos corridos —, com quem entra na fase já listado e zerado antes do
+     * primeiro jogo.
+     */
+    @GetMapping("/{id}/tabela")
+    public ResponseEntity<List<LinhaDaTabelaResponse>> tabela ( @PathVariable("id") Long id )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        return ResponseEntity.ok( faseService.tabelaDe( fase ).stream()
+                .map( linha -> {
+                    var d = linha.desempenho();
+                    return new LinhaDaTabelaResponse( linha.grupo(), linha.posicao(), d.getIdTime(),
+                            nomeDoTime( d.getIdTime() ), d.getPontos(), d.getJogos(), d.getVitorias(),
+                            d.getEmpates(), d.getDerrotas(), d.getGolsPro(), d.getGolsContra(),
+                            d.getSaldoDeGols() );
+                } )
+                .toList() );
     }
 
     private String nomeDoTime ( Long idEquipe )

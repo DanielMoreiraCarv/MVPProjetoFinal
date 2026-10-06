@@ -72,4 +72,20 @@ public interface EstrategiaDeFase
      * recebe.
      */
     List<Classificado> classificacao ( Fase fase, ConfiguracaoDaFase configuracao );
+
+    /** Se a fase se decide por pontos — grupos e pontos corridos —, e não por eliminação. */
+    default boolean temTabelaDePontos ()
+    {
+        return false;
+    }
+
+    /**
+     * A tabela de pontos com quem entra na fase, inclusive quem ainda não
+     * jogou: zerado desde o início, e não ausente até o primeiro jogo.
+     */
+    default List<LinhaDaTabela> tabela ( Fase fase, ConfiguracaoDaFase configuracao,
+            List<Classificado> entrada )
+    {
+        return List.of();
+    }
 }

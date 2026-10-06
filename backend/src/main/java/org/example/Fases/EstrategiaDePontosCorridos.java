@@ -110,6 +110,19 @@ public class EstrategiaDePontosCorridos implements EstrategiaDeFase
         return grupos.classificacao( fase, comGrupoUnico( configuracao ) );
     }
 
+    @Override
+    public boolean temTabelaDePontos ()
+    {
+        return true;
+    }
+
+    @Override
+    public List<LinhaDaTabela> tabela ( Fase fase, ConfiguracaoDaFase configuracao,
+            List<Classificado> entrada )
+    {
+        return grupos.tabela( fase, comGrupoUnico( configuracao ), entrada );
+    }
+
     /**
      * A configuração que a fase de grupos espera, com um grupo fixo e os
      * valores desta fase repassados.

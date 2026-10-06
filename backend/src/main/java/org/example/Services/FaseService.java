@@ -135,6 +135,16 @@ public class FaseService
         return partidaRepository.findByFaseId( fase.getId() );
     }
 
+    public List<org.example.Fases.LinhaDaTabela> tabelaDe ( Fase fase )
+    {
+        if ( !orquestrador.temTabelaDePontos( fase ) )
+        {
+            throw new IllegalArgumentException( "A fase " + fase.getNome()
+                    + " é eliminatória: não tem tabela de pontos, só a ordem de classificação." );
+        }
+        return orquestrador.tabelaDe( fase );
+    }
+
     public List<Classificado> classificacaoDe ( Fase fase )
     {
         return orquestrador.classificacaoDe( fase );
