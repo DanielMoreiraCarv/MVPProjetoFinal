@@ -180,6 +180,56 @@ public class FaseService
                 base.qtdClassificados(), base.idFaseSucessora(), entram, avancam );
     }
 
+    public List<org.example.Fases.ValidacaoDaFase> validarEstrutura ( Long idCompeticao )
+    {
+        List<Fase> fases = buscarFasePorCompeticao( idCompeticao );
+        return orquestrador.validarEstrutura( fases == null ? List.of() : fases );
+    }
+
+    /**
+     * O botão único: valida a estrutura inteira e, só se tudo fechar, gera
+     * a primeira fase e publica a competição. As seguintes nascem quando a
+     * anterior termina. Gerar fase por fase deixava nascer partidas de uma
+     * estrutura que não fechava — e o erro só aparecia na fase seguinte.
+     */
+    @Transactional
+    public List<Partida> gerarPartidasDaCompeticao ( Long idCompeticao )
+    {
+        List<Fase> fases = buscarFasePorCompeticao( idCompeticao );
+        if ( fases == null || fases.isEmpty() )
+        {
+            throw new IllegalArgumentException( "A competição ainda não tem fases: monte a estrutura antes de gerar as partidas." );
+        }
+        if ( fases.stream().anyMatch( fase -> !partidaRepository.findByFaseId( fase.getId() ).isEmpty() ) )
+        {
+            throw new IllegalStateException( "As partidas desta competição já foram geradas." );
+        }
+
+        List<String> problemas = orquestrador.validarEstrutura( fases ).stream()
+                .filter( validacao -> !validacao.resultado().ehValido() )
+                .map( validacao -> validacao.fase().getNome() + ": " + String.join( " ", validacao.resultado().erros() ) )
+                .toList();
+        if ( !problemas.isEmpty() )
+        {
+            throw new IllegalArgumentException( "A estrutura não fecha, e nenhuma partida foi gerada. "
+                    + String.join( " ", problemas ) );
+        }
+
+        Fase primeira = fases.stream()
+                .filter( fase -> faseRepository.findByFaseSucessoraId( fase.getId() ).isEmpty() )
+                .min( java.util.Comparator.comparing( ( Fase f ) -> f.getOrdem() == null ? 0 : f.getOrdem() ) )
+                .orElseThrow();
+
+        var competicao = competicaoService.buscarPorId( idCompeticao );
+        if ( competicao != null && competicao.getEstado() == org.example.Models.EnumEstadoCompeticao.RASCUNHO )
+        {
+            competicaoService.mudarEstado( idCompeticao, org.example.Models.EnumEstadoCompeticao.EM_ANDAMENTO );
+        }
+
+        orquestrador.configurar( primeira );
+        return partidaRepository.findByFaseId( primeira.getId() );
+    }
+
     public org.example.Fases.Chaveamento chaveamentoDe ( Fase fase )
     {
         return orquestrador.chaveamentoDe( fase );

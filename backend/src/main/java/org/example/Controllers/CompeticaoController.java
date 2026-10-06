@@ -10,6 +10,7 @@ import org.example.Models.Equipe;
 import org.example.Models.Request.CompeticaoCreateRequest;
 import org.example.Models.Request.CompeticaoEstadoRequest;
 import org.example.Models.Request.CompeticaoUpdateRequest;
+import org.example.Models.Response.EstruturaResponse;
 import org.example.Models.Response.CompeticaoResponse;
 import org.example.Services.CompeticaoService;
 import org.example.Services.EquipeService;
@@ -34,6 +35,15 @@ public class CompeticaoController
 {
     @Autowired
     private CompeticaoService competicaoService;
+
+    @Autowired
+    private org.example.Services.FaseService faseService;
+
+    @Autowired
+    private org.example.Fases.OrquestradorDeFases orquestrador;
+
+    @Autowired
+    private org.example.Repositories.PartidaRepository partidaRepository;
 
     @Autowired
     private EquipeService equipeService;
@@ -176,6 +186,40 @@ public class CompeticaoController
         Competicao competicao = competicaoService.removerEquipeDaCompeticao( id, idEquipe );
 
         return ResponseEntity.ok( CompeticaoMapper.toResponse( competicao ) );
+    }
+
+    /**
+     * A estrutura validada fase a fase — inclusive as que só vão receber
+     * equipes depois —, para a tela dizer o que não fecha antes de gerar.
+     */
+    @GetMapping("/{id}/estrutura")
+    public ResponseEntity<EstruturaResponse> estrutura ( @PathVariable Long id )
+    {
+        List<EstruturaResponse.Fase> fases = faseService.validarEstrutura( id ).stream()
+                .map( validacao -> new EstruturaResponse.Fase(
+                        validacao.fase().getId(), validacao.fase().getNome(), validacao.fase().getOrdem(),
+                        validacao.fase().getFasePartida().name(),
+                        orquestrador.quantosEntram( validacao.fase() ),
+                        orquestrador.quantosAvancam( validacao.fase() ),
+                        validacao.resultado().ehValido(), validacao.resultado().erros(),
+                        partidaRepository.findByFaseId( validacao.fase().getId() ).size() ) )
+                .toList();
+        boolean geradas = fases.stream().anyMatch( fase -> fase.partidas() > 0 );
+
+        return ResponseEntity.ok( new EstruturaResponse(
+                !fases.isEmpty() && fases.stream().allMatch( EstruturaResponse.Fase::valida ), geradas, fases ) );
+    }
+
+    /**
+     * O botão único: valida a estrutura inteira e, se fechar, gera a primeira
+     * fase e publica. Se alguma fase não fechar, nada é gerado e a resposta diz
+     * qual e por quê.
+     */
+    @PostMapping("/{id}/partidas")
+    public ResponseEntity<?> gerarPartidas ( @PathVariable Long id )
+    {
+        int geradas = faseService.gerarPartidasDaCompeticao( id ).size();
+        return ResponseEntity.ok( java.util.Map.of( "partidasGeradas", geradas ) );
     }
 
     @DeleteMapping("/{id}")

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -141,6 +142,83 @@ public class OrquestradorDeFases
             entrada.add( new Classificado( 1, equipe.getId() ) );
         }
         return entrada;
+    }
+
+    /**
+     * A fase validada com a entrada que ela vai ter, antes de saber quem:
+     * na primeira, as inscritas; nas seguintes, tantas quantas a anterior faz
+     * avançar, já em ordem. É o que deixa reprovar, antes de gerar qualquer
+     * partida, uma eliminatória que vai receber 24 equipes.
+     */
+    public ResultadoDaValidacao validarPrevista ( Fase fase )
+    {
+        if ( faseRepository.findByFaseSucessoraId( fase.getId() ).isEmpty() )
+        {
+            return validar( fase );
+        }
+
+        EstrategiaDeFase estrategia = registro.para( fase.getFasePartida() );
+        ConfiguracaoDaFase configuracao = configuracaoDe( fase );
+        int entram = quantosEntram( fase );
+        List<Classificado> prevista = new ArrayList<>();
+        for ( int i = 1; i <= entram; i++ )
+        {
+            // Equipes que ainda não se sabe quem são: o que importa para a
+            // validação é quantas são e que chegam em ordem.
+            prevista.add( new Classificado( i, -(long) i ) );
+        }
+
+        ResultadoDaValidacao resultado = conferirObrigatorios( fase, configuracao );
+        if ( fase.getQuantidadeClassificados() != null && fase.getQuantidadeClassificados() > entram )
+        {
+            resultado = resultado.mais( ResultadoDaValidacao.com( "Avançam " + fase.getQuantidadeClassificados()
+                    + ", mas entram só " + entram + " equipes nesta fase." ) );
+        }
+        return resultado.mais( estrategia.validar( configuracao, prevista ) );
+    }
+
+    /**
+     * A estrutura inteira, fase a fase, na ordem da competição. Além do que
+     * cada fase exige, confere o encadeamento: uma fase que não é a primeira e
+     * não recebe de ninguém ficaria sem equipes para sempre.
+     */
+    public List<ValidacaoDaFase> validarEstrutura ( List<Fase> fases )
+    {
+        List<Fase> emOrdem = fases.stream()
+                .sorted( Comparator.comparing( ( Fase f ) -> f.getOrdem() == null ? 0 : f.getOrdem() )
+                        .thenComparing( Fase::getId ) )
+                .toList();
+        List<ValidacaoDaFase> resultado = new ArrayList<>();
+
+        for ( int i = 0; i < emOrdem.size(); i++ )
+        {
+            Fase fase = emOrdem.get( i );
+            ResultadoDaValidacao daFase = validarPrevista( fase );
+            if ( i > 0 && faseRepository.findByFaseSucessoraId( fase.getId() ).isEmpty() )
+            {
+                daFase = daFase.mais( ResultadoDaValidacao.com( "Esta fase não recebe equipes de nenhuma outra."
+                        + " Escolha de qual fase ela recebe os classificados." ) );
+            }
+            resultado.add( new ValidacaoDaFase( fase, daFase ) );
+        }
+        return resultado;
+    }
+
+    /**
+     * Fase acabou: a seguinte é montada sozinha, se ainda não foi e se puder.
+     * Antes alguém precisava gerar os confrontos dela à mão, fase por fase.
+     */
+    public void avancarSeTerminou ( Fase fase )
+    {
+        Fase seguinte = fase.getFaseSucessora();
+        if ( seguinte == null || !terminou( fase ) || !partidaRepository.findByFaseId( seguinte.getId() ).isEmpty() )
+        {
+            return;
+        }
+        if ( validar( seguinte ).ehValido() )
+        {
+            configurar( seguinte );
+        }
     }
 
     public ResultadoDaValidacao validar ( Fase fase )

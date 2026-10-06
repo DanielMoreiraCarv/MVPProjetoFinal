@@ -243,6 +243,10 @@ public class PartidaService {
             if (fase != null && fase.getFasePartida() == EnumFasePartida.ELIMINATORIA) {
                 orquestrador.atualizar(fase, java.util.Map.of());
             }
+            // E fechar o último jogo da fase monta a fase seguinte.
+            if (fase != null) {
+                orquestrador.avancarSeTerminou(fase);
+            }
             return salva;
         }
         return null;
