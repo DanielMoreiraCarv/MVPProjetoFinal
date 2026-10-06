@@ -9,6 +9,7 @@ import { CarregandoTabela, Erro, Vazio } from "@/src/components/estado/Estados";
 import { Secao } from "@/src/components/layout/Secao";
 import { TabelasPorGrupo } from "@/src/features/campeonatos/TabelasPorGrupo";
 import { ChaveDaEliminatoria } from "@/src/features/fases/ChaveDaEliminatoria";
+import { buscarEstrutura } from "@/src/lib/api/competicoes";
 import {
     Chaveamento,
     Fase,
@@ -37,6 +38,9 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
     const [tabela, setTabela] = useState<LinhaDaTabela[]>([]);
     const [chave, setChave] = useState<Chaveamento | null>(null);
     const [carregandoFases, setCarregandoFases] = useState(true);
+    // Sem partidas geradas não há classificação: a tabela zerada antes disso
+    // parecia uma competição em andamento que ainda nem foi montada.
+    const [partidasGeradas, setPartidasGeradas] = useState(false);
     const [carregandoFase, setCarregandoFase] = useState(false);
     const [erro, setErro] = useState<unknown>(null);
 
@@ -44,8 +48,9 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
         if (!Number.isFinite(idCompeticao)) return;
         setCarregandoFases(true);
         setErro(null);
-        listarFasesDaCompeticao(idCompeticao)
-            .then((lista) => {
+        Promise.all([listarFasesDaCompeticao(idCompeticao), buscarEstrutura(idCompeticao)])
+            .then(([lista, estrutura]) => {
+                setPartidasGeradas(estrutura.partidasGeradas);
                 const emOrdem = [...lista].sort(porOrdem);
                 setFases(emOrdem);
                 setEscolhida((anterior) =>
@@ -67,7 +72,7 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
     const anterior = fase ? fases.find((cada) => cada.idFaseSucessora === fase.id) : undefined;
 
     const carregarFase = useCallback(() => {
-        if (!fase) return;
+        if (!fase || !partidasGeradas) return;
         setCarregandoFase(true);
         setErro(null);
         const busca = temTabelaDePontos(fase.formato)
@@ -80,7 +85,7 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
                   setTabela([]);
               });
         busca.catch(setErro).finally(() => setCarregandoFase(false));
-    }, [fase]);
+    }, [fase, partidasGeradas]);
 
     useEffect(carregarFase, [carregarFase]);
 
@@ -93,6 +98,25 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
                 conceito="fase"
                 titulo="A competição ainda não tem fases"
                 descricao="A classificação sai das fases: monte a estrutura — grupos, pontos corridos, eliminatória — e ela aparece aqui."
+                acao={
+                    <Button
+                        size="sm"
+                        nativeButton={false}
+                        render={<Link href={`/competicao/${idCompeticao}/estrutura`} />}
+                    >
+                        Ir para a Estrutura
+                    </Button>
+                }
+            />
+        );
+    }
+
+    if (!partidasGeradas) {
+        return (
+            <Vazio
+                conceito="classificacao"
+                titulo="A classificação aparece quando as partidas forem geradas"
+                descricao="A estrutura está montada, mas as partidas ainda não existem. Elas são geradas todas de uma vez, depois de conferir que todas as fases fecham."
                 acao={
                     <Button
                         size="sm"

@@ -254,6 +254,7 @@ const FasesPage = () => {
                                     >
                                         <ConfrontosDaFase
                                             idFase={fase.id}
+                                            idCompeticao={idCompeticao}
                                             versaoDaConfiguracao={versaoDaConfiguracao}
                                         />
                                     </Secao>

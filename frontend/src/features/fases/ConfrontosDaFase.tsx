@@ -1,113 +1,113 @@
 "use client";
 
 import { AlertTriangle, Check, RotateCw } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoLista, Erro } from "@/src/components/estado/Estados";
-import { ValidacaoDaFase, gerarConfrontosDaFase, validarFase } from "@/src/lib/api/fases";
-import { useAvisos } from "@/src/lib/avisos";
+import { Estrutura, buscarEstrutura } from "@/src/lib/api/competicoes";
 
 /**
- * O portão antes de gerar os confrontos.
+ * A situação da fase dentro da estrutura: se ela fecha — validada contra a
+ * entrada que vai ter, também quando ainda depende da anterior — e se os
+ * confrontos dela já existem.
  *
- * Quem decide se a fase pode ser montada é o servidor — ele conhece a
- * estratégia e a entrada. A tela mostra a lista de motivos como ela vem
- * ("informe exatamente um entre numeroDeGrupos e tamanhoDoGrupo") em vez de
- * um "não foi possível" que não diz o que corrigir.
+ * Não gera nada. Gerar fase por fase deixava nascer partidas de uma estrutura
+ * que não fechava; as partidas saem todas pelo botão único da Estrutura e da
+ * visão geral, e as fases seguintes quando a anterior termina.
  */
 export const ConfrontosDaFase = ({
     idFase,
-    /** Muda quando a configuração é gravada: a validação precisa ser refeita. */
+    idCompeticao,
     versaoDaConfiguracao = 0,
-    aoGerar,
 }: {
     idFase: number;
+    idCompeticao: number;
+    /** Muda quando a configuração é gravada: a validação precisa ser refeita. */
     versaoDaConfiguracao?: number;
-    aoGerar?: () => void;
 }) => {
-    const avisos = useAvisos();
-
-    const [validacao, setValidacao] = useState<ValidacaoDaFase | null>(null);
+    const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
     const [carregando, setCarregando] = useState(true);
-    const [gerando, setGerando] = useState(false);
     const [erro, setErro] = useState<unknown>(null);
 
     const conferir = useCallback(() => {
         setCarregando(true);
         setErro(null);
-        validarFase(idFase)
-            .then(setValidacao)
+        buscarEstrutura(idCompeticao)
+            .then(setEstrutura)
             .catch(setErro)
             .finally(() => setCarregando(false));
-    }, [idFase]);
+    }, [idCompeticao]);
 
     useEffect(conferir, [conferir, versaoDaConfiguracao]);
 
-    const gerar = async () => {
-        setGerando(true);
-        try {
-            const quantos = await gerarConfrontosDaFase(idFase);
-            avisos.sucesso(
-                quantos === 1 ? "1 confronto gerado." : `${quantos} confrontos gerados.`,
-            );
-            aoGerar?.();
-            conferir();
-        } catch (causa) {
-            avisos.erro(causa);
-        } finally {
-            setGerando(false);
-        }
-    };
-
     if (erro) return <Erro causa={erro} aoTentarDeNovo={conferir} />;
-    if (carregando) return <CarregandoLista linhas={2} />;
-    if (!validacao) return null;
+    if (carregando || !estrutura) return <CarregandoLista linhas={2} />;
+
+    const indice = estrutura.fases.findIndex((fase) => fase.idFase === idFase);
+    const fase = estrutura.fases[indice];
+    if (!fase) return null;
+    const anterior = indice > 0 ? estrutura.fases[indice - 1] : undefined;
 
     return (
-        <div className="space-y-4 rounded-3xl border border-border bg-card px-5 py-4">
-            {validacao.valido ? (
+        <div className="space-y-3 rounded-3xl border border-border bg-card px-5 py-4">
+            {fase.partidas > 0 ? (
                 <p className="flex items-center gap-2 text-sm">
                     <Check className="size-4 shrink-0 text-success" />
-                    <span>A fase está pronta para ser montada.</span>
+                    <span>
+                        {fase.partidas === 1 ? "1 partida gerada" : `${fase.partidas} partidas geradas`} nesta
+                        fase.
+                    </span>
+                </p>
+            ) : fase.valida ? (
+                <p className="flex items-center gap-2 text-sm">
+                    <Check className="size-4 shrink-0 text-success" />
+                    <span>
+                        {estrutura.partidasGeradas && anterior
+                            ? `A fase fecha. Os confrontos saem quando ${anterior.nome} terminar.`
+                            : "A fase fecha com a estrutura."}
+                    </span>
                 </p>
             ) : (
                 <div className="space-y-2 rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-3">
                     <p className="flex items-center gap-2 text-sm font-medium text-destructive">
                         <AlertTriangle className="size-4 shrink-0" />
                         <span>
-                            {validacao.erros.length === 1
-                                ? "Falta uma coisa para montar a fase"
-                                : `Faltam ${validacao.erros.length} coisas para montar a fase`}
+                            {fase.erros.length === 1
+                                ? "Falta uma coisa para a fase fechar"
+                                : `Faltam ${fase.erros.length} coisas para a fase fechar`}
                         </span>
                     </p>
                     <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                        {validacao.erros.map((motivo) => (
+                        {fase.erros.map((motivo) => (
                             <li key={motivo}>{motivo}</li>
                         ))}
                     </ul>
                 </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={conferir}>
-                    <RotateCw />
-                    Conferir de novo
-                </Button>
-                <Confirmacao
-                    gatilho={
-                        <Button size="sm" disabled={!validacao.valido || gerando}>
-                            {gerando ? "Gerando…" : "Gerar confrontos"}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                    {estrutura.partidasGeradas
+                        ? "As fases seguintes são geradas quando a anterior termina."
+                        : "As partidas de todas as fases são geradas juntas, pelo botão Gerar partidas."}
+                </p>
+                <span className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={conferir}>
+                        <RotateCw />
+                        Conferir de novo
+                    </Button>
+                    {!estrutura.partidasGeradas && (
+                        <Button
+                            size="sm"
+                            nativeButton={false}
+                            render={<Link href={`/competicao/${idCompeticao}/estrutura`} />}
+                        >
+                            Gerar partidas na Estrutura
                         </Button>
-                    }
-                    titulo="Gerar os confrontos desta fase?"
-                    // Diz o que se perde: os confrontos anteriores da fase são
-                    // substituídos, e com eles os placares já lançados.
-                    descricao="Os confrontos que esta fase já tinha são substituídos, junto com os placares lançados neles. As outras fases não são afetadas."
-                    rotuloDaAcao="Gerar confrontos"
-                    aoConfirmar={gerar}
-                />
+                    )}
+                </span>
             </div>
         </div>
     );

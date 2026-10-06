@@ -26,6 +26,7 @@ import {
 } from "@/src/features/fases/CamposDaFase";
 import { POR_GRUPO, QuemAvanca, pendenciasDeQuemAvanca } from "@/src/features/fases/QuemAvanca";
 import { ApiError } from "@/src/lib/api/client";
+import { buscarEstrutura } from "@/src/lib/api/competicoes";
 import {
     AtributoDeFase,
     Fase,
@@ -37,7 +38,6 @@ import {
     definirAtributoDaFase,
     listarAtributosDaFase,
     listarAtributosDoTipo,
-    validarFase,
 } from "@/src/lib/api/fases";
 import { useAvisos } from "@/src/lib/avisos";
 
@@ -310,11 +310,16 @@ export const FaseDialog = ({
                 await encadear(faseAnterior, salva.id);
             }
 
-            const validacao = await validarFase(salva.id);
-            if (validacao.valido) {
-                avisos.sucesso(editando ? "Fase atualizada." : "Fase criada e pronta para gerar os confrontos.");
+            // A validação da estrutura, e não a da fase sozinha: a fase seguinte
+            // é conferida contra a entrada que vai ter, antes de ela existir.
+            const daFase = (await buscarEstrutura(idCompeticao)).fases.find((cada) => cada.idFase === salva.id);
+            if (!daFase || daFase.valida) {
+                avisos.sucesso(editando ? "Fase atualizada." : "Fase criada.");
             } else {
-                avisos.aviso(editando ? "Fase atualizada." : "Fase criada.", validacao.erros.join(" "));
+                avisos.aviso(
+                    editando ? "Fase atualizada, mas ainda não fecha." : "Fase criada, mas ainda não fecha.",
+                    daFase.erros.join(" "),
+                );
             }
             aoSalvar(salva);
             setAberto(false);

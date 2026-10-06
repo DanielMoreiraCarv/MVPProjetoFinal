@@ -17,8 +17,11 @@ import { InscreverEquipeDialog } from "@/src/features/campeonatos/InscreverEquip
 import { ListaDeInscritas } from "@/src/features/campeonatos/ListaDeInscritas";
 import { ClassificacaoPorFase } from "@/src/features/fases/ClassificacaoPorFase";
 import { ListaDePartidas } from "@/src/features/partidas/ListaDePartidas";
+import { GerarPartidas } from "@/src/features/estrutura/GerarPartidas";
 import {
+    Estrutura,
     buscarCompeticao,
+    buscarEstrutura,
     mudarEstadoDaCompeticao,
     removerCompeticao,
     removerEquipeDaCompeticao,
@@ -52,13 +55,16 @@ const CompeticaoDetalhePage = () => {
     const [partidas, setPartidas] = useState<Partida[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<unknown>(null);
+    const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
+    const [versao, setVersao] = useState(0);
 
     const carregar = () => {
         if (!Number.isFinite(id)) return;
         setCarregando(true);
         setErro(null);
-        Promise.all([buscarCompeticao(id), listarPartidasDaCompeticao(id)])
-            .then(([encontrada, suasPartidas]) => {
+        Promise.all([buscarCompeticao(id), listarPartidasDaCompeticao(id), buscarEstrutura(id)])
+            .then(([encontrada, suasPartidas, validada]) => {
+                setEstrutura(validada);
                 setCompeticao(encontrada);
                 setEquipes(encontrada.equipes);
                 setPartidas(suasPartidas);
@@ -171,6 +177,25 @@ const CompeticaoDetalhePage = () => {
                             {carregando ? (
                                 <CarregandoCartoes cartoes={3} />
                             ) : (
+                                <div className="space-y-6">
+                                {/* Estrutura montada e nenhuma partida: o botão
+                                    único está aqui também, para não obrigar a
+                                    voltar à Estrutura só para gerar. */}
+                                {estrutura &&
+                                    estrutura.fases.length > 0 &&
+                                    !estrutura.partidasGeradas &&
+                                    competicao?.estado === "RASCUNHO" && (
+                                        <GerarPartidas
+                                            idCompeticao={id}
+                                            estrutura={estrutura}
+                                            mostrarLinkDaEstrutura
+                                            aoGerar={() => {
+                                                recarregar();
+                                                carregar();
+                                                setVersao((atual) => atual + 1);
+                                            }}
+                                        />
+                                    )}
                                 <Tabs defaultValue="classificacao">
                                     <TabsList>
                                         <TabsTrigger value="classificacao">Classificação</TabsTrigger>
@@ -178,7 +203,7 @@ const CompeticaoDetalhePage = () => {
                                     </TabsList>
 
                                     <TabsContent value="classificacao" className="pt-4">
-                                        <ClassificacaoPorFase idCompeticao={id} />
+                                        <ClassificacaoPorFase key={versao} idCompeticao={id} />
                                     </TabsContent>
 
                                     <TabsContent value="calendario" className="pt-4">
@@ -193,6 +218,7 @@ const CompeticaoDetalhePage = () => {
                                         )}
                                     </TabsContent>
                                 </Tabs>
+                                </div>
                             )}
 
                             {aberta && (
@@ -200,12 +226,15 @@ const CompeticaoDetalhePage = () => {
                                     titulo="Situação"
                                     descricao={
                                         estado === "RASCUNHO"
-                                            ? "Em rascunho: monte as fases na Estrutura e publique por lá."
+                                            ? estrutura && estrutura.fases.length > 0
+                                                ? "Em rascunho: as partidas ainda não foram geradas. Gerar, no quadro acima, é o que coloca a competição em andamento."
+                                                : "Em rascunho: monte as fases na Estrutura; depois, gere as partidas."
                                             : "Encerrar fecha a competição com o resultado atual. Cancelar a tira de circulação sem resultado."
                                     }
                                 >
                                     <div className="flex flex-wrap gap-2">
                                         {estado === "RASCUNHO" ? (
+                                            estrutura && estrutura.fases.length > 0 ? null : (
                                             <Button
                                                 size="sm"
                                                 nativeButton={false}
@@ -213,6 +242,7 @@ const CompeticaoDetalhePage = () => {
                                             >
                                                 Ir para a Estrutura
                                             </Button>
+                                            )
                                         ) : (
                                             <Confirmacao
                                                 gatilho={<Button size="sm">Encerrar competição</Button>}

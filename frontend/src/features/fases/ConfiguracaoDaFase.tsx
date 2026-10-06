@@ -5,7 +5,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { CamposDaFase, paraCampo, paraServidor } from "@/src/features/fases/CamposDaFase";
-import { POR_GRUPO, QuemAvanca, pendenciasDeQuemAvanca } from "@/src/features/fases/QuemAvanca";
+import {
+    POR_GRUPO,
+    QuemAvanca,
+    contaDeQuemAvanca,
+    pendenciasDeQuemAvanca,
+} from "@/src/features/fases/QuemAvanca";
 import {
     AtributoDeFase,
     Fase,
@@ -32,6 +37,7 @@ export const ConfiguracaoDaFase = ({
     idCompeticao,
     editavel = true,
     aoGravar,
+    aoMudarPrevia,
 }: {
     idFase: number;
     /**
@@ -47,6 +53,8 @@ export const ConfiguracaoDaFase = ({
     editavel?: boolean;
     /** Configuração mudou: a validação da fase precisa ser refeita. */
     aoGravar?: () => void;
+    /** Quantas avançariam com o que está preenchido, antes de gravar. */
+    aoMudarPrevia?: (avancam: number | undefined) => void;
 }) => {
     const avisos = useAvisos();
 
@@ -80,6 +88,12 @@ export const ConfiguracaoDaFase = ({
     const totalMudou = deGrupos && total !== (fase?.classificados ? String(fase.classificados) : "");
     const quantasMudancas = alterados.length + (totalMudou ? 1 : 0);
     const pendencias = deGrupos ? pendenciasDeQuemAvanca(fase?.entram ?? 0, rascunho, total) : [];
+
+    const conta = deGrupos ? contaDeQuemAvanca(fase?.entram ?? 0, rascunho, total) : null;
+    const previa = conta && conta.quantosGrupos > 0 ? conta.totalQueAvanca : undefined;
+    useEffect(() => {
+        aoMudarPrevia?.(previa);
+    }, [previa, aoMudarPrevia]);
 
     const gravar = async () => {
         setSalvando(true);

@@ -6,7 +6,6 @@ import {
     CircleCheck,
     Lock,
     Plus,
-    Rocket,
     Trash2,
 } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -28,20 +27,18 @@ import { Confirmacao } from "@/src/components/estado/Confirmacao";
 import { CarregandoCartoes, Erro, Vazio } from "@/src/components/estado/Estados";
 import { ConfiguracaoDaFase } from "@/src/features/fases/ConfiguracaoDaFase";
 import { MODELOS, ModeloDeCompeticao } from "@/src/features/estrutura/modelos";
-import { buscarCompeticao, mudarEstadoDaCompeticao } from "@/src/lib/api/competicoes";
+import { Estrutura, buscarCompeticao, buscarEstrutura } from "@/src/lib/api/competicoes";
+import { GerarPartidas } from "@/src/features/estrutura/GerarPartidas";
 import {
     Fase,
     FORMATOS_DE_FASE,
     FormatoDeFase,
     ROTULO_DO_FORMATO,
-    ValidacaoDaFase,
     atualizarFase,
     criarFase,
     definirAtributoDaFase,
-    gerarConfrontosDaFase,
     listarFasesDaCompeticao,
     removerFase,
-    validarFase,
 } from "@/src/lib/api/fases";
 import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
@@ -69,7 +66,19 @@ const EstruturaPage = () => {
 
     const [competicao, setCompeticao] = useState<Competicao | null>(null);
     const [fases, setFases] = useState<Fase[]>([]);
-    const [validacoes, setValidacoes] = useState<Record<number, ValidacaoDaFase>>({});
+    const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
+    // O que o painel de cada fase está mostrando antes de gravar: a seta
+    // entre as fases acompanha o rascunho, não só o que já foi salvo.
+    const [previas, setPrevias] = useState<Record<number, number | undefined>>({});
+    // Validação contra a entrada que cada fase vai ter — também as seguintes,
+    // que antes só se validavam depois de a anterior terminar.
+    const validacoes = useMemo(
+        () =>
+            Object.fromEntries(
+                (estrutura?.fases ?? []).map((fase) => [fase.idFase, { valido: fase.valida, erros: fase.erros }]),
+            ) as Record<number, { valido: boolean; erros: string[] }>,
+        [estrutura],
+    );
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<unknown>(null);
     const [trabalhando, setTrabalhando] = useState(false);
@@ -83,29 +92,24 @@ const EstruturaPage = () => {
 
     const editavel = competicao?.estado === "RASCUNHO" || competicao?.estado === undefined;
 
-    const revalidar = useCallback(async (lista: Fase[]) => {
-        const resultados = await Promise.all(
-            lista.map((fase) =>
-                validarFase(fase.id)
-                    .then((v) => [fase.id, v] as const)
-                    .catch(() => [fase.id, { valido: false, erros: [] }] as const),
-            ),
-        );
-        setValidacoes(Object.fromEntries(resultados));
-    }, []);
 
     const carregar = useCallback(() => {
         setCarregando(true);
         setErro(null);
-        Promise.all([buscarCompeticao(idCompeticao), listarFasesDaCompeticao(idCompeticao)])
-            .then(async ([encontrada, suasFases]) => {
+        Promise.all([
+            buscarCompeticao(idCompeticao),
+            listarFasesDaCompeticao(idCompeticao),
+            buscarEstrutura(idCompeticao),
+        ])
+            .then(([encontrada, suasFases, validada]) => {
                 setCompeticao(encontrada);
                 setFases(suasFases);
-                await revalidar(suasFases);
+                setEstrutura(validada);
+                setPrevias({});
             })
             .catch(setErro)
             .finally(() => setCarregando(false));
-    }, [idCompeticao, revalidar]);
+    }, [idCompeticao]);
 
     useEffect(carregar, [carregar]);
 
@@ -205,45 +209,6 @@ const EstruturaPage = () => {
         }
     };
 
-    /* --------------------------------------------------- publicar -------- */
-
-    /**
-     * Publicar exige a PRIMEIRA fase pronta, não todas.
-     *
-     * A entrada de uma fase é a classificação da anterior, então uma fase
-     * seguinte só tem o que validar depois que a anterior produziu resultado —
-     * antes disso ela recebe zero equipes e reprova. Exigir todas válidas
-     * tornaria impossível publicar qualquer competição de mais de uma fase.
-     */
-    const primeira = ordenadas[0];
-    const podePublicar = Boolean(primeira && validacoes[primeira.id]?.valido);
-
-    const publicar = async () => {
-        setTrabalhando(true);
-        try {
-            await mudarEstadoDaCompeticao(idCompeticao, "EM_ANDAMENTO");
-
-            // A primeira fase recebe as equipes inscritas; gerar os confrontos
-            // dela é o que torna a competição jogável. As seguintes são
-            // montadas quando a anterior terminar e houver classificação.
-            if (primeira) {
-                const quantos = await gerarConfrontosDaFase(primeira.id);
-                avisos.sucesso(
-                    `Competição publicada. ${quantos} confronto${quantos === 1 ? "" : "s"} gerado${quantos === 1 ? "" : "s"} em ${primeira.nome}.`,
-                );
-            } else {
-                avisos.sucesso("Competição publicada.");
-            }
-
-            recarregarEscopo();
-            carregar();
-        } catch (causa) {
-            avisos.erro(causa);
-        } finally {
-            setTrabalhando(false);
-        }
-    };
-
     /* ------------------------------------------------------ render ------- */
 
     return (
@@ -271,21 +236,6 @@ const EstruturaPage = () => {
                             >
                                 {ROTULO_DO_ESTADO[competicao.estado]}
                             </Badge>
-                        )}
-                        {editavel && ordenadas.length > 0 && (
-                            <Confirmacao
-                                gatilho={
-                                    <Button size="sm" disabled={!podePublicar || trabalhando}>
-                                        <Rocket />
-                                        Publicar
-                                    </Button>
-                                }
-                                titulo="Publicar a competição?"
-                                descricao="Os confrontos da primeira fase são gerados e a estrutura deixa de ser editável. A competição passa a estar em andamento."
-                                rotuloDaAcao="Publicar competição"
-                                destrutiva={false}
-                                aoConfirmar={publicar}
-                            />
                         )}
                     </>
                 }
@@ -463,17 +413,7 @@ const EstruturaPage = () => {
                                                             </span>
                                                         </CardTitle>
 
-                                                        {validacao && indice > 0 && !validacao.valido ? (
-                                                            <CardDescription className="flex items-start gap-1.5">
-                                                                <CircleAlert className="mt-0.5 size-3.5 shrink-0" />
-                                                                <span>
-                                                                    Será montada quando{" "}
-                                                                    {ordenadas[indice - 1].nome}{" "}
-                                                                    terminar e houver
-                                                                    classificação para alimentá-la.
-                                                                </span>
-                                                            </CardDescription>
-                                                        ) : validacao ? (
+                                                        {validacao ? (
                                                             <CardDescription
                                                                 className={cn(
                                                                     "flex items-start gap-1.5",
@@ -485,8 +425,9 @@ const EstruturaPage = () => {
                                                                 {validacao.valido ? (
                                                                     <>
                                                                         <CircleCheck className="mt-0.5 size-3.5 shrink-0" />
-                                                                        Pronta para gerar os
-                                                                        confrontos
+                                                                        {indice === 0
+                                                                            ? "Pronta para gerar os confrontos"
+                                                                            : `Fecha — os confrontos saem quando ${ordenadas[indice - 1].nome} terminar`}
                                                                     </>
                                                                 ) : (
                                                                     <>
@@ -588,6 +529,13 @@ const EstruturaPage = () => {
                                                             idCompeticao={idCompeticao}
                                                             editavel={editavel}
                                                             aoGravar={carregar}
+                                                            aoMudarPrevia={(avancam) =>
+                                                                setPrevias((antes) =>
+                                                                    antes[fase.id] === avancam
+                                                                        ? antes
+                                                                        : { ...antes, [fase.id]: avancam },
+                                                                )
+                                                            }
                                                         />
                                                     </CardContent>
                                                 </Card>
@@ -596,9 +544,11 @@ const EstruturaPage = () => {
                                                     <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                                                         <ArrowDown className="size-3.5" />
                                                         <span>
-                                                            {fase.avancam !== undefined
-                                                                ? `${fase.avancam} ${fase.avancam === 1 ? "avança" : "avançam"}`
-                                                                : "os classificados avançam"}
+                                                            {previas[fase.id] !== undefined && previas[fase.id] !== fase.avancam
+                                                                ? `${previas[fase.id]} vão avançar — ainda não gravado`
+                                                                : fase.avancam !== undefined
+                                                                  ? `${fase.avancam} ${fase.avancam === 1 ? "avança" : "avançam"}`
+                                                                  : "os classificados avançam"}
                                                         </span>
                                                     </div>
                                                 )}
@@ -607,12 +557,15 @@ const EstruturaPage = () => {
                                     })}
                                 </div>
 
-                                {editavel && (
-                                    <p className="text-xs text-muted-foreground">
-                                        {podePublicar
-                                            ? "Publicar gera os confrontos da primeira fase. As seguintes são montadas quando a anterior terminar e houver classificação para alimentá-las."
-                                            : "Publicar fica disponível quando a primeira fase estiver pronta. Quem decide é o servidor, que conhece a estratégia de cada formato."}
-                                    </p>
+                                {editavel && estrutura && !estrutura.partidasGeradas && estrutura.fases.length > 0 && (
+                                    <GerarPartidas
+                                        idCompeticao={idCompeticao}
+                                        estrutura={estrutura}
+                                        aoGerar={() => {
+                                            recarregarEscopo();
+                                            carregar();
+                                        }}
+                                    />
                                 )}
                             </Secao>
                         )}

@@ -153,3 +153,42 @@ export const mudarEstadoDaCompeticao = async (
             }),
         ),
     );
+
+const estruturaSchema = z.object({
+    pronta: z.boolean(),
+    partidasGeradas: z.boolean(),
+    fases: z.array(
+        z.object({
+            idFase: z.number(),
+            nome: z.string(),
+            ordem: z.number().nullable(),
+            fasePartida: z.string(),
+            quantosEntram: z.number().nullable(),
+            quantosAvancam: z.number().nullable(),
+            valida: z.boolean(),
+            erros: z.array(z.string()),
+            partidas: z.number(),
+        }),
+    ),
+});
+
+export type Estrutura = z.infer<typeof estruturaSchema>;
+export type FaseDaEstrutura = Estrutura["fases"][number];
+
+/**
+ * A estrutura validada fase a fase — inclusive as que só recebem equipes
+ * depois, contra a entrada que elas vão ter —, para dizer o que não fecha
+ * antes de gerar qualquer partida.
+ */
+export const buscarEstrutura = async (idCompeticao: number): Promise<Estrutura> =>
+    estruturaSchema.parse(await apiFetch<unknown>(`/competicao/${idCompeticao}/estrutura`));
+
+/**
+ * O botão único: valida a estrutura inteira e, se fechar, gera a primeira fase
+ * e publica a competição. As seguintes nascem quando a anterior termina.
+ */
+export const gerarPartidasDaCompeticao = async (idCompeticao: number): Promise<number> =>
+    z
+        .object({ partidasGeradas: z.number() })
+        .parse(await apiFetch<unknown>(`/competicao/${idCompeticao}/partidas`, { method: "POST" }))
+        .partidasGeradas;

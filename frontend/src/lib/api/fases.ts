@@ -248,18 +248,6 @@ export const validarFase = async (idFase: number): Promise<ValidacaoDaFase> => {
     return { valido: resposta.valido, erros: resposta.erros ?? [] };
 };
 
-/**
- * Gera os confrontos da fase, substituindo os que já existiam. Devolve
- * quantos ficaram.
- */
-export const gerarConfrontosDaFase = async (idFase: number): Promise<number> => {
-    const resposta = await apiFetch<unknown>(`/fase/${idFase}/confrontos`, { method: "POST" });
-
-    return z
-        .array(z.unknown())
-        .parse(resposta ?? [])
-        .length;
-};
 
 const classificadoResponseSchema = z.object({
     posicao: z.number().nullable(),
