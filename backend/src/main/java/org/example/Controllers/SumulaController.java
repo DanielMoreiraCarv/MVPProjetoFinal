@@ -3,6 +3,7 @@ package org.example.Controllers;
 import jakarta.validation.Valid;
 import org.example.Exception.NaoEncontradoException;
 import org.example.Mapper.SumulaMapper;
+import org.example.Models.Request.EventoDaSumulaRequest;
 import org.example.Models.Request.SumulaCreateRequest;
 import org.example.Models.Request.SumulaFinalizacaoRequest;
 import org.example.Models.Request.SumulaUpdateRequest;
@@ -108,6 +109,24 @@ public class SumulaController
 
         return ResponseEntity.ok(
                 SumulaMapper.toResponse(sumulaService.adicionarOcorrencia(id, ocorrencia)));
+    }
+
+    /** O que um atleta fez: gol, gol contra, cartão, falta. */
+    @PostMapping("/{id}/evento")
+    public ResponseEntity<SumulaResponse> registrarEvento(
+            @PathVariable Long id,
+            @Valid @RequestBody EventoDaSumulaRequest request)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(
+                sumulaService.registrarEvento(id, request.idAtleta(), request.tipo())));
+    }
+
+    @DeleteMapping("/{id}/evento/{idEvento}")
+    public ResponseEntity<SumulaResponse> removerEvento(
+            @PathVariable Long id,
+            @PathVariable Long idEvento)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(sumulaService.removerEvento(id, idEvento)));
     }
 
     @PutMapping("/{id}")

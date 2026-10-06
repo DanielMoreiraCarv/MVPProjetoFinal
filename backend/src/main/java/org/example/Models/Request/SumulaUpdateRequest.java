@@ -8,7 +8,10 @@ public record SumulaUpdateRequest(
 
         Integer placarVisitante,
 
-        String observacoes
+        String observacoes,
+
+        /** SIMPLIFICADA ou COMPLETA. */
+        String modo
 )
 {
 }

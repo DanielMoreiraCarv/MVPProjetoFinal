@@ -27,7 +27,11 @@ public record SumulaResponse(
 
         Date dataFechamento,
 
-        Boolean assinada
+        Boolean assinada,
+
+        String modo,
+
+        List<EventoDaSumulaResponse> eventos
 )
 {
 }

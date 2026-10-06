@@ -51,6 +51,14 @@ public class Sumula {
     @Column(name = "assinada")
     private boolean assinada;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "modo", nullable = false)
+    private EnumModoDaSumula modo = EnumModoDaSumula.COMPLETA;
+
+    @OneToMany(mappedBy = "sumula", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("registradoEm ASC, id ASC")
+    private List<EventoDaSumula> eventos = new ArrayList<>();
+
     public Sumula ( Partida partida, Arbitro arbitro )
     {
         this.partida = partida;

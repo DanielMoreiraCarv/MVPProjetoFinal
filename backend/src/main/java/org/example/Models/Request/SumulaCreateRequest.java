@@ -10,7 +10,10 @@ public record SumulaCreateRequest(
         @NotNull(message = "É preciso informar a partida")
         Long idPartida,
 
-        Long idArbitro
+        Long idArbitro,
+
+        /** Sem informar, a súmula nasce completa. */
+        String modo
 )
 {
 }

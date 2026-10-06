@@ -10,6 +10,7 @@
 
 begin;
 
+delete from evento_sumula;
 delete from sumula_ocorrencia;
 delete from sumula;
 delete from partida;
