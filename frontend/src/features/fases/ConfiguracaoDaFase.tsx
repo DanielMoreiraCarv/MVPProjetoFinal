@@ -5,8 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
 import { CamposDaFase, paraCampo, paraServidor } from "@/src/features/fases/CamposDaFase";
+import { POR_GRUPO, QuemAvanca, pendenciasDeQuemAvanca } from "@/src/features/fases/QuemAvanca";
 import {
     AtributoDeFase,
+    Fase,
+    atualizarFase,
     definirAtributoDaFase,
     listarAtributosDaFase,
 } from "@/src/lib/api/fases";
@@ -25,10 +28,18 @@ import { useAvisos } from "@/src/lib/avisos";
 
 export const ConfiguracaoDaFase = ({
     idFase,
+    fase,
+    idCompeticao,
     editavel = true,
     aoGravar,
 }: {
     idFase: number;
+    /**
+     * A fase inteira, quando a tela a tem: na fase de grupos, o "quem avança"
+     * mexe no total da fase além do atributo, e grava os dois juntos.
+     */
+    fase?: Fase;
+    idCompeticao?: number;
     /**
      * Falso na competição já publicada: a estrutura vira leitura, porque
      * mexer nela invalidaria confrontos gerados e classificação calculada.
@@ -44,6 +55,8 @@ export const ConfiguracaoDaFase = ({
     const [carregando, setCarregando] = useState(true);
     const [salvando, setSalvando] = useState(false);
     const [erro, setErro] = useState<unknown>(null);
+    const [total, setTotal] = useState(fase?.classificados ? String(fase.classificados) : "");
+    const deGrupos = fase?.formato === "GRUPOS" && idCompeticao !== undefined;
 
     const assentar = useCallback((catalogo: AtributoDeFase[]) => {
         setAtributos(catalogo);
@@ -64,6 +77,9 @@ export const ConfiguracaoDaFase = ({
     const alterados = atributos.filter(
         (atributo) => (rascunho[atributo.codigo] ?? "") !== paraCampo(atributo),
     );
+    const totalMudou = deGrupos && total !== (fase?.classificados ? String(fase.classificados) : "");
+    const quantasMudancas = alterados.length + (totalMudou ? 1 : 0);
+    const pendencias = deGrupos ? pendenciasDeQuemAvanca(fase?.entram ?? 0, rascunho, total) : [];
 
     const gravar = async () => {
         setSalvando(true);
@@ -77,6 +93,16 @@ export const ConfiguracaoDaFase = ({
                     atributo.codigo,
                     paraServidor(atributo, rascunho[atributo.codigo] ?? ""),
                 );
+            }
+            if (totalMudou && fase?.formato && idCompeticao !== undefined) {
+                await atualizarFase(fase.id, {
+                    nome: fase.nome,
+                    ordem: fase.ordem ?? 1,
+                    fasePartida: fase.formato,
+                    idCompeticao,
+                    qtdClassificados: total ? Number(total) : undefined,
+                    idFaseSucessora: fase.idFaseSucessora,
+                });
             }
             assentar(ultimo);
             avisos.sucesso("Configuração da fase gravada.");
@@ -106,7 +132,21 @@ export const ConfiguracaoDaFase = ({
     return (
         <div className="space-y-4 rounded-3xl border border-border bg-card px-5 py-4">
             <CamposDaFase
-                atributos={atributos}
+                atributos={deGrupos ? atributos.filter((a) => a.codigo !== POR_GRUPO) : atributos}
+                depoisDoEssencial={
+                    deGrupos && (
+                        <QuemAvanca
+                            entram={fase?.entram ?? 0}
+                            rascunho={rascunho}
+                            aoMudarPorGrupo={(valor) =>
+                                setRascunho((anterior) => ({ ...anterior, [POR_GRUPO]: valor }))
+                            }
+                            total={total}
+                            aoMudarTotal={setTotal}
+                            editavel={editavel}
+                        />
+                    )
+                }
                 rascunho={rascunho}
                 editavel={editavel}
                 aoMudar={(codigo, valor) =>
@@ -116,14 +156,24 @@ export const ConfiguracaoDaFase = ({
 
             {editavel && (
             <div className="flex items-center justify-end gap-3 pt-1">
-                {alterados.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                        {alterados.length === 1
-                            ? "1 campo alterado"
-                            : `${alterados.length} campos alterados`}
+                {pendencias.length > 0 ? (
+                    <p role="alert" className="text-xs text-destructive">
+                        {pendencias[0]}
                     </p>
+                ) : (
+                    quantasMudancas > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            {quantasMudancas === 1
+                                ? "1 campo alterado"
+                                : `${quantasMudancas} campos alterados`}
+                        </p>
+                    )
                 )}
-                <Button size="sm" onClick={gravar} disabled={salvando || alterados.length === 0}>
+                <Button
+                    size="sm"
+                    onClick={gravar}
+                    disabled={salvando || quantasMudancas === 0 || pendencias.length > 0}
+                >
                     {salvando ? "Gravando…" : "Gravar configuração"}
                 </Button>
             </div>

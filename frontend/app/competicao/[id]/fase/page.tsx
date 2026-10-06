@@ -17,7 +17,7 @@ import {
 import { Secao } from "@/src/components/layout/Secao";
 import { ConfiguracaoDaFase } from "@/src/features/fases/ConfiguracaoDaFase";
 import { ConfrontosDaFase } from "@/src/features/fases/ConfrontosDaFase";
-import { FaseDialog, equipesQueEntram } from "@/src/features/fases/FaseDialog";
+import { FaseDialog } from "@/src/features/fases/FaseDialog";
 import {
     Fase,
     ROTULO_DO_FORMATO,
@@ -59,7 +59,10 @@ const FasesPage = () => {
                 setEscolhida((anterior) =>
                     anterior && lista.some((fase) => fase.id === anterior)
                         ? anterior
-                        : (lista[0]?.id ?? null),
+                        : // A primeira da competição, e não a primeira que a API
+                          // devolveu — o modelo cria de trás para frente.
+                          ([...lista].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.id - b.id)[0]?.id ??
+                          null),
                 );
             })
             .catch(setErro)
@@ -177,16 +180,9 @@ const FasesPage = () => {
                                                             : "Formato não informado"}
                                                     </span>
                                                     <span className="block text-xs text-muted-foreground">
-                                                        {`${equipesQueEntram(
-                                                            emOrdem.find((outra) => outra.idFaseSucessora === cada.id),
-                                                            emOrdem,
-                                                            inscritas,
-                                                        )} entram · `}
-                                                        {cada.classificados === undefined
-                                                            ? "todas seguem"
-                                                            : cada.classificados === 1
-                                                              ? "1 avança"
-                                                              : `${cada.classificados} avançam`}
+                                                        {cada.entram !== undefined && `${cada.entram} entram`}
+                                                        {cada.avancam !== undefined &&
+                                                            ` · ${cada.avancam === cada.entram ? "todas seguem" : `${cada.avancam} avançam`}`}
                                                     </span>
                                                     {cada.idFaseSucessora && (
                                                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -245,7 +241,11 @@ const FasesPage = () => {
                                                     // Diz o que NÃO acontece: a
                                                     // competição e as equipes
                                                     // inscritas ficam.
-                                                    descricao="Os confrontos gerados por ela vão junto. A competição e as equipes inscritas continuam; as outras fases também."
+                                                    descricao={`Os confrontos gerados por ela vão junto. A competição, as equipes inscritas e as outras fases continuam${
+                                                        emOrdem.find((cada) => cada.idFaseSucessora === fase.id)
+                                                            ? ` — ${emOrdem.find((cada) => cada.idFaseSucessora === fase.id)?.nome} deixa de levar a ela`
+                                                            : ""
+                                                    }.`}
                                                     rotuloDaAcao="Excluir fase"
                                                     aoConfirmar={() => excluir(fase)}
                                                 />
@@ -263,11 +263,14 @@ const FasesPage = () => {
                                             à fase: sem ela, trocar de fase
                                             reaproveitava o rascunho da anterior. */}
                                         <ConfiguracaoDaFase
-                                            key={fase.id}
+                                            key={`${fase.id}-${fase.classificados ?? ""}`}
                                             idFase={fase.id}
-                                            aoGravar={() =>
-                                                setVersaoDaConfiguracao((versao) => versao + 1)
-                                            }
+                                            fase={fase}
+                                            idCompeticao={idCompeticao}
+                                            aoGravar={() => {
+                                                setVersaoDaConfiguracao((versao) => versao + 1);
+                                                carregar();
+                                            }}
                                         />
                                     </Secao>
                                 </>

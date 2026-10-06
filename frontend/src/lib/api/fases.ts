@@ -9,6 +9,8 @@ const faseResponseSchema = z.object({
     fasePartida: z.string().nullable(),
     qtdClassificados: z.number().nullable(),
     idFaseSucessora: z.number().nullable(),
+    quantosEntram: z.number().nullable().optional(),
+    quantosAvancam: z.number().nullable().optional(),
 });
 
 /** Os três formatos que o motor de fases conhece. */
@@ -47,6 +49,9 @@ export type Fase = {
     formato?: FormatoDeFase;
     classificados?: number;
     idFaseSucessora?: number;
+    /** Do servidor: quantas entram e quantas avançam, mesmo antes de saber quais. */
+    entram?: number;
+    avancam?: number;
 };
 
 const paraFase = (resposta: z.infer<typeof faseResponseSchema>): Fase => ({
@@ -56,6 +61,8 @@ const paraFase = (resposta: z.infer<typeof faseResponseSchema>): Fase => ({
     formato: formatoDoTexto(resposta.fasePartida),
     classificados: resposta.qtdClassificados ?? undefined,
     idFaseSucessora: resposta.idFaseSucessora ?? undefined,
+    entram: resposta.quantosEntram ?? undefined,
+    avancam: resposta.quantosAvancam ?? undefined,
 });
 
 /** O corpo de `POST /fase` e de `PUT /fase/{id}`. */

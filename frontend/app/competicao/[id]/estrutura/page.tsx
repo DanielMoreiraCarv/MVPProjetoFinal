@@ -534,7 +534,13 @@ const EstruturaPage = () => {
                                                                 />
                                                             </div>
 
-                                                            {!ultima && (
+                                                            {/* Na fase de grupos quem avança é
+                                                                perguntado por grupo, no painel de
+                                                                configuração; na eliminatória decide
+                                                                a regra "equipes ao final". O total
+                                                                solto aqui só faz sentido em pontos
+                                                                corridos. */}
+                                                            {!ultima && fase.formato === "PONTOS_CORRIDOS" && (
                                                                 <div className="space-y-1.5">
                                                                     <Label
                                                                         htmlFor={`classificados-${fase.id}`}
@@ -576,9 +582,12 @@ const EstruturaPage = () => {
                                                         </div>
 
                                                         <ConfiguracaoDaFase
+                                                            key={`${fase.id}-${fase.classificados ?? ""}`}
                                                             idFase={fase.id}
+                                                            fase={fase}
+                                                            idCompeticao={idCompeticao}
                                                             editavel={editavel}
-                                                            aoGravar={() => revalidar(fases)}
+                                                            aoGravar={carregar}
                                                         />
                                                     </CardContent>
                                                 </Card>
@@ -587,8 +596,8 @@ const EstruturaPage = () => {
                                                     <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                                                         <ArrowDown className="size-3.5" />
                                                         <span>
-                                                            {fase.classificados
-                                                                ? `os ${fase.classificados} primeiros avançam`
+                                                            {fase.avancam !== undefined
+                                                                ? `${fase.avancam} ${fase.avancam === 1 ? "avança" : "avançam"}`
                                                                 : "os classificados avançam"}
                                                         </span>
                                                     </div>

@@ -65,8 +65,7 @@ export const MODELOS: ModeloDeCompeticao[] = [
             {
                 nome: "Fase de grupos",
                 formato: "GRUPOS",
-                classificados: 8,
-                atributos: { numeroDeGrupos: "4", idaEVolta: "false" },
+                atributos: { numeroDeGrupos: "4", classificadosPorGrupo: "2", idaEVolta: "false" },
             },
             {
                 nome: "Eliminatória",
@@ -85,8 +84,7 @@ export const MODELOS: ModeloDeCompeticao[] = [
             {
                 nome: "Fase de grupos",
                 formato: "GRUPOS",
-                classificados: 4,
-                atributos: { numeroDeGrupos: "2", idaEVolta: "false" },
+                atributos: { numeroDeGrupos: "2", classificadosPorGrupo: "2", idaEVolta: "false" },
             },
             {
                 nome: "Semifinal e final",

@@ -24,6 +24,7 @@ import {
     paraServidor,
     pendenciasDosCampos,
 } from "@/src/features/fases/CamposDaFase";
+import { POR_GRUPO, QuemAvanca, pendenciasDeQuemAvanca } from "@/src/features/fases/QuemAvanca";
 import { ApiError } from "@/src/lib/api/client";
 import {
     AtributoDeFase,
@@ -77,6 +78,9 @@ export const equipesQueEntram = (
     visitadas = new Set<number>(),
 ): number => {
     if (!anterior || visitadas.has(anterior.id)) return inscritas;
+    // O servidor já sabe quantas avançam, inclusive pelo padrão do formato —
+    // na fase de grupos, grupos vezes os que avançam por grupo.
+    if (anterior.avancam !== undefined) return anterior.avancam;
     if (anterior.classificados) return anterior.classificados;
     visitadas.add(anterior.id);
     return equipesQueEntram(anteriorDe(anterior, fases), fases, inscritas, visitadas);
@@ -225,11 +229,7 @@ export const FaseDialog = ({
 
     const faseAnterior = outras.find((outra) => String(outra.id) === anterior);
     const entram = equipesQueEntram(faseAnterior, fases, equipesInscritas);
-    const origem = faseAnterior
-        ? faseAnterior.classificados
-            ? `classificados de ${faseAnterior.nome}`
-            : `vindas de ${faseAnterior.nome} (todas: ela não define classificados)`
-        : "inscritas na competição";
+    const origem = faseAnterior ? `classificados de ${faseAnterior.nome}` : "inscritas na competição";
 
     const nClassificados = Number(classificados);
     const pendencias = [
@@ -242,6 +242,7 @@ export const FaseDialog = ({
                   "Na primeira fase as equipes não têm classificação: ative \"Aceitar empates na entrada\" nas regras para chavear pela ordem de inscrição.",
               ]
             : []),
+        ...(formato === "GRUPOS" ? pendenciasDeQuemAvanca(entram, rascunho, classificados) : []),
         ...(classificados && nClassificados > entram
             ? [`Classificados não podem passar das ${entram} equipes que entram.`]
             : []),
@@ -324,6 +325,18 @@ export const FaseDialog = ({
             setSalvando(false);
         }
     };
+
+    const blocoQuemAvanca =
+        formato === "GRUPOS" ? (
+            <QuemAvanca
+                key={`${aberto}-${fase?.id ?? "nova"}`}
+                entram={entram}
+                rascunho={rascunho}
+                aoMudarPorGrupo={(valor) => setRascunho((antes) => ({ ...antes, [POR_GRUPO]: valor }))}
+                total={classificados}
+                aoMudarTotal={setClassificados}
+            />
+        ) : null;
 
     return (
         <Dialog open={aberto} onOpenChange={aoAbrir}>
@@ -429,7 +442,8 @@ export const FaseDialog = ({
                         <p className="text-sm text-muted-foreground">Carregando os campos do formato…</p>
                     ) : (
                         <CamposDaFase
-                            atributos={atributos}
+                            depoisDoEssencial={blocoQuemAvanca}
+                            atributos={atributos.filter((atributo) => atributo.codigo !== POR_GRUPO)}
                             rascunho={rascunho}
                             aoMudar={(codigo, valor) =>
                                 setRascunho((antes) => ({ ...antes, [codigo]: valor }))
@@ -437,13 +451,13 @@ export const FaseDialog = ({
                         />
                     )}
 
+                    {formato === "PONTOS_CORRIDOS" ? (
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="fase-classificados">Classificados</Label>
                         <Input
                             id="fase-classificados"
                             type="number"
                             min={1}
-                            max={entram}
                             className="numero-tabular font-mono sm:w-40"
                             placeholder={`até ${entram}`}
                             value={classificados}
@@ -455,6 +469,7 @@ export const FaseDialog = ({
                             fase não precisa.
                         </p>
                     </div>
+                    ) : null}
 
                     {tentou && pendencias.length > 0 && (
                         <ul role="alert" className="space-y-1 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

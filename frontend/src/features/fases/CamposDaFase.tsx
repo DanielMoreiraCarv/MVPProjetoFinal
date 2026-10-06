@@ -255,12 +255,15 @@ export const CamposDaFase = ({
     aoMudar,
     editavel = true,
     regrasAbertas = false,
+    depoisDoEssencial,
 }: {
     atributos: AtributoDeFase[];
     rascunho: Record<string, string>;
     aoMudar: (codigo: string, valor: string) => void;
     editavel?: boolean;
     regrasAbertas?: boolean;
+    /** O que a tela quer mostrar junto do essencial, antes das regras recolhidas. */
+    depoisDoEssencial?: React.ReactNode;
 }) => {
     // O painel da página e o diálogo podem estar na tela juntos: id fixo
     // fazia cada rótulo apontar para dois campos.
@@ -290,6 +293,8 @@ export const CamposDaFase = ({
                     </div>
                 </div>
             )}
+
+            {depoisDoEssencial}
 
             {regras.length > 0 && (
                 <details open={regrasAbertas} className="group rounded-2xl border border-border">
