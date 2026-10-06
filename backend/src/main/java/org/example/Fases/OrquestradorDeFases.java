@@ -7,6 +7,7 @@ import org.example.Models.Equipe;
 import org.example.Models.ValorAtributoFase;
 import org.example.Repositories.AtributoFaseRepository;
 import org.example.Repositories.FaseRepository;
+import org.example.Repositories.PartidaRepository;
 import org.example.Repositories.ValorAtributoFaseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,11 +29,14 @@ public class OrquestradorDeFases
     private final FaseRepository faseRepository;
     private final AtributoFaseRepository atributoRepository;
     private final ValorAtributoFaseRepository valorRepository;
+    private final PartidaRepository partidaRepository;
 
     public OrquestradorDeFases ( RegistroDeEstrategias registro, FaseRepository faseRepository,
             AtributoFaseRepository atributoRepository,
-            ValorAtributoFaseRepository valorRepository )
+            ValorAtributoFaseRepository valorRepository,
+            PartidaRepository partidaRepository )
     {
+        this.partidaRepository = partidaRepository;
         this.registro = registro;
         this.faseRepository = faseRepository;
         this.atributoRepository = atributoRepository;
@@ -54,8 +58,31 @@ public class OrquestradorDeFases
     public List<Classificado> entradaDe ( Fase fase )
     {
         return faseRepository.findByFaseSucessoraId( fase.getId() )
-                             .map( this::classificadosDe )
+                             .map( anterior -> terminou( anterior ) ? classificadosDe( anterior )
+                                     : List.<Classificado>of() )
                              .orElseGet( () -> timesInscritos( fase ) );
+    }
+
+    /**
+     * Só entra na fase seguinte quem se classificou de fato. Antes disso a
+     * classificação da anterior é provisória — com os confrontos gerados e
+     * ninguém jogando, os primeiros de uma tabela toda zerada —, e era ela
+     * que virava a entrada: dava para gerar o mata-mata antes dos grupos.
+     */
+    private boolean terminou ( Fase fase )
+    {
+        List<org.example.Models.Partida> partidas = partidaRepository.findByFaseId( fase.getId() );
+        return !partidas.isEmpty() && partidas.stream().allMatch( org.example.Models.Partida::isRealizada );
+    }
+
+    /** Quantas equipes a fase vai receber, mesmo antes de saber quais. */
+    private int participantesPrevistos ( Fase fase, int profundidade )
+    {
+        return faseRepository.findByFaseSucessoraId( fase.getId() )
+                             .map( anterior -> anterior.getQuantidadeClassificados() != null
+                                     ? anterior.getQuantidadeClassificados()
+                                     : profundidade > 20 ? 0 : participantesPrevistos( anterior, profundidade + 1 ) )
+                             .orElseGet( () -> timesInscritos( fase ).size() );
     }
 
     /**
@@ -101,7 +128,7 @@ public class OrquestradorDeFases
         {
             return conferirObrigatorios( fase, configuracao ).mais( new ResultadoDaValidacao( List.of(
                     "As equipes desta fase saem de " + anterior.get().getNome()
-                            + ", que ainda não tem classificação. Gere e jogue os confrontos dela primeiro." ) ) );
+                            + ", que ainda não terminou. Os classificados entram quando todos os jogos dela forem encerrados." ) ) );
         }
 
         ResultadoDaValidacao obrigatorios = conferirObrigatorios( fase, configuracao );
@@ -173,6 +200,18 @@ public class OrquestradorDeFases
     {
         EstrategiaDeFase estrategia = registro.para( fase.getFasePartida() );
         return estrategia.tabela( fase, configuracaoDe( fase ), entradaDe( fase ) );
+    }
+
+    /** A chave da eliminatória; as outras fases não têm. */
+    public Chaveamento chaveamentoDe ( Fase fase )
+    {
+        if ( !( registro.para( fase.getFasePartida() ) instanceof EstrategiaDeMataMata mataMata ) )
+        {
+            throw new IllegalArgumentException( "A fase " + fase.getNome()
+                    + " não é eliminatória: ela tem tabela de pontos, não chave." );
+        }
+        return mataMata.chaveamento( fase, configuracaoDe( fase ), entradaDe( fase ),
+                participantesPrevistos( fase, 0 ) );
     }
 
     public boolean temTabelaDePontos ( Fase fase )

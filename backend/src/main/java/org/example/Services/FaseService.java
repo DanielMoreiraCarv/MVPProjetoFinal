@@ -50,6 +50,19 @@ public class FaseService
     public FaseResponse criarFase ( FaseCreateRequest request )
     {
         Fase fase = FaseMapper.toEntity( request );
+
+        // O pedido declarava a sucessora e ela era descartada, como já tinha
+        // acontecido com a quantidade de classificados.
+        if ( request.idFaseSucessora() != null )
+        {
+            Fase sucessora = buscarFasePorId( request.idFaseSucessora() );
+            if ( sucessora == null )
+            {
+                throw new IllegalArgumentException( "Fase sucessora não encontrada" );
+            }
+            fase.setFaseSucessora( sucessora );
+        }
+
         return FaseMapper.toResponse( faseRepository.save( fase ) );
     }
 
@@ -143,6 +156,11 @@ public class FaseService
                     + " é eliminatória: não tem tabela de pontos, só a ordem de classificação." );
         }
         return orquestrador.tabelaDe( fase );
+    }
+
+    public org.example.Fases.Chaveamento chaveamentoDe ( Fase fase )
+    {
+        return orquestrador.chaveamentoDe( fase );
     }
 
     public List<Classificado> classificacaoDe ( Fase fase )

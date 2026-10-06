@@ -47,6 +47,7 @@ class FaseDeMataMataTest
     }
 
     @Autowired private OrquestradorDeFases orquestrador;
+    @Autowired private org.example.Services.PartidaService partidaService;
     @Autowired private PartidaRepository partidaRepository;
     @Autowired private FaseRepository faseRepository;
     @Autowired private CompeticaoRepository competicaoRepository;
@@ -143,6 +144,45 @@ class FaseDeMataMataTest
 
         assertFalse( resultado.ehValido() );
         assertTrue( resultado.mensagem().contains( "Aceitar empates na entrada" ), resultado.mensagem() );
+    }
+
+    @Test
+    void chaveamentoDesenhaAChaveInteiraDesdeOInicio ()
+    {
+        Fase fase = faseCom( 8, Map.of( EstrategiaDeMataMata.DESCONSIDERAR_EMPATES, "true" ) );
+        orquestrador.configurar( fase );
+
+        Chaveamento chave = orquestrador.chaveamentoDe( fase );
+
+        assertEquals( 8, chave.participantes() );
+        assertEquals( List.of( "Quartas de final", "Semifinal", "Final" ),
+                chave.etapas().stream().map( EtapaDaChave::nome ).toList() );
+        // Na ordem de desenho, cada par vizinho alimenta o mesmo jogo da etapa seguinte.
+        List<ConfrontoDaChave> quartas = chave.etapas().get( 0 ).confrontos();
+        assertEquals( 4, quartas.size() );
+        assertEquals( quartas.get( 0 ).alimenta(), quartas.get( 1 ).alimenta() );
+        assertEquals( quartas.get( 2 ).alimenta(), quartas.get( 3 ).alimenta() );
+        // A semifinal ainda não existe, mas a chave já diz de onde vem cada lado.
+        ConfrontoDaChave semi = chave.etapas().get( 1 ).confrontos().get( 0 );
+        assertEquals( null, semi.idMandante() );
+        assertTrue( semi.origemMandante().startsWith( "Vencedor do jogo" ) );
+    }
+
+    @Test
+    void encerrarORestoDaRodadaGeraAProximaSozinho ()
+    {
+        Fase fase = faseCom( 4, Map.of( EstrategiaDeMataMata.DESCONSIDERAR_EMPATES, "true" ) );
+        orquestrador.configurar( fase );
+
+        for ( Partida partida : daRodada( fase, 1 ) )
+        {
+            partidaService.definirResultado( partida.getId(), 1, 0 );
+        }
+
+        assertEquals( 1, daRodada( fase, 2 ).size(),
+                "a final só aparecia se alguém chamasse a rota de atualizar a fase" );
+        ConfrontoDaChave finalDaChave = orquestrador.chaveamentoDe( fase ).etapas().get( 1 ).confrontos().get( 0 );
+        assertTrue( finalDaChave.idMandante() != null && finalDaChave.idVisitante() != null );
     }
 
     @Test

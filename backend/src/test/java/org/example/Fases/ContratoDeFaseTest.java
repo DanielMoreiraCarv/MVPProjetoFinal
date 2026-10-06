@@ -65,6 +65,7 @@ class ContratoDeFaseTest
     @Autowired private RegistroDeEstrategias registro;
     @Autowired private EstrategiaDeGrupos estrategia;
     @Autowired private org.example.Repositories.PartidaRepository partidaRepository;
+    @Autowired private org.example.Services.FaseService faseService;
     @Autowired private AtributoFaseRepository atributoRepository;
     @Autowired private FaseRepository faseRepository;
     @Autowired private CompeticaoRepository competicaoRepository;
@@ -149,6 +150,18 @@ class ContratoDeFaseTest
     }
 
     @Test
+    void criarFaseJaEncadeadaGravaASucessora ()
+    {
+        Fase sucessora = novaFase();
+
+        var criada = faseService.criarFase( new org.example.Models.Request.FaseCreateRequest(
+                "Primeira", 1, "GRUPOS", competicao.getId(), 2, sucessora.getId() ) );
+
+        assertEquals( sucessora.getId(), criada.idFaseSucessora(),
+                "o pedido de criação declarava a sucessora e o servidor a descartava" );
+    }
+
+    @Test
     void valorEmBrancoApagaOAtributo ()
     {
         Fase fase = novaFase();
@@ -175,6 +188,31 @@ class ContratoDeFaseTest
 
         assertEquals( 2, orquestrador.entradaDe( sucessora ).size(),
                 "a fase seguinte recebeu quem não se classificou" );
+    }
+
+    @Test
+    void sucessoraSoRecebeQuandoAAnteriorTermina ()
+    {
+        Fase sucessora = novaFase();
+        sucessora.setOrdem( 2 );
+        sucessora.setFasePartida( EnumFasePartida.ELIMINATORIA );
+        faseRepository.save( sucessora );
+
+        Fase primeira = novaFase();
+        primeira.setQuantidadeClassificados( 2 );
+        primeira.setFaseSucessora( sucessora );
+        faseRepository.save( primeira );
+        orquestrador.definirAtributo( primeira, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "4" );
+        orquestrador.configurar( primeira );
+
+        assertTrue( orquestrador.entradaDe( sucessora ).isEmpty(),
+                "a fase seguinte tomava a classificação provisória — todos zerados — como entrada" );
+
+        // A chave já tem forma: a quantidade de classificados da anterior diz o tamanho.
+        Chaveamento chave = orquestrador.chaveamentoDe( sucessora );
+        assertEquals( 2, chave.participantes() );
+        assertEquals( "Final", chave.etapas().get( 0 ).nome() );
+        assertEquals( null, chave.etapas().get( 0 ).confrontos().get( 0 ).idMandante() );
     }
 
     @Test

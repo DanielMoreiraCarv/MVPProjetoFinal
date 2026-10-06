@@ -1,6 +1,7 @@
 package org.example.Services;
 
 import org.example.Exception.NaoEncontradoException;
+import org.example.Fases.OrquestradorDeFases;
 import org.example.Models.Arbitro;
 import org.example.Models.Competicao;
 import org.example.Models.EnumFasePartida;
@@ -39,6 +40,9 @@ public class PartidaService {
 
     @Autowired
     private FaseRepository faseRepository;
+
+    @Autowired
+    private OrquestradorDeFases orquestrador;
     
     public Partida criarPartida(Partida partida) {
         partida.setId(null);
@@ -230,7 +234,16 @@ public class PartidaService {
                 p.setIdEquipeVencedora(p.getIdEquipeMandante()); // Empate favorece mandante
             }
             
-            return partidaRepository.save(p);
+            Partida salva = partidaRepository.save(p);
+
+            // Na eliminatória, fechar o último jogo da rodada gera a seguinte.
+            // Antes isso só acontecia chamando a rota de atualizar a fase, que
+            // nenhuma tela chamava: a chave parava na primeira rodada.
+            Fase fase = salva.getFase();
+            if (fase != null && fase.getFasePartida() == EnumFasePartida.ELIMINATORIA) {
+                orquestrador.atualizar(fase, java.util.Map.of());
+            }
+            return salva;
         }
         return null;
     }

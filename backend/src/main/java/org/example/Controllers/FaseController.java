@@ -1,6 +1,7 @@
 package org.example.Controllers;
 
 import org.example.Mapper.AtributoFaseMapper;
+import org.example.Models.Response.ChaveamentoResponse;
 import org.example.Models.Response.LinhaDaTabelaResponse;
 import org.example.Models.Response.AtributoFaseResponse;
 import org.example.Models.Request.ValorDeAtributoRequest;
@@ -266,6 +267,54 @@ public class FaseController
                             d.getSaldoDeGols() );
                 } )
                 .toList() );
+    }
+
+    /** A chave da eliminatória, inclusive as etapas que ainda não foram geradas. */
+    @GetMapping("/{id}/chaveamento")
+    public ResponseEntity<ChaveamentoResponse> chaveamento ( @PathVariable("id") Long id )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        var chave = faseService.chaveamentoDe( fase );
+        return ResponseEntity.ok( new ChaveamentoResponse( chave.participantes(), chave.pararEm(),
+                chave.etapas().stream()
+                     .map( etapa -> new ChaveamentoResponse.Etapa( etapa.rodada(), etapa.nome(), etapa.equipes(),
+                             etapa.confrontos().stream().map( this::paraConfronto ).toList() ) )
+                     .toList() ) );
+    }
+
+    private ChaveamentoResponse.Confronto paraConfronto ( org.example.Fases.ConfrontoDaChave confronto )
+    {
+        Integer golsMandante = null;
+        Integer golsVisitante = null;
+        for ( Partida partida : confronto.partidas() )
+        {
+            if ( !partida.isRealizada() )
+            {
+                continue;
+            }
+            boolean mesmoMando = java.util.Objects.equals( partida.getIdEquipeMandante(), confronto.idMandante() );
+            golsMandante = ( golsMandante == null ? 0 : golsMandante )
+                    + ( mesmoMando ? partida.getPlacarMandante() : partida.getPlacarVisitante() );
+            golsVisitante = ( golsVisitante == null ? 0 : golsVisitante )
+                    + ( mesmoMando ? partida.getPlacarVisitante() : partida.getPlacarMandante() );
+        }
+
+        return new ChaveamentoResponse.Confronto( confronto.jogo(), confronto.alimenta(),
+                lado( confronto.idMandante(), confronto.origemMandante() ),
+                lado( confronto.idVisitante(), confronto.origemVisitante() ),
+                golsMandante, golsVisitante, confronto.idVencedor() != null, confronto.idVencedor(),
+                confronto.partidas().stream().map( Partida::getId ).toList() );
+    }
+
+    private ChaveamentoResponse.Lado lado ( Long idEquipe, String origem )
+    {
+        return new ChaveamentoResponse.Lado( idEquipe, idEquipe == null ? null : nomeDoTime( idEquipe ), origem );
     }
 
     private String nomeDoTime ( Long idEquipe )
