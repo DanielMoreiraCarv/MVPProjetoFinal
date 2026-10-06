@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { LinhaDaClassificacao } from "@/src/features/campeonatos/calculos";
@@ -39,11 +41,19 @@ export const TabelaDeClassificacao = ({ linhas }: { linhas: LinhaDaClassificacao
             </TableHeader>
             <TableBody>
                 {linhas.map((linha, i) => (
-                    <TableRow key={linha.equipe} className={cn(i % 2 !== 0 && "bg-muted/40")}>
+                    <TableRow key={linha.idEquipe ?? linha.equipe} className={cn(i % 2 !== 0 && "bg-muted/40")}>
                         <TableCell className="numero-tabular pl-5 font-mono text-muted-foreground">
                             {linha.posicao}
                         </TableCell>
-                        <TableCell className="max-w-40 truncate font-medium sm:max-w-none">{linha.equipe}</TableCell>
+                        <TableCell className="max-w-40 truncate font-medium sm:max-w-none">
+                            {linha.idEquipe ? (
+                                <Link href={`/equipe/${linha.idEquipe}`} className="hover:underline">
+                                    {linha.equipe}
+                                </Link>
+                            ) : (
+                                linha.equipe
+                            )}
+                        </TableCell>
                         <TableCell className="numero-tabular text-center font-mono font-semibold text-primary">
                             {linha.pontos}
                         </TableCell>

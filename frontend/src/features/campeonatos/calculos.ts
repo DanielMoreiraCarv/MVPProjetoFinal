@@ -3,6 +3,7 @@ import { Partida } from "@/src/lib/types/partida";
 export type LinhaDaClassificacao = {
     posicao: number;
     equipe: string;
+    idEquipe?: number;
     jogos: number;
     vitorias: number;
     empates: number;
@@ -31,7 +32,11 @@ export type LinhaDaClassificacao = {
  * parecia funcionar porque o front rotulava toda eliminatória de "Final".
  */
 
-export const calcularClassificacao = (partidas: Partida[]): LinhaDaClassificacao[] => {
+export const calcularClassificacao = (
+    partidas: Partida[],
+    /** As inscritas entram zeradas: a tabela não espera o primeiro jogo para listá-las. */
+    inscritas: string[] = [],
+): LinhaDaClassificacao[] => {
     const desempenho = new Map<string, Omit<LinhaDaClassificacao, "posicao" | "equipe" | "jogos" | "saldo" | "pontos">>();
     const de = (equipe: string) => {
         if (!desempenho.has(equipe)) {
@@ -39,6 +44,8 @@ export const calcularClassificacao = (partidas: Partida[]): LinhaDaClassificacao
         }
         return desempenho.get(equipe)!;
     };
+
+    inscritas.forEach((equipe) => de(equipe));
 
     for (const partida of partidas) {
         if (!partida.realizada) continue;
@@ -73,6 +80,12 @@ export const calcularClassificacao = (partidas: Partida[]): LinhaDaClassificacao
             saldo: d.golsPro - d.golsContra,
             pontos: d.vitorias * 3 + d.empates,
         }))
-        .sort((a, b) => b.pontos - a.pontos || b.saldo - a.saldo || b.golsPro - a.golsPro)
+        .sort(
+            (a, b) =>
+                b.pontos - a.pontos ||
+                b.saldo - a.saldo ||
+                b.golsPro - a.golsPro ||
+                a.equipe.localeCompare(b.equipe, "pt-BR"),
+        )
         .map((linha, i) => ({ ...linha, posicao: i + 1 }));
 };

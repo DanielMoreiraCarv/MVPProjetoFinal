@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import {
     Table,
     TableBody,
@@ -12,7 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Escolha } from "@/src/components/Escolha";
 import { CarregandoTabela, Erro, Vazio } from "@/src/components/estado/Estados";
 import {
     CabecalhoDaPagina,
@@ -20,24 +21,28 @@ import {
     migalhasDaCompeticao,
 } from "@/src/components/layout/CabecalhoDaPagina";
 import { Secao } from "@/src/components/layout/Secao";
+import { TabelasPorGrupo } from "@/src/features/campeonatos/TabelasPorGrupo";
 import {
     Classificado,
     Fase,
+    LinhaDaTabela,
     ROTULO_DO_FORMATO,
     listarClassificacaoDaFase,
     listarFasesDaCompeticao,
+    listarTabelaDaFase,
+    temTabelaDePontos,
 } from "@/src/lib/api/fases";
 import { useEscopo } from "@/src/lib/escopo";
 
 const porOrdem = (a: Fase, b: Fase) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.id - b.id;
 
 /**
- * A classificação de cada fase, como o servidor a apura.
+ * A classificação de cada fase, como o servidor a apura (RNF23).
  *
- * A conta é do servidor por RNF23, e a rota `GET /fase/{id}/classificacao`
- * devolve só a ordem: posição, equipe e nome. Pontos, jogos, vitórias e saldo
- * não vêm — e recalculá-los aqui seria justamente o que o requisito proíbe.
- * A tabela mostra o que existe.
+ * Fase que se decide por pontos — grupos e pontos corridos — mostra a tabela
+ * completa, com quem entra na fase listado e zerado desde o início: não se
+ * espera o primeiro jogo para a equipe aparecer. A eliminatória não tem
+ * pontos, e mostra a ordem em que as equipes saíram.
  */
 const ClassificacaoPage = () => {
     const params = useParams<{ id: string }>();
@@ -45,8 +50,9 @@ const ClassificacaoPage = () => {
     const { atual } = useEscopo();
 
     const [fases, setFases] = useState<Fase[]>([]);
-    const [escolhida, setEscolhida] = useState<string[]>([]);
-    const [linhas, setLinhas] = useState<Classificado[]>([]);
+    const [escolhida, setEscolhida] = useState("");
+    const [tabela, setTabela] = useState<LinhaDaTabela[]>([]);
+    const [ordem, setOrdem] = useState<Classificado[]>([]);
     const [carregandoFases, setCarregandoFases] = useState(true);
     const [carregandoTabela, setCarregandoTabela] = useState(false);
     const [erro, setErro] = useState<unknown>(null);
@@ -59,11 +65,11 @@ const ClassificacaoPage = () => {
             .then((lista) => {
                 setFases(lista);
                 setEscolhida((anterior) =>
-                    anterior[0] && lista.some((fase) => String(fase.id) === anterior[0])
+                    anterior && lista.some((fase) => String(fase.id) === anterior)
                         ? anterior
                         : lista.length > 0
-                          ? [String([...lista].sort(porOrdem)[0].id)]
-                          : [],
+                          ? String([...lista].sort(porOrdem)[0].id)
+                          : "",
                 );
             })
             .catch(setErro)
@@ -72,104 +78,142 @@ const ClassificacaoPage = () => {
 
     useEffect(carregarFases, [carregarFases]);
 
-    const idDaFase = escolhida[0] ? Number(escolhida[0]) : null;
+    const emOrdem = useMemo(() => [...fases].sort(porOrdem), [fases]);
+    const fase = emOrdem.find((cada) => String(cada.id) === escolhida) ?? null;
+    const porPontos = temTabelaDePontos(fase?.formato);
+    const anterior = fase ? emOrdem.find((cada) => cada.idFaseSucessora === fase.id) : undefined;
 
     const carregarTabela = useCallback(() => {
-        if (idDaFase === null) {
-            setLinhas([]);
-            return;
-        }
+        if (!fase) return;
         setCarregandoTabela(true);
         setErro(null);
-        listarClassificacaoDaFase(idDaFase)
-            .then(setLinhas)
-            .catch(setErro)
-            .finally(() => setCarregandoTabela(false));
-    }, [idDaFase]);
+        const busca = temTabelaDePontos(fase.formato)
+            ? listarTabelaDaFase(fase.id).then((linhas) => {
+                  setTabela(linhas);
+                  setOrdem([]);
+              })
+            : listarClassificacaoDaFase(fase.id).then((linhas) => {
+                  setOrdem(linhas);
+                  setTabela([]);
+              });
+        busca.catch(setErro).finally(() => setCarregandoTabela(false));
+    }, [fase]);
 
     useEffect(carregarTabela, [carregarTabela]);
 
-    const emOrdem = useMemo(() => [...fases].sort(porOrdem), [fases]);
-    const fase = emOrdem.find((cada) => cada.id === idDaFase) ?? null;
+    const ninguemJogou = tabela.every((linha) => linha.jogos === 0);
+    const gruposAindaNaoSorteados =
+        fase?.formato === "GRUPOS" && tabela.every((linha) => linha.grupo === undefined);
 
     return (
         <>
             <CabecalhoDaPagina
                 conceito="classificacao"
                 titulo="Classificação"
-                descricao="A ordem de classificação em cada fase."
+                descricao="A tabela de cada fase, com todas as equipes desde o início."
                 migalhas={migalhasDaCompeticao(atual)}
             />
             <CorpoDaPagina>
                 {erro ? (
-                    <Erro
-                        causa={erro}
-                        aoTentarDeNovo={idDaFase === null ? carregarFases : carregarTabela}
-                    />
+                    <Erro causa={erro} aoTentarDeNovo={fase ? carregarTabela : carregarFases} />
                 ) : carregandoFases ? (
-                    <CarregandoTabela linhas={8} colunas={2} />
+                    <CarregandoTabela linhas={8} colunas={4} />
                 ) : emOrdem.length === 0 ? (
                     <Vazio
                         conceito="fase"
                         titulo="Nenhuma fase nesta competição"
                         descricao="A classificação é apurada por fase. Crie a primeira fase para ter uma."
                         acao={
-                            <Link
-                                href={`/competicao/${idCompeticao}/fase`}
-                                className="text-sm underline underline-offset-4"
+                            <Button
+                                size="sm"
+                                nativeButton={false}
+                                render={<Link href={`/competicao/${idCompeticao}/fase`} />}
                             >
                                 Ir para as fases
-                            </Link>
+                            </Button>
                         }
                     />
                 ) : (
                     <Secao
                         titulo={fase ? fase.nome : "Classificação"}
+                        descricao={
+                            fase?.formato
+                                ? `${ROTULO_DO_FORMATO[fase.formato]}${
+                                      fase.classificados ? ` · ${fase.classificados} avançam` : ""
+                                  }`
+                                : undefined
+                        }
                         acao={
-                            <ToggleGroup
-                                value={escolhida}
-                                onValueChange={(valor) => valor.length > 0 && setEscolhida(valor)}
-                                spacing={0}
-                                variant="outline"
-                                className="flex-wrap"
-                                aria-label="Fase"
-                            >
-                                {emOrdem.map((cada) => (
-                                    <ToggleGroupItem key={cada.id} value={String(cada.id)}>
-                                        {cada.nome}
-                                    </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
+                            emOrdem.length > 1 && (
+                                <Escolha
+                                    valor={escolhida}
+                                    aoMudar={setEscolhida}
+                                    className="w-56"
+                                    opcoes={emOrdem.map((cada) => ({
+                                        valor: String(cada.id),
+                                        rotulo: cada.nome,
+                                    }))}
+                                />
+                            )
                         }
                     >
                         {carregandoTabela ? (
-                            <CarregandoTabela linhas={8} colunas={2} />
-                        ) : linhas.length === 0 ? (
+                            <CarregandoTabela linhas={8} colunas={porPontos ? 10 : 2} />
+                        ) : porPontos ? (
+                            tabela.length === 0 ? (
+                                <Vazio
+                                    conceito="classificacao"
+                                    titulo={
+                                        anterior
+                                            ? `Aguardando ${anterior.nome}`
+                                            : "Nenhuma equipe entra nesta fase"
+                                    }
+                                    descricao={
+                                        anterior
+                                            ? `As equipes desta fase são os classificados de ${anterior.nome}, e aparecem aqui quando ela tiver classificação.`
+                                            : "Inscreva as equipes na competição para a tabela começar."
+                                    }
+                                />
+                            ) : (
+                                <div className="space-y-4">
+                                    {(gruposAindaNaoSorteados || ninguemJogou) && (
+                                        <p className="px-1 text-xs text-muted-foreground">
+                                            {gruposAindaNaoSorteados
+                                                ? `Os grupos saem quando os confrontos forem gerados. Até lá, a tabela lista as ${tabela.length} equipes que entram na fase, todas zeradas.`
+                                                : "Ninguém jogou ainda: todas as equipes começam zeradas."}
+                                        </p>
+                                    )}
+                                    <TabelasPorGrupo linhas={tabela} />
+                                </div>
+                            )
+                        ) : ordem.length === 0 ? (
                             <Vazio
                                 conceito="classificacao"
-                                titulo="Esta fase ainda não tem classificação"
-                                descricao="A ordem aparece depois que os confrontos da fase são gerados."
+                                titulo="A eliminatória ainda não tem classificação"
+                                descricao="A ordem aparece conforme as equipes forem eliminadas."
                                 acao={
-                                    <Link
-                                        href={`/competicao/${idCompeticao}/fase`}
-                                        className="text-sm underline underline-offset-4"
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        nativeButton={false}
+                                        render={<Link href={`/competicao/${idCompeticao}/fase`} />}
                                     >
-                                        Gerar confrontos nas fases
-                                    </Link>
+                                        Ir para as fases
+                                    </Button>
                                 }
                             />
                         ) : (
                             <div className="space-y-3">
-                                <div className="overflow-x-auto rounded-3xl border border-border">
+                                <div className="overflow-x-auto rounded-2xl border border-border">
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="text-xs">
-                                                <TableHead className="w-12 pl-5">#</TableHead>
+                                                <TableHead className="w-14 pl-5">#</TableHead>
                                                 <TableHead className="pr-5">Equipe</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {linhas.map((linha, i) => (
+                                            {ordem.map((linha, i) => (
                                                 <TableRow
                                                     key={linha.idEquipe ?? linha.nomeEquipe}
                                                     className={i % 2 !== 0 ? "bg-muted/40" : ""}
@@ -194,15 +238,9 @@ const ClassificacaoPage = () => {
                                         </TableBody>
                                     </Table>
                                 </div>
-
-                                {/* O que a rota não devolve, dito na tela: sem
-                                    isto a tabela parece incompleta por engano. */}
                                 <p className="px-1 text-xs text-muted-foreground">
-                                    {fase?.formato
-                                        ? `${ROTULO_DO_FORMATO[fase.formato]} · `
-                                        : ""}
-                                    a API devolve apenas a ordem apurada. Pontos, jogos, vitórias
-                                    e saldo não vêm nesta rota, e a conta é do servidor.
+                                    Na eliminatória a classificação é a ordem de saída: quem caiu na
+                                    mesma rodada divide a posição.
                                 </p>
                             </div>
                         )}

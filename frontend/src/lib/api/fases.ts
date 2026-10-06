@@ -287,3 +287,42 @@ export const listarClassificacaoDaFase = async (idFase: number): Promise<Classif
             idEquipe: r.idEquipe ?? undefined,
             nomeEquipe: r.nomeEquipe ?? "Equipe sem nome",
         }));
+
+const linhaDaTabelaSchema = z.object({
+    grupo: z.number().nullable(),
+    posicao: z.number(),
+    idEquipe: z.number(),
+    nomeEquipe: z.string().nullable(),
+    pontos: z.number(),
+    jogos: z.number(),
+    vitorias: z.number(),
+    empates: z.number(),
+    derrotas: z.number(),
+    golsPro: z.number(),
+    golsContra: z.number(),
+    saldo: z.number(),
+});
+
+export type LinhaDaTabela = Omit<z.infer<typeof linhaDaTabelaSchema>, "nomeEquipe" | "grupo"> & {
+    grupo?: number;
+    equipe: string;
+};
+
+/**
+ * A tabela de pontos da fase — grupos e pontos corridos —, com os números
+ * calculados no servidor (RNF23) e quem entra na fase já listado e zerado
+ * antes do primeiro jogo. A eliminatória não tem tabela: a rota recusa.
+ */
+export const listarTabelaDaFase = async (idFase: number): Promise<LinhaDaTabela[]> =>
+    z
+        .array(linhaDaTabelaSchema)
+        .parse((await apiFetch<unknown>(`/fase/${idFase}/tabela`)) ?? [])
+        .map(({ nomeEquipe, grupo, ...linha }) => ({
+            ...linha,
+            grupo: grupo ?? undefined,
+            equipe: nomeEquipe ?? "Equipe sem nome",
+        }));
+
+/** Os formatos que se decidem por pontos e por isso têm tabela. */
+export const temTabelaDePontos = (formato?: FormatoDeFase) =>
+    formato === "GRUPOS" || formato === "PONTOS_CORRIDOS";
