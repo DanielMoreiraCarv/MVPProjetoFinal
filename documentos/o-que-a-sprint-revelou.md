@@ -271,6 +271,33 @@ competição usa a tabela da primeira fase de pontos.
 A rota `/classificacao`, que é o contrato de entrada entre as fases, ficou
 como estava.
 
-**Ainda pendente:** a regra de sanção guarda o esporte, não a infração. Para
+## Classificação fase a fase, e a chave
+
+A visão geral e a página de classificação discordavam sobre a mesma
+competição: a visão geral lia um campo antigo da competição ("pontos
+corridos" ou "mata-mata", escolhido na criação) e mostrava tabela para uma
+estrutura de mata-mata, enquanto a outra lia as fases. Agora as duas usam o
+mesmo componente, fase a fase com uma escolha de fase, e o campo antigo saiu
+do formulário da competição. Fase de pontos é tabela, um grupo por vez; a
+eliminatória é chave — desenhada a partir das oitavas, e em lista de
+confrontos, uma página por etapa, nas etapas maiores. A conta local que
+sobrava (`calculos.ts`) saiu: competição sem fase diz que não tem fase.
+
+A chave vem de `GET /fase/{id}/chaveamento`, já na ordem de desenho e com as
+etapas futuras ("Vencedor do jogo 3"): o motor emparelha os vencedores do
+primeiro contra o último, então a chave inteira é conhecida desde a primeira
+rodada.
+
+Três defeitos do motor apareceram no caminho, cada um com teste escrito antes:
+
+| Onde | O que acontecia |
+|---|---|
+| Eliminatória | a rodada seguinte só era gerada chamando a rota de atualizar a fase, que nenhuma tela chamava: a chave parava na primeira rodada. Agora encerrar o último jogo da rodada — direto ou assinando a súmula — gera a seguinte |
+| Entrada da fase seguinte | era a classificação provisória da anterior: com os grupos gerados e ninguém jogando, os primeiros de uma tabela zerada já entravam, e dava para gerar o mata-mata antes dos grupos. Agora só entra quem se classificou, quando todos os jogos da anterior terminam |
+| `POST /fase` | aceitava `idFaseSucessora` e descartava, como já tinha acontecido com a quantidade de classificados |
+
+**Ainda pendente:** empate em eliminatória dá a vaga ao mandante, porque o
+modelo não registra pênaltis. E a regra de sanção guarda o esporte, não a
+infração. Para
 "cartão vermelho = 1 jogo" o modelo precisa de um campo de infração, e a
 contagem automática continua dependendo da entidade `Evento`.
