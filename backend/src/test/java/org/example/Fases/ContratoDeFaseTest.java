@@ -149,6 +149,32 @@ class ContratoDeFaseTest
         }
     }
 
+    /** As rotas em lote da PR #34, sobre o código novo: tudo ou nada. */
+    @Test
+    void atributosEmLoteGravamTudoOuNada ()
+    {
+        Fase fase = novaFase();
+
+        faseService.definirAtributos( fase, Map.of(
+                EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2",
+                EstrategiaDeGrupos.IDA_E_VOLTA, "true" ) );
+        var configuracao = orquestrador.configuracaoDe( fase );
+        assertEquals( 2, configuracao.inteiroOu( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, 0 ) );
+        assertTrue( configuracao.booleano( EstrategiaDeGrupos.IDA_E_VOLTA ) );
+
+        IllegalArgumentException tipoErrado = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> faseService.definirAtributos( fase, Map.of(
+                        EstrategiaDeGrupos.PONTOS_VITORIA, "4",
+                        EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "dois" ) ) );
+        assertTrue( tipoErrado.getMessage().contains( "espera INTEIRO" ), tipoErrado.getMessage() );
+        assertEquals( 3, orquestrador.configuracaoDe( fase ).inteiroOu( EstrategiaDeGrupos.PONTOS_VITORIA, 0 ),
+                "um campo inválido não pode deixar o outro gravado" );
+
+        org.junit.jupiter.api.Assertions.assertThrows( IllegalArgumentException.class,
+                () -> faseService.definirAtributos( fase, Map.of( "inexistente", "1" ) ) );
+    }
+
     @Test
     void apagarAFaseSeguinteDesencadeiaAAnterior ()
     {

@@ -225,6 +225,38 @@ public class FaseController
         return ResponseEntity.ok( faseService.atributosDaFase( fase ) );
     }
 
+    /**
+     * Os atributos que a fase aceita, com o valor configurado e o padrão de
+     * cada um — o mesmo que `GET /{id}/atributo`, no plural da PR #34.
+     */
+    @GetMapping("/{id}/atributos")
+    public ResponseEntity<List<AtributoFaseResponse>> atributos ( @PathVariable("id") Long id )
+    {
+        return ResponseEntity.ok( faseService.atributosDaFase( exigirFase( id ) ) );
+    }
+
+    /**
+     * Configura vários atributos de uma vez: {"codigo": "valor"}. Confere
+     * todos antes de gravar qualquer um; valor nulo ou vazio volta o atributo
+     * ao padrão. Veio da PR #34, adaptado ao contrato de erro.
+     */
+    @PutMapping("/{id}/atributos")
+    public ResponseEntity<List<AtributoFaseResponse>> definirAtributos ( @PathVariable("id") Long id,
+            @RequestBody Map<String, String> valores )
+    {
+        return ResponseEntity.ok( faseService.definirAtributos( exigirFase( id ), valores ) );
+    }
+
+    private Fase exigirFase ( Long id )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+        return fase;
+    }
+
     @GetMapping("/{id}/classificacao")
     public ResponseEntity<?> classificacao ( @PathVariable("id") Long id )
     {

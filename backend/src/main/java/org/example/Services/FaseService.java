@@ -266,4 +266,57 @@ public class FaseService
     {
         orquestrador.definirAtributo( fase, codigo, valor );
     }
+
+    /**
+     * Grava vários atributos de uma vez (PR #34). Confere todos antes de
+     * gravar qualquer um: um atributo desconhecido ou com tipo errado recusa a
+     * requisição inteira, em vez de deixar metade gravada.
+     */
+    @Transactional
+    public List<AtributoFaseResponse> definirAtributos ( Fase fase, Map<String, String> valores )
+    {
+        if ( fase.getFasePartida() == null )
+        {
+            throw new IllegalArgumentException( "A fase não tem formato definido." );
+        }
+        if ( valores == null || valores.isEmpty() )
+        {
+            throw new IllegalArgumentException( "Informe ao menos um atributo." );
+        }
+
+        Map<String, org.example.Models.AtributoFase> aceitos = new java.util.HashMap<>();
+        atributosDoTipo( fase.getFasePartida() )
+                    .forEach( atributo -> aceitos.put( atributo.getCodigo(), atributo ) );
+
+        List<String> erros = new java.util.ArrayList<>();
+        valores.forEach( ( codigo, valor ) -> {
+            var atributo = aceitos.get( codigo );
+            if ( atributo == null )
+            {
+                erros.add( "A fase " + fase.getNome() + " não aceita o atributo " + codigo + "." );
+            }
+            else if ( valor != null && !valor.isBlank() && !tipoValido( atributo.getTipoDado(), valor ) )
+            {
+                erros.add( "O atributo " + codigo + " espera " + atributo.getTipoDado() + ", veio \"" + valor + "\"." );
+            }
+        } );
+        if ( !erros.isEmpty() )
+        {
+            throw new IllegalArgumentException( String.join( " ", erros ) );
+        }
+
+        valores.forEach( ( codigo, valor ) -> orquestrador.definirAtributo( fase, codigo, valor ) );
+        return atributosDaFase( fase );
+    }
+
+    private static boolean tipoValido ( org.example.Models.EnumTipoDeDado tipo, String valor )
+    {
+        String limpo = valor.trim();
+        return switch ( tipo )
+        {
+            case INTEIRO -> limpo.matches( "-?\\d+" );
+            case BOOLEANO -> limpo.equalsIgnoreCase( "true" ) || limpo.equalsIgnoreCase( "false" );
+            case TEXTO, LISTA_DE_TEXTO -> true;
+        };
+    }
 }
