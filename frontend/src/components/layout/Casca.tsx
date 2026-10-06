@@ -40,11 +40,11 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
     return (
         <ToastProvider>
         <ProvedorDeEscopo>
-            <div className="flex min-h-svh bg-background">
+            <div className="flex min-h-svh bg-background print:block print:min-h-0">
                 {/* Mesa: menu fixo, recolhível para uma trilha de ícones. */}
                 <aside
                     className={cn(
-                        "sticky top-0 hidden h-svh shrink-0 border-r border-sidebar-border transition-[width] duration-200 md:block",
+                        "sticky top-0 hidden h-svh shrink-0 border-r border-sidebar-border transition-[width] duration-200 md:block print:hidden",
                         recolhido ? "w-[4.5rem]" : "w-64",
                     )}
                 >
@@ -53,7 +53,7 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
 
                 <div className="flex min-w-0 flex-1 flex-col">
                     {/* Celular: barra com o botão da gaveta. */}
-                    <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur md:hidden">
+                    <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur md:hidden print:hidden">
                         <Drawer.Root open={gavetaAberta} onOpenChange={setGavetaAberta}>
                             <Drawer.Trigger
                                 render={<Button variant="ghost" size="icon-sm" />}
@@ -76,7 +76,7 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
                 </div>
             </div>
             <PaletaDeCompeticoes />
-            <ToastViewport />
+            <ToastViewport className="print:hidden" />
         </ProvedorDeEscopo>
         </ToastProvider>
     );

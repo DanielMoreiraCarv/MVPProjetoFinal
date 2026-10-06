@@ -31,7 +31,7 @@ export const CabecalhoDaPagina = ({
     return (
         <header
             className={cn(
-                "sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur",
+                "sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur print:hidden",
                 className,
             )}
         >
@@ -89,7 +89,7 @@ export const CorpoDaPagina = ({
     children: React.ReactNode;
     className?: string;
 }) => (
-    <div className={cn("mx-auto w-full max-w-6xl flex-1 px-5 py-6 sm:px-6", className)}>
+    <div className={cn("mx-auto w-full max-w-6xl flex-1 px-5 py-6 sm:px-6 print:max-w-none print:p-0", className)}>
         {children}
     </div>
 );
