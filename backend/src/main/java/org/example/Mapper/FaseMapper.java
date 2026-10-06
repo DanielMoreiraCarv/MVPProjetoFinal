@@ -64,7 +64,7 @@ public class FaseMapper
                 // marcar o formato atual num seletor.
                 fase.getFasePartida() == null ? null : fase.getFasePartida().name(),
                 fase.getQuantidadeClassificados(),
-                fase.getFaseSucessora() == null ? null : fase.getFaseSucessora().getId() );
+                fase.getFaseSucessora() == null ? null : fase.getFaseSucessora().getId(), null, null );
 
     }
 

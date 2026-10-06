@@ -178,6 +178,101 @@ class FaseDeGruposTest
         assertEquals( depoisDeConfigurar, partidaRepository.findByFaseId( fase.getId() ).size() );
     }
 
+    /** Uma eliminatória depois da fase de grupos, para ver quem entra nela. */
+    private Fase eliminatoriaDepoisDe ( Fase grupos )
+    {
+        Fase seguinte = new Fase();
+        seguinte.setNome( "Mata-mata" );
+        seguinte.setOrdem( 2 );
+        seguinte.setFasePartida( EnumFasePartida.ELIMINATORIA );
+        seguinte.setCompeticao( grupos.getCompeticao() );
+        seguinte = faseRepository.save( seguinte );
+        grupos.setFaseSucessora( seguinte );
+        faseRepository.save( grupos );
+        return seguinte;
+    }
+
+    private void jogarTudo ( Fase fase )
+    {
+        int i = 0;
+        for ( Partida partida : partidaRepository.findByFaseId( fase.getId() ) )
+        {
+            // Placar variado para a tabela não sair toda empatada.
+            encerrar( partida, ( i * 7 ) % 4, ( i * 3 ) % 3 );
+            i++;
+        }
+    }
+
+    private java.util.Set<Long> topoDeCadaGrupo ( Fase fase, int quantos )
+    {
+        return orquestrador.tabelaDe( fase ).stream()
+                .filter( linha -> linha.posicao() <= quantos )
+                .map( linha -> linha.desempenho().getIdTime() )
+                .collect( java.util.stream.Collectors.toSet() );
+    }
+
+    @Test
+    void porPadraoAvancamOsDoisPrimeirosDeCadaGrupo ()
+    {
+        Fase grupos = faseCom( 8, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+        Fase seguinte = eliminatoriaDepoisDe( grupos );
+
+        assertEquals( 4, orquestrador.quantosAvancam( grupos ),
+                "2 grupos × 2 por grupo, sabido antes de qualquer jogo" );
+        assertEquals( 4, orquestrador.quantosEntram( seguinte ) );
+
+        orquestrador.configurar( grupos );
+        jogarTudo( grupos );
+
+        java.util.Set<Long> entraram = orquestrador.entradaDe( seguinte ).stream()
+                .map( Classificado::idEquipe ).collect( java.util.stream.Collectors.toSet() );
+        assertEquals( topoDeCadaGrupo( grupos, 2 ), entraram );
+    }
+
+    @Test
+    void totalMenorQueOPorGrupoLevaOsPrimeirosEOsMelhoresSegundos ()
+    {
+        Fase grupos = faseCom( 12, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "3" ) );
+        grupos.setQuantidadeClassificados( 4 );
+        faseRepository.save( grupos );
+        Fase seguinte = eliminatoriaDepoisDe( grupos );
+        orquestrador.configurar( grupos );
+        jogarTudo( grupos );
+
+        java.util.Set<Long> entraram = orquestrador.entradaDe( seguinte ).stream()
+                .map( Classificado::idEquipe ).collect( java.util.stream.Collectors.toSet() );
+
+        assertEquals( 4, entraram.size() );
+        assertTrue( entraram.containsAll( topoDeCadaGrupo( grupos, 1 ) ), "todos os primeiros entram" );
+        assertEquals( 1, entraram.stream().filter( id -> !topoDeCadaGrupo( grupos, 1 ).contains( id ) ).count(),
+                "e só o melhor dos segundos completa" );
+    }
+
+    @Test
+    void maisPorGrupoDoQueOGrupoTemEhRecusado ()
+    {
+        Fase grupos = faseCom( 8, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2",
+                EstrategiaDeGrupos.CLASSIFICADOS_POR_GRUPO, "5" ) );
+
+        ResultadoDaValidacao resultado = orquestrador.validar( grupos );
+
+        assertFalse( resultado.ehValido() );
+        assertTrue( resultado.mensagem().contains( "5 por grupo" ), resultado.mensagem() );
+    }
+
+    @Test
+    void totalMaiorQueQuemEntraEhRecusado ()
+    {
+        Fase grupos = faseCom( 8, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+        grupos.setQuantidadeClassificados( 10 );
+        faseRepository.save( grupos );
+
+        ResultadoDaValidacao resultado = orquestrador.validar( grupos );
+
+        assertFalse( resultado.ehValido() );
+        assertTrue( resultado.mensagem().contains( "Avançam 10" ), resultado.mensagem() );
+    }
+
     @Test
     void tabelaComecaComTodosZeradosAntesDeGerarOsConfrontos ()
     {

@@ -150,6 +150,22 @@ class ContratoDeFaseTest
     }
 
     @Test
+    void apagarAFaseSeguinteDesencadeiaAAnterior ()
+    {
+        Fase sucessora = novaFase();
+        Fase primeira = novaFase();
+        primeira.setFaseSucessora( sucessora );
+        faseRepository.save( primeira );
+
+        faseService.deleteFase( sucessora );
+        faseRepository.flush();
+
+        assertTrue( faseRepository.findById( sucessora.getId() ).isEmpty() );
+        assertEquals( null, faseRepository.findById( primeira.getId() ).orElseThrow().getFaseSucessora(),
+                "a anterior seguia apontando para ela, e a exclusão estourava a chave estrangeira" );
+    }
+
+    @Test
     void criarFaseJaEncadeadaGravaASucessora ()
     {
         Fase sucessora = novaFase();
@@ -216,7 +232,7 @@ class ContratoDeFaseTest
     }
 
     @Test
-    void semQuantidadeDeClassificadosTodosSeguem ()
+    void semTotalValeOQueAvancaPorGrupo ()
     {
         Fase sucessora = novaFase();
         sucessora.setOrdem( 2 );
@@ -226,7 +242,8 @@ class ContratoDeFaseTest
         primeira.setFaseSucessora( sucessora );
         jogarAteOFim( faseRepository.save( primeira ) );
 
-        assertEquals( 4, orquestrador.entradaDe( sucessora ).size() );
+        // Um grupo de 4, e por padrão avançam 2 por grupo.
+        assertEquals( 2, orquestrador.entradaDe( sucessora ).size() );
     }
 
     @Test

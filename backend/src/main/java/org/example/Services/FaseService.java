@@ -123,6 +123,13 @@ public class FaseService
     @Transactional
     public void deleteFase ( Fase fase )
     {
+        // Quem apontava para ela passa a não levar a lugar nenhum: sem isso a
+        // exclusão da fase seguinte estourava a chave estrangeira, e a tela só
+        // podia dizer "conflita com um vínculo em uso".
+        faseRepository.findByFaseSucessoraId( fase.getId() ).ifPresent( anterior -> {
+            anterior.setFaseSucessora( null );
+            faseRepository.save( anterior );
+        } );
         valorAtributoFaseRepository.deleteByFaseId( fase.getId() );
         partidaRepository.deleteAll( partidaRepository.findByFaseId( fase.getId() ) );
         faseRepository.delete( fase );
@@ -156,6 +163,21 @@ public class FaseService
                     + " é eliminatória: não tem tabela de pontos, só a ordem de classificação." );
         }
         return orquestrador.tabelaDe( fase );
+    }
+
+    /** A resposta da fase com as contagens que só o orquestrador sabe fazer. */
+    public FaseResponse comContagens ( Fase fase )
+    {
+        FaseResponse base = FaseMapper.toResponse( fase );
+        Integer entram = null;
+        Integer avancam = null;
+        if ( fase.getFasePartida() != null )
+        {
+            entram = orquestrador.quantosEntram( fase );
+            avancam = orquestrador.quantosAvancam( fase );
+        }
+        return new FaseResponse( base.id(), base.nome(), base.ordem(), base.fasePartida(),
+                base.qtdClassificados(), base.idFaseSucessora(), entram, avancam );
     }
 
     public org.example.Fases.Chaveamento chaveamentoDe ( Fase fase )

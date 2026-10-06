@@ -73,6 +73,16 @@ public interface EstrategiaDeFase
      */
     List<Classificado> classificacao ( Fase fase, ConfiguracaoDaFase configuracao );
 
+    /**
+     * Quantas equipes avançam quando a fase não diz o total: na fase de
+     * grupos, grupos vezes os que avançam por grupo; na eliminatória, as que
+     * restam no fim. Nulo é "todas".
+     */
+    default Integer quantosAvancamPorPadrao ( ConfiguracaoDaFase configuracao, int entram )
+    {
+        return null;
+    }
+
     /** Se a fase se decide por pontos — grupos e pontos corridos —, e não por eliminação. */
     default boolean temTabelaDePontos ()
     {

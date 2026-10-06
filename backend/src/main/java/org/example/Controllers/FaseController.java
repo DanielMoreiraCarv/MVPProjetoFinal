@@ -81,7 +81,8 @@ public class FaseController
                 ? faseService.buscarFases()
                 : faseService.buscarFasePorCompeticao( idCompeticao );
 
-        return ResponseEntity.ok( FaseMapper.toResponse( fases ) );
+        return ResponseEntity.ok( fases == null ? List.of()
+                : fases.stream().map( faseService::comContagens ).toList() );
     }
 
     @GetMapping("/{id}")
@@ -94,7 +95,8 @@ public class FaseController
             throw NaoEncontradoException.de( "Fase", id );
         }
 
-        return ResponseEntity.ok( fase );
+        // Devolvia a entidade crua, diferente de todas as outras rotas.
+        return ResponseEntity.ok( faseService.comContagens( fase ) );
     }
 
     @DeleteMapping("/{id}")

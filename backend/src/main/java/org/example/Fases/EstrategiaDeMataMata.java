@@ -66,6 +66,12 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     }
 
     @Override
+    public Integer quantosAvancamPorPadrao ( ConfiguracaoDaFase configuracao, int entram )
+    {
+        return configuracao.inteiroOu( PARAR_EM_N_TIMES, 1 );
+    }
+
+    @Override
     public boolean aceitaEmpateNaEntrada ( ConfiguracaoDaFase configuracao )
     {
         return configuracao.booleano( DESCONSIDERAR_EMPATES );

@@ -79,10 +79,35 @@ public class OrquestradorDeFases
     private int participantesPrevistos ( Fase fase, int profundidade )
     {
         return faseRepository.findByFaseSucessoraId( fase.getId() )
-                             .map( anterior -> anterior.getQuantidadeClassificados() != null
-                                     ? anterior.getQuantidadeClassificados()
-                                     : profundidade > 20 ? 0 : participantesPrevistos( anterior, profundidade + 1 ) )
+                             .map( anterior -> profundidade > 20 ? 0 : avancam( anterior, profundidade + 1 ) )
                              .orElseGet( () -> timesInscritos( fase ).size() );
+    }
+
+    private int avancam ( Fase fase, int profundidade )
+    {
+        int entram = participantesPrevistos( fase, profundidade );
+        if ( fase.getQuantidadeClassificados() != null )
+        {
+            return fase.getQuantidadeClassificados();
+        }
+        Integer padrao = registro.para( fase.getFasePartida() )
+                                 .quantosAvancamPorPadrao( configuracaoDe( fase ), entram );
+        return padrao != null ? padrao : entram;
+    }
+
+    /** Quantas equipes entram na fase — sabido antes de saber quais. */
+    public int quantosEntram ( Fase fase )
+    {
+        return participantesPrevistos( fase, 0 );
+    }
+
+    /**
+     * Quantas avançam: o total da fase, quando informado; senão o que o
+     * formato diz — na fase de grupos, grupos vezes os que avançam por grupo.
+     */
+    public int quantosAvancam ( Fase fase )
+    {
+        return avancam( fase, 0 );
     }
 
     /**
@@ -93,9 +118,12 @@ public class OrquestradorDeFases
     private List<Classificado> classificadosDe ( Fase anterior )
     {
         List<Classificado> classificacao = classificacaoDe( anterior );
-        Integer quantos = anterior.getQuantidadeClassificados();
+        // A classificação da fase de grupos já vem por colocação — os
+        // primeiros, depois os segundos, cada leva ordenada pelos critérios —,
+        // então cortar no total é "os primeiros e os melhores segundos".
+        int quantos = quantosAvancam( anterior );
 
-        return quantos == null || quantos <= 0 || quantos >= classificacao.size()
+        return quantos <= 0 || quantos >= classificacao.size()
                 ? classificacao
                 : classificacao.subList( 0, quantos );
     }
@@ -129,6 +157,14 @@ public class OrquestradorDeFases
             return conferirObrigatorios( fase, configuracao ).mais( new ResultadoDaValidacao( List.of(
                     "As equipes desta fase saem de " + anterior.get().getNome()
                             + ", que ainda não terminou. Os classificados entram quando todos os jogos dela forem encerrados." ) ) );
+        }
+
+        if ( fase.getQuantidadeClassificados() != null && !entrada.isEmpty()
+                && fase.getQuantidadeClassificados() > entrada.size() )
+        {
+            return conferirObrigatorios( fase, configuracao ).mais( new ResultadoDaValidacao( List.of(
+                    "Avançam " + fase.getQuantidadeClassificados() + ", mas entram só " + entrada.size()
+                            + " equipes nesta fase." ) ) );
         }
 
         ResultadoDaValidacao obrigatorios = conferirObrigatorios( fase, configuracao );

@@ -31,6 +31,7 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
     public static final String IDA_E_VOLTA = "idaEVolta";
     public static final String GRUPOS_DESIGUAIS = "permiteGruposDesiguais";
     public static final String CRITERIOS = "criteriosDeDesempate";
+    public static final String CLASSIFICADOS_POR_GRUPO = "classificadosPorGrupo";
     public static final String PONTOS_VITORIA = "pontosPorVitoria";
     public static final String PONTOS_EMPATE = "pontosPorEmpate";
     public static final String PONTOS_DERROTA = "pontosPorDerrota";
@@ -56,6 +57,8 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
                         "Quantos grupos formar. Informe este ou o tamanho do grupo." ),
                 new AtributoFase( tipo(), TAMANHO_DO_GRUPO, EnumTipoDeDado.INTEIRO, false, null,
                         "Quantas equipes por grupo. Informe este ou o número de grupos." ),
+                new AtributoFase( tipo(), CLASSIFICADOS_POR_GRUPO, EnumTipoDeDado.INTEIRO, false, "2",
+                        "Quantas equipes de cada grupo avançam para a fase seguinte." ),
                 new AtributoFase( tipo(), IDA_E_VOLTA, EnumTipoDeDado.BOOLEANO, false, "false",
                         "Se cada confronto tem partida de volta" ),
                 new AtributoFase( tipo(), GRUPOS_DESIGUAIS, EnumTipoDeDado.BOOLEANO, false, "false",
@@ -115,9 +118,37 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
                 erros.add( "As " + entrada.size() + " equipes não se dividem igualmente em "
                         + quantidade + " grupos. Ajuste o número de grupos ou permita grupos de tamanhos diferentes." );
             }
+            else
+            {
+                int porGrupo = configuracao.inteiroOu( CLASSIFICADOS_POR_GRUPO, 2 );
+                int menorGrupo = entrada.size() / quantidade;
+                if ( porGrupo < 1 )
+                {
+                    erros.add( "Avança ao menos uma equipe por grupo." );
+                }
+                else if ( porGrupo > menorGrupo )
+                {
+                    erros.add( "Avançam " + porGrupo + " por grupo, mas o menor grupo tem " + menorGrupo
+                            + " equipes." );
+                }
+            }
         }
 
         return new ResultadoDaValidacao( erros );
+    }
+
+    /**
+     * Grupos vezes os que avançam por grupo — a conta que o organizador faz de
+     * cabeça. Sem saber quantos grupos ainda, não há como dizer.
+     */
+    @Override
+    public Integer quantosAvancamPorPadrao ( ConfiguracaoDaFase configuracao, int entram )
+    {
+        if ( !configuracao.informado( NUMERO_DE_GRUPOS ) && !configuracao.informado( TAMANHO_DO_GRUPO ) )
+        {
+            return null;
+        }
+        return numeroDeGrupos( configuracao, entram ) * configuracao.inteiroOu( CLASSIFICADOS_POR_GRUPO, 2 );
     }
 
     private int numeroDeGrupos ( ConfiguracaoDaFase configuracao, int totalDeTimes )
