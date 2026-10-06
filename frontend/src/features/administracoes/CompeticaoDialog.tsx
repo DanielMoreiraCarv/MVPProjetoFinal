@@ -26,11 +26,6 @@ import { Competicao } from "@/src/lib/types/competicao";
 
 const CATEGORIAS = ["Masculino", "Feminino", "Misto"];
 
-const FORMATOS = [
-    { valor: "pontos", rotulo: "Pontos corridos" },
-    { valor: "mata-mata", rotulo: "Mata-mata" },
-];
-
 const Erro = ({ mensagem }: { mensagem?: string }) =>
     mensagem ? (
         <p role="alert" className="text-xs text-destructive">
@@ -57,7 +52,6 @@ export const CompeticaoDialog = ({
     const [descricao, setDescricao] = useState("");
     const [modalidade, setModalidade] = useState("");
     const [categoria, setCategoria] = useState(CATEGORIAS[0]);
-    const [formato, setFormato] = useState(FORMATOS[0].valor);
     const [salvando, setSalvando] = useState(false);
     const [erro, setErro] = useState<unknown>(null);
 
@@ -78,7 +72,6 @@ export const CompeticaoDialog = ({
         setDescricao(competicao?.descricao ?? "");
         setModalidade(competicao?.modalidadeId ? String(competicao.modalidadeId) : "");
         setCategoria(competicao?.categoria || CATEGORIAS[0]);
-        setFormato(competicao?.isMataMata ? "mata-mata" : "pontos");
         setErro(null);
     };
 
@@ -102,7 +95,9 @@ export const CompeticaoDialog = ({
                 categoria,
                 idAdministracao: administracao,
                 modalidadesIds: modalidade ? [Number(modalidade)] : [],
-                isMataMata: formato === "mata-mata",
+                // O formato mora nas fases, montadas na Estrutura. O campo
+                // antigo segue no contrato e só é preservado.
+                isMataMata: competicao?.isMataMata ?? false,
             };
             const salva = editando
                 ? await atualizarCompeticao(competicao.id, entrada)
@@ -195,21 +190,6 @@ export const CompeticaoDialog = ({
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <Label>Formato</Label>
-                        <ToggleGroup
-                            value={[formato]}
-                            onValueChange={(valor) => valor.length > 0 && setFormato(valor[0])}
-                            variant="outline"
-                            className="w-full"
-                        >
-                            {FORMATOS.map((f) => (
-                                <ToggleGroupItem key={f.valor} value={f.valor} className="flex-1">
-                                    {f.rotulo}
-                                </ToggleGroupItem>
-                            ))}
-                        </ToggleGroup>
-                    </div>
 
                     {erro instanceof Error &&
                         (!(erro instanceof ApiError) || erro.detalhes.length === 0) && (

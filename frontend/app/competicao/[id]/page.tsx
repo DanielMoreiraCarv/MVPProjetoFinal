@@ -13,10 +13,9 @@ import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/component
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
 import { Secao } from "@/src/components/layout/Secao";
 import { CompeticaoDialog } from "@/src/features/administracoes/CompeticaoDialog";
-import { calcularClassificacao } from "@/src/features/campeonatos/calculos";
 import { InscreverEquipeDialog } from "@/src/features/campeonatos/InscreverEquipeDialog";
 import { ListaDeInscritas } from "@/src/features/campeonatos/ListaDeInscritas";
-import { TabelasPorGrupo } from "@/src/features/campeonatos/TabelasPorGrupo";
+import { ClassificacaoPorFase } from "@/src/features/fases/ClassificacaoPorFase";
 import { ListaDePartidas } from "@/src/features/partidas/ListaDePartidas";
 import {
     buscarCompeticao,
@@ -24,13 +23,6 @@ import {
     removerCompeticao,
     removerEquipeDaCompeticao,
 } from "@/src/lib/api/competicoes";
-import {
-    Fase,
-    LinhaDaTabela,
-    listarFasesDaCompeticao,
-    listarTabelaDaFase,
-    temTabelaDePontos,
-} from "@/src/lib/api/fases";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { useAvisos } from "@/src/lib/avisos";
 import { useEscopo } from "@/src/lib/escopo";
@@ -60,22 +52,13 @@ const CompeticaoDetalhePage = () => {
     const [partidas, setPartidas] = useState<Partida[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState<unknown>(null);
-    // A fase de pontos que a visão geral mostra: a primeira da estrutura.
-    const [faseDePontos, setFaseDePontos] = useState<Fase | null>(null);
-    const [tabelaDaFase, setTabelaDaFase] = useState<LinhaDaTabela[]>([]);
 
     const carregar = () => {
         if (!Number.isFinite(id)) return;
         setCarregando(true);
         setErro(null);
-        Promise.all([buscarCompeticao(id), listarPartidasDaCompeticao(id), listarFasesDaCompeticao(id)])
-            .then(async ([encontrada, suasPartidas, fases]) => {
-                const primeiraDePontos =
-                    [...fases]
-                        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.id - b.id)
-                        .find((fase) => temTabelaDePontos(fase.formato)) ?? null;
-                setTabelaDaFase(primeiraDePontos ? await listarTabelaDaFase(primeiraDePontos.id) : []);
-                setFaseDePontos(primeiraDePontos);
+        Promise.all([buscarCompeticao(id), listarPartidasDaCompeticao(id)])
+            .then(([encontrada, suasPartidas]) => {
                 setCompeticao(encontrada);
                 setEquipes(encontrada.equipes);
                 setPartidas(suasPartidas);
@@ -91,15 +74,6 @@ const CompeticaoDetalhePage = () => {
         [partidas],
     );
 
-    // Com fase de pontos, a tabela é a do servidor; sem ela — as competições
-    // anteriores às fases, cujas partidas não pertencem a fase nenhuma —, a
-    // conta local, já com todas as inscritas zeradas.
-    const pontosCorridos = faseDePontos !== null || (competicao ? !competicao.isMataMata : false);
-    const classificacao = faseDePontos
-        ? tabelaDaFase
-        : pontosCorridos
-          ? calcularClassificacao(partidas, equipes.map((equipe) => equipe.nome))
-          : [];
 
     const aoSalvar = (salva: Competicao) => {
         setCompeticao(salva);
@@ -199,41 +173,12 @@ const CompeticaoDetalhePage = () => {
                             ) : (
                                 <Tabs defaultValue="classificacao">
                                     <TabsList>
-                                        <TabsTrigger value="classificacao">
-                                            {pontosCorridos ? "Classificação" : "Chaveamento"}
-                                        </TabsTrigger>
+                                        <TabsTrigger value="classificacao">Classificação</TabsTrigger>
                                         <TabsTrigger value="calendario">Calendário</TabsTrigger>
                                     </TabsList>
 
                                     <TabsContent value="classificacao" className="pt-4">
-                                        {!pontosCorridos ? (
-                                            <Vazio
-                                                conceito="chaveamento"
-                                                titulo="Chaveamento ainda não disponível"
-                                                descricao="A chave da eliminatória ainda não é desenhada nesta versão. As partidas estão no Calendário."
-                                            />
-                                        ) : classificacao.length === 0 ? (
-                                            <Vazio
-                                                conceito="classificacao"
-                                                titulo="Nenhuma equipe na tabela"
-                                                descricao="Inscreva as equipes para a tabela começar, todas zeradas."
-                                            />
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {faseDePontos && (
-                                                    <p className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
-                                                        <span>{faseDePontos.nome}</span>
-                                                        <Link
-                                                            href={`/competicao/${id}/classificacao`}
-                                                            className="font-medium text-foreground hover:underline"
-                                                        >
-                                                            Ver por fase
-                                                        </Link>
-                                                    </p>
-                                                )}
-                                                <TabelasPorGrupo linhas={classificacao} />
-                                            </div>
-                                        )}
+                                        <ClassificacaoPorFase idCompeticao={id} />
                                     </TabsContent>
 
                                     <TabsContent value="calendario" className="pt-4">

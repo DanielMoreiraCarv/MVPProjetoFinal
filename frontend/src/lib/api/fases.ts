@@ -326,3 +326,47 @@ export const listarTabelaDaFase = async (idFase: number): Promise<LinhaDaTabela[
 /** Os formatos que se decidem por pontos e por isso têm tabela. */
 export const temTabelaDePontos = (formato?: FormatoDeFase) =>
     formato === "GRUPOS" || formato === "PONTOS_CORRIDOS";
+
+const ladoDaChaveSchema = z.object({
+    idEquipe: z.number().nullable(),
+    nomeEquipe: z.string().nullable(),
+    origem: z.string().nullable(),
+});
+
+const chaveamentoSchema = z.object({
+    participantes: z.number(),
+    pararEm: z.number(),
+    etapas: z.array(
+        z.object({
+            rodada: z.number(),
+            nome: z.string(),
+            equipes: z.number(),
+            confrontos: z.array(
+                z.object({
+                    jogo: z.number(),
+                    alimenta: z.number().nullable(),
+                    mandante: ladoDaChaveSchema,
+                    visitante: ladoDaChaveSchema,
+                    placarMandante: z.number().nullable(),
+                    placarVisitante: z.number().nullable(),
+                    decidido: z.boolean(),
+                    idVencedor: z.number().nullable(),
+                    idsDasPartidas: z.array(z.number()),
+                }),
+            ),
+        }),
+    ),
+});
+
+export type Chaveamento = z.infer<typeof chaveamentoSchema>;
+export type EtapaDaChave = Chaveamento["etapas"][number];
+export type ConfrontoDaChave = EtapaDaChave["confrontos"][number];
+export type LadoDaChave = ConfrontoDaChave["mandante"];
+
+/**
+ * A chave da eliminatória, etapa por etapa e já na ordem de desenho — cada
+ * par vizinho alimenta o mesmo confronto da etapa seguinte. As etapas que
+ * ainda não existem vêm com a origem de cada lado ("Vencedor do jogo 3").
+ */
+export const buscarChaveamento = async (idFase: number): Promise<Chaveamento> =>
+    chaveamentoSchema.parse(await apiFetch<unknown>(`/fase/${idFase}/chaveamento`));

@@ -1,5 +1,7 @@
-import { TabelaDeClassificacao } from "@/src/features/campeonatos/TabelaDeClassificacao";
-import { LinhaDaClassificacao } from "@/src/features/campeonatos/calculos";
+import {
+    LinhaDaClassificacao,
+    TabelaDeClassificacao,
+} from "@/src/features/campeonatos/TabelaDeClassificacao";
 
 type Linha = LinhaDaClassificacao & { grupo?: number };
 

@@ -2,10 +2,23 @@ import Link from "next/link";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { LinhaDaClassificacao } from "@/src/features/campeonatos/calculos";
 
 // No celular ficam pontos, jogos, vitórias e saldo; o resto aparece a partir
 // do tablet, em vez de a tabela rolar de lado sem a pessoa perceber.
+export type LinhaDaClassificacao = {
+    posicao: number;
+    equipe: string;
+    idEquipe?: number;
+    jogos: number;
+    vitorias: number;
+    empates: number;
+    derrotas: number;
+    golsPro: number;
+    golsContra: number;
+    saldo: number;
+    pontos: number;
+};
+
 const COLUNAS: { chave: keyof LinhaDaClassificacao; sigla: string; nome: string; soNaMesa?: boolean }[] = [
     { chave: "jogos", sigla: "J", nome: "Jogos" },
     { chave: "vitorias", sigla: "V", nome: "Vitórias" },
