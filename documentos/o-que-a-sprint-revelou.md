@@ -120,16 +120,18 @@ real no mesmo dia em que foram escritas:
 
 ## O que continua pendente, e por quê
 
-**A entidade `Evento`.** É o requisito central do trabalho e não existe. A
-súmula guarda ocorrência como texto livre, então não há como derivar artilharia
-(RF114), contagem de cartão (RF105) nem suspensão automática (RF106). A tela de
-sanções lança a punição à mão e diz na própria tela por quê.
+**O que se deriva dos eventos.** A súmula passou a registrar evento por atleta
+(ver "Súmula completa e simplificada", abaixo), mas a artilharia (RF114), a
+contagem de cartão ao longo da competição (RF105) e a suspensão automática
+(RF106) ainda não leem esses eventos. A tela de sanções continua lançando a
+punição à mão.
 
-**A classificação vem do servidor só como ordem.** `GET /fase/{id}/classificacao`
-devolve posição, id e nome da equipe — sem pontos, jogos, vitórias ou saldo. Por
-isso `src/features/campeonatos/calculos.ts` continua calculando no cliente, o
-que viola o RNF23. Está num arquivo só, com os limites escritos no topo, para a
-remoção ser um `git rm` quando a rota devolver os números.
+**A conta local que sobrou.** As fases de pontos têm tabela no servidor
+(`GET /fase/{id}/tabela`, abaixo). `src/features/campeonatos/calculos.ts`
+continua só para as competições anteriores às fases, cujas partidas não
+pertencem a fase nenhuma e por isso não têm de onde o servidor tirar a tabela.
+Quando essas competições forem migradas para fases, o arquivo sai com um
+`git rm`.
 
 **O chaveamento.** A API informa o formato da fase por partida, não o estágio da
 eliminatória. Não há como montar a chave no cliente, e a aba diz isso em vez de
@@ -225,6 +227,49 @@ teste escrito antes da correção:
 | `definirAtributo` | gravar vazio contava como informado, então trocar o número de grupos pelo tamanho deles caía sempre em "não os dois" |
 | eliminatória como primeira fase | era sempre recusada: as inscritas entram empatadas e o orquestrador conferia o empate sem consultar a configuração, então "Aceitar empates na entrada" não tinha efeito. Os testes semeavam à mão e contornavam o orquestrador, por isso não viam |
 | validação da fase seguinte | antes de a anterior ter classificação, dizia "precisa de ao menos 2 equipes, recebeu 0"; agora diz de qual fase as equipes vêm e o que fazer |
+
+## Súmula completa e simplificada
+
+A súmula guardava ocorrência como texto livre ("9' - Gol de João"). Agora tem
+dois modos, trocáveis enquanto não for assinada:
+
+- **Completa**, a padrão: o elenco das duas equipes lado a lado, com uma coluna
+  por acontecimento — gol, gol contra, amarelo, vermelho indireto, vermelho
+  direto, falta cometida e falta sofrida. Um toque na célula lança; no modo
+  de correção, o toque tira o último. Sem minuto de jogo: num campeonato
+  amador o que se anota é o acontecimento, e cada evento guarda a hora em que
+  entrou na súmula.
+- **Simplificada**: só o placar.
+
+Nos dois modos o placar aceita o número direto, para o gol de que ninguém
+sabe o autor; na completa, o gol lançado no atleta soma sozinho. O placar
+nunca fica abaixo dos gols com autor. O segundo amarelo gera o vermelho
+indireto (RF77), e tirar o amarelo tira o vermelho que ele gerou.
+
+A folha sai em PDF no formato de papel — A4 deitado, os dois elencos, o
+placar, observações e as linhas de assinatura —, sempre no tema claro. Sem
+súmula, sai em branco, para anotar à mão (RF145).
+
+Dois defeitos apareceram no caminho:
+
+| Onde | O que acontecia |
+|---|---|
+| Assinar a súmula | não mudava nada na partida: os dois placares eram independentes, e a classificação não via o resultado da súmula. Agora assinar encerra a partida com o placar dela, e enquanto a súmula está aberta o placar da partida a acompanha |
+| `DELETE /sumula/{id}` | respondia 204 e não apagava: a partida segura a súmula com cascata, e no flush a cascata a persistia de novo. O teste de tela da revisão anterior também não pegou, porque conferia a tela, e não o servidor |
+
+## Tabela de pontos desde o início
+
+A classificação de fase devolvia só a ordem — posição e equipe, sem pontos —,
+e vazia até os confrontos serem gerados. As fases que se decidem por pontos,
+grupos e pontos corridos, ganharam `GET /fase/{id}/tabela`: pontos, jogos,
+vitórias, empates, derrotas, gols e saldo calculados no servidor (RNF23),
+separados por grupo, e com quem entra na fase listado e zerado antes do
+primeiro jogo. Na fase de grupos, enquanto os confrontos não são gerados, a
+tabela é única e diz que os grupos saem na geração. A visão geral da
+competição usa a tabela da primeira fase de pontos.
+
+A rota `/classificacao`, que é o contrato de entrada entre as fases, ficou
+como estava.
 
 **Ainda pendente:** a regra de sanção guarda o esporte, não a infração. Para
 "cartão vermelho = 1 jogo" o modelo precisa de um campo de infração, e a
