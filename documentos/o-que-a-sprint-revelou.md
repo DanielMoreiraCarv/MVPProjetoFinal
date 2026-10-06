@@ -322,6 +322,26 @@ isso. Quantas equipes entram e saem de
 cada fase vem do servidor (`quantosEntram`, `quantosAvancam`), e a tela não
 refaz a conta.
 
+## Um botão só para gerar as partidas
+
+Cada fase tinha o seu "Gerar confrontos", e a validação de uma fase seguinte
+só acontecia depois de a anterior terminar — antes disso ela não tinha
+entrada. Daí uma fase de grupos que classificava 24 para uma eliminatória
+gerava as partidas normalmente, e o erro só aparecia quando os grupos
+acabavam.
+
+Agora a estrutura inteira é validada antes de qualquer partida
+(`GET /competicao/{id}/estrutura`): cada fase seguinte é conferida contra a
+entrada que vai ter — tantas equipes quantas a anterior faz avançar, em ordem
+—, e uma fase que não recebe de nenhuma outra é apontada. As partidas saem por
+um botão só (`POST /competicao/{id}/partidas`), na Estrutura e na visão
+geral: se alguma fase não fechar, nada é gerado e a resposta diz qual e por
+quê; se fechar, a primeira fase é gerada e a competição é publicada. As fases
+seguintes nascem sozinhas quando a anterior termina. A classificação só
+aparece depois de gerar — antes disso, uma tabela zerada parecia uma
+competição em andamento que nem tinha sido montada. Na Estrutura, a seta entre
+as fases acompanha o rascunho antes de gravar.
+
 **Ainda pendente:** empate em eliminatória dá a vaga ao mandante, porque o
 modelo não registra pênaltis. E a regra de sanção guarda o esporte, não a
 infração. Para
