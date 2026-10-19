@@ -1,5 +1,13 @@
 package org.example.Controllers;
 
+import org.example.Mapper.AtributoFaseMapper;
+import org.example.Models.Response.ChaveamentoResponse;
+import org.example.Models.Response.LinhaDaTabelaResponse;
+import org.example.Models.Response.AtributoFaseResponse;
+import org.example.Models.Request.ValorDeAtributoRequest;
+import org.example.Models.EnumFasePartida;
+import jakarta.validation.Valid;
+import org.example.Exception.NaoEncontradoException;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
 import org.example.Mapper.PartidaMapper;
@@ -13,7 +21,7 @@ import org.example.Models.Response.FaseResponse;
 import org.example.Models.Response.PartidaResponse;
 import org.example.Models.Response.ValidacaoResponse;
 import org.example.Services.FaseService;
-import org.example.Services.TimeService;
+import org.example.Services.EquipeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +32,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/fase")
-@CrossOrigin(origins = "*")
 public class FaseController
 {
     @Autowired
     private FaseService faseService;
 
     @Autowired
-    private TimeService timeService;
+    private EquipeService timeService;
 
     @PostMapping
     public ResponseEntity<?> criarFase ( @RequestBody FaseCreateRequest request )
@@ -42,14 +49,15 @@ public class FaseController
 
     }
 
-    @PutMapping
-    public ResponseEntity<?> atualizarFase ( @RequestBody FaseUpdateRequest request )
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizarFase ( @PathVariable("id") Long id,
+            @RequestBody FaseUpdateRequest request )
     {
-        Fase fase = faseService.buscarFasePorId( request.id() );
+        Fase fase = faseService.buscarFasePorId( id );
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         FaseResponse faseAtualizada = faseService.atualizarFase( request, fase );
@@ -57,10 +65,24 @@ public class FaseController
         return ResponseEntity.ok( faseAtualizada );
     }
 
+    /**
+     * As fases, opcionalmente só as de uma competição.
+     *
+     * Sem o filtro a tela da competição recebia as fases de todas as
+     * competições e teria que peneirar no cliente — o que só funciona
+     * enquanto o número de competições é pequeno.
+     */
     @GetMapping
-    public ResponseEntity<?> buscarFases ()
+    public ResponseEntity<?> buscarFases (
+            @RequestParam(required = false) Long idCompeticao
+    )
     {
-        return ResponseEntity.ok( FaseMapper.toResponse( faseService.buscarFases() ) );
+        List<Fase> fases = idCompeticao == null
+                ? faseService.buscarFases()
+                : faseService.buscarFasePorCompeticao( idCompeticao );
+
+        return ResponseEntity.ok( fases == null ? List.of()
+                : fases.stream().map( faseService::comContagens ).toList() );
     }
 
     @GetMapping("/{id}")
@@ -70,10 +92,11 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
-        return ResponseEntity.ok( fase );
+        // Devolvia a entidade crua, diferente de todas as outras rotas.
+        return ResponseEntity.ok( faseService.comContagens( fase ) );
     }
 
     @DeleteMapping("/{id}")
@@ -82,7 +105,7 @@ public class FaseController
         Fase fase = faseService.buscarFasePorId( id );
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         if ( fase.getFaseSucessora() != null )
@@ -106,7 +129,7 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         ResultadoDaValidacao resultado = faseService.validarConfrontos( fase );
@@ -122,18 +145,15 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
-        try
-        {
-            return ResponseEntity.status( HttpStatus.CREATED )
-                                 .body( paraResposta( faseService.gerarConfrontos( fase ) ) );
-        }
-        catch ( IllegalStateException erro )
-        {
-            return ResponseEntity.badRequest().body( erro.getMessage() );
-        }
+        // Sem try: `IllegalStateException` já é tratada centralmente e sai no
+        // envelope de erro. O catch que havia aqui devolvia texto puro, fora
+        // do contrato, e o cliente recebia uma string solta onde esperava
+        // `{ erro: { codigo, mensagem } }`.
+        return ResponseEntity.status( HttpStatus.CREATED )
+                             .body( paraResposta( faseService.gerarConfrontos( fase ) ) );
     }
 
     /** Recalcula os confrontos a partir dos resultados já registrados, sem apagar o que já existe. */
@@ -145,60 +165,96 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
-        try
-        {
-            return ResponseEntity.ok( paraResposta( faseService.atualizarConfrontos( fase, opcoes ) ) );
-        }
-        catch ( IllegalStateException erro )
-        {
-            return ResponseEntity.badRequest().body( erro.getMessage() );
-        }
+        return ResponseEntity.ok( paraResposta( faseService.atualizarConfrontos( fase, opcoes ) ) );
     }
 
-    /** Os atributos que a fase aceita, com o valor configurado e o padrão de cada um. */
-    @GetMapping("/{id}/atributos")
-    public ResponseEntity<?> atributos ( @PathVariable("id") Long id )
+    /**
+     * O catálogo de configuração de um tipo de fase: quais campos ele aceita,
+     * de que tipo, obrigatórios ou não, com o valor padrão e a descrição.
+     *
+     * É o que o construtor usa para montar o formulário sozinho. Sem esta
+     * rota, cada tipo de fase precisaria dos seus campos escritos à mão na
+     * tela — e o modelo de atributos existe justamente para evitar isso.
+     */
+    @GetMapping("/atributo")
+    public ResponseEntity<List<AtributoFaseResponse>> atributosDoTipo (
+            @RequestParam EnumFasePartida tipoFase
+    )
+    {
+        return ResponseEntity.ok( faseService.atributosDoTipo( tipoFase ).stream()
+                                             .map( AtributoFaseMapper::toResponse )
+                                             .toList() );
+    }
+
+    /** O catálogo do tipo desta fase, já com o valor que ela tem em cada campo. */
+    @GetMapping("/{id}/atributo")
+    public ResponseEntity<List<AtributoFaseResponse>> atributosDaFase (
+            @PathVariable("id") Long id
+    )
     {
         Fase fase = faseService.buscarFasePorId( id );
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
-        try
-        {
-            return ResponseEntity.ok( faseService.atributosDe( fase ) );
-        }
-        catch ( IllegalArgumentException erro )
-        {
-            return ResponseEntity.badRequest().body( erro.getMessage() );
-        }
+        return ResponseEntity.ok( faseService.atributosDaFase( fase ) );
     }
 
-    /** Configura a fase: {"codigo": "valor"}. Valor null volta o atributo ao padrão. */
+    /** Grava um campo de configuração da fase. */
+    @PutMapping("/{id}/atributo/{codigo}")
+    public ResponseEntity<List<AtributoFaseResponse>> definirAtributo (
+            @PathVariable("id") Long id,
+            @PathVariable("codigo") String codigo,
+            @Valid @RequestBody ValorDeAtributoRequest request
+    )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        faseService.definirAtributo( fase, codigo, request.valor() );
+
+        return ResponseEntity.ok( faseService.atributosDaFase( fase ) );
+    }
+
+    /**
+     * Os atributos que a fase aceita, com o valor configurado e o padrão de
+     * cada um — o mesmo que `GET /{id}/atributo`, no plural da PR #34.
+     */
+    @GetMapping("/{id}/atributos")
+    public ResponseEntity<List<AtributoFaseResponse>> atributos ( @PathVariable("id") Long id )
+    {
+        return ResponseEntity.ok( faseService.atributosDaFase( exigirFase( id ) ) );
+    }
+
+    /**
+     * Configura vários atributos de uma vez: {"codigo": "valor"}. Confere
+     * todos antes de gravar qualquer um; valor nulo ou vazio volta o atributo
+     * ao padrão. Veio da PR #34, adaptado ao contrato de erro.
+     */
     @PutMapping("/{id}/atributos")
-    public ResponseEntity<?> definirAtributos ( @PathVariable("id") Long id,
+    public ResponseEntity<List<AtributoFaseResponse>> definirAtributos ( @PathVariable("id") Long id,
             @RequestBody Map<String, String> valores )
     {
-        Fase fase = faseService.buscarFasePorId( id );
+        return ResponseEntity.ok( faseService.definirAtributos( exigirFase( id ), valores ) );
+    }
 
+    private Fase exigirFase ( Long id )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
-
-        try
-        {
-            return ResponseEntity.ok( faseService.definirAtributos( fase, valores ) );
-        }
-        catch ( IllegalArgumentException erro )
-        {
-            return ResponseEntity.badRequest().body( erro.getMessage() );
-        }
+        return fase;
     }
 
     @GetMapping("/{id}/classificacao")
@@ -208,23 +264,97 @@ public class FaseController
 
         if ( fase == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Fase", id );
         }
 
         List<Classificado> classificacao = faseService.classificacaoDe( fase );
 
         List<ClassificadoResponse> resposta = classificacao.stream()
                 .map( classificado -> new ClassificadoResponse( classificado.posicao(),
-                        classificado.idTime(), nomeDoTime( classificado.idTime() ) ) )
+                        classificado.idEquipe(), nomeDoTime( classificado.idEquipe() ) ) )
                 .toList();
 
         return ResponseEntity.ok( resposta );
     }
 
-    private String nomeDoTime ( Long idTime )
+    /**
+     * A tabela de pontos das fases que se decidem por pontos — grupos e
+     * pontos corridos —, com quem entra na fase já listado e zerado antes do
+     * primeiro jogo.
+     */
+    @GetMapping("/{id}/tabela")
+    public ResponseEntity<List<LinhaDaTabelaResponse>> tabela ( @PathVariable("id") Long id )
     {
-        var time = timeService.buscarPorId( idTime );
-        return time == null ? null : time.getNome();
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        return ResponseEntity.ok( faseService.tabelaDe( fase ).stream()
+                .map( linha -> {
+                    var d = linha.desempenho();
+                    return new LinhaDaTabelaResponse( linha.grupo(), linha.posicao(), d.getIdTime(),
+                            nomeDoTime( d.getIdTime() ), d.getPontos(), d.getJogos(), d.getVitorias(),
+                            d.getEmpates(), d.getDerrotas(), d.getGolsPro(), d.getGolsContra(),
+                            d.getSaldoDeGols() );
+                } )
+                .toList() );
+    }
+
+    /** A chave da eliminatória, inclusive as etapas que ainda não foram geradas. */
+    @GetMapping("/{id}/chaveamento")
+    public ResponseEntity<ChaveamentoResponse> chaveamento ( @PathVariable("id") Long id )
+    {
+        Fase fase = faseService.buscarFasePorId( id );
+
+        if ( fase == null )
+        {
+            throw NaoEncontradoException.de( "Fase", id );
+        }
+
+        var chave = faseService.chaveamentoDe( fase );
+        return ResponseEntity.ok( new ChaveamentoResponse( chave.participantes(), chave.pararEm(),
+                chave.etapas().stream()
+                     .map( etapa -> new ChaveamentoResponse.Etapa( etapa.rodada(), etapa.nome(), etapa.equipes(),
+                             etapa.confrontos().stream().map( this::paraConfronto ).toList() ) )
+                     .toList() ) );
+    }
+
+    private ChaveamentoResponse.Confronto paraConfronto ( org.example.Fases.ConfrontoDaChave confronto )
+    {
+        Integer golsMandante = null;
+        Integer golsVisitante = null;
+        for ( Partida partida : confronto.partidas() )
+        {
+            if ( !partida.isRealizada() )
+            {
+                continue;
+            }
+            boolean mesmoMando = java.util.Objects.equals( partida.getIdEquipeMandante(), confronto.idMandante() );
+            golsMandante = ( golsMandante == null ? 0 : golsMandante )
+                    + ( mesmoMando ? partida.getPlacarMandante() : partida.getPlacarVisitante() );
+            golsVisitante = ( golsVisitante == null ? 0 : golsVisitante )
+                    + ( mesmoMando ? partida.getPlacarVisitante() : partida.getPlacarMandante() );
+        }
+
+        return new ChaveamentoResponse.Confronto( confronto.jogo(), confronto.alimenta(),
+                lado( confronto.idMandante(), confronto.origemMandante() ),
+                lado( confronto.idVisitante(), confronto.origemVisitante() ),
+                golsMandante, golsVisitante, confronto.idVencedor() != null, confronto.idVencedor(),
+                confronto.partidas().stream().map( Partida::getId ).toList() );
+    }
+
+    private ChaveamentoResponse.Lado lado ( Long idEquipe, String origem )
+    {
+        return new ChaveamentoResponse.Lado( idEquipe, idEquipe == null ? null : nomeDoTime( idEquipe ), origem );
+    }
+
+    private String nomeDoTime ( Long idEquipe )
+    {
+        var equipe = timeService.buscarPorId( idEquipe );
+        return equipe == null ? null : equipe.getNome();
     }
 
     private List<PartidaResponse> paraResposta ( List<Partida> confrontos )

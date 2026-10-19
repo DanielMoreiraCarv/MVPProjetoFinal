@@ -25,11 +25,11 @@ public class ValorAtributoFase
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "ID_FASE", nullable = false)
+    @JoinColumn(name = "FASE_ID", nullable = false)
     private Fase fase;
 
     @ManyToOne
-    @JoinColumn(name = "ID_ATRIBUTO", nullable = false)
+    @JoinColumn(name = "ATRIBUTO_ID", nullable = false)
     private AtributoFase atributo;
 
     @Column(name = "VALOR", length = 200)

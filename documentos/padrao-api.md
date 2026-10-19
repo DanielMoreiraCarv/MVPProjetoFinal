@@ -135,3 +135,133 @@ Com base nas decisões tomadas, os primeiros endpoints a serem implementados ou 
 | **POST** | `/api/v1/time` | Cadastro de nova equipe (antigo time) | `{ "id": 3, "nomeEquipe": "..." }` |
 | **POST** | `/api/v1/atleta` | Cadastro de novo atleta (antigo jogador) | `{ "id": 45, "nomeAtleta": "..." }` |
 | **GET** | `/api/v1/arbitro` | Lista árbitros disponíveis | `[ { "id": 5, "nome": "..." } ]` |
+
+
+---
+
+## 6. O que já vale e o que ainda não
+
+**Vale:** o envelope de erro da §4, em toda falha, produzido por um
+`@RestControllerAdvice` só. Os códigos em uso são `VALIDACAO_FALHOU`,
+`NAO_ENCONTRADO`, `CONFLITO`, `REGRA_VIOLADA`, `ENTRADA_INVALIDA`,
+`ROTA_INEXISTENTE` e `ERRO_INTERNO`. Mensagem de exceção interna nunca vai
+para a resposta: o que o cliente pode corrigir vira 4xx com a causa, o resto
+vira 500 genérico com o stack no log.
+
+**Vale:** o vocabulário do glossário nas rotas e nos campos, e o recurso no
+singular.
+
+**Ainda não vale:** o envelope de sucesso da §2 (`{ "resultado": ... }`). As
+rotas devolvem o DTO cru. Mexer nisso toca todas as rotas e todos os parsers
+do front de uma vez, e nenhuma tela consome a diferença — ficou registrado
+como evolução, não como dívida urgente.
+
+**Ainda não vale:** paginação (§2.3). Nenhum `listar` pagina.
+
+
+---
+
+## 7. Rotas por recurso
+
+O que existe hoje. Toda falha responde com o envelope da §4.
+
+### Administração
+```
+GET    /api/v1/administracao            POST   /api/v1/administracao
+GET    /api/v1/administracao/{id}       PUT    /api/v1/administracao/{id}
+DELETE /api/v1/administracao/{id}
+```
+
+### Competição
+```
+GET    /api/v1/competicao[?idAdministracao=]
+POST   /api/v1/competicao
+GET    /api/v1/competicao/{id}          PUT    /api/v1/competicao/{id}
+DELETE /api/v1/competicao/{id}
+PUT    /api/v1/competicao/{id}/estado   -> { "estado": "EM_ANDAMENTO" }
+POST   /api/v1/competicao/{id}/equipe/{idEquipe}     inscreve
+DELETE /api/v1/competicao/{id}/equipe/{idEquipe}     remove a inscrição
+```
+
+Estados: `RASCUNHO -> EM_ANDAMENTO -> ENCERRADA`, e `CANCELADA` alcançável das
+duas primeiras. Nenhuma transição é reversível. Publicar exige duas equipes
+inscritas. Encerrada e cancelada não aceitam mudança de inscrição.
+
+### Equipe e atleta
+```
+GET    /api/v1/equipe[?idModalidade=]   POST   /api/v1/equipe
+GET    /api/v1/equipe/{id}              PUT    /api/v1/equipe/{id}
+DELETE /api/v1/equipe/{id}
+GET    /api/v1/equipe/{id}/atleta                    o elenco
+POST   /api/v1/equipe/{id}/atleta/{idAtleta}         traz para a equipe
+DELETE /api/v1/equipe/{id}/atleta/{idAtleta}         tira da equipe, sem apagar
+
+GET    /api/v1/atleta[?idEquipe=]       POST   /api/v1/atleta
+GET    /api/v1/atleta/{id}              PUT    /api/v1/atleta/{id}
+DELETE /api/v1/atleta/{id}
+```
+
+O elenco é derivado de `atleta.equipe_id`. Havia uma segunda fonte — a
+associativa `equipe_atleta` — e as duas podiam discordar; a V8 derrubou a
+associativa.
+
+### Partida e súmula
+```
+GET    /api/v1/partida                  POST   /api/v1/partida
+GET    /api/v1/partida/{id}             PUT    /api/v1/partida/{id}
+DELETE /api/v1/partida/{id}
+GET    /api/v1/partida/competicao/{id}  GET    /api/v1/partida/equipe/{id}
+GET    /api/v1/partida/acompanhamento[?realizada=]
+PUT    /api/v1/partida/{id}/agendamento -> { "dataHora": ISO-8601, "local": "…" }
+PUT    /api/v1/partida/{id}/placar?placarMandante=&placarVisitante=
+PUT    /api/v1/partida/{id}/escalar-arbitro?idArbitro=
+POST   /api/v1/partida/{id}/finalizar
+
+GET    /api/v1/sumula[?assinada=]       POST   /api/v1/sumula
+GET    /api/v1/sumula/{id}              PUT    /api/v1/sumula/{id}
+DELETE /api/v1/sumula/{id}
+GET    /api/v1/sumula/partida/{idPartida}
+GET    /api/v1/sumula/arbitro/{idArbitro}
+POST   /api/v1/sumula/{id}/ocorrencia   POST   /api/v1/sumula/{id}/finalizar
+```
+
+Regras: equipe tem que estar inscrita na competição para jogar; mandante e
+visitante têm que ser diferentes; partida encerrada não aceita troca de placar
+nem de árbitro; súmula assinada é imutável.
+
+`PartidaResponse` traz a equipe como `{id, nome}`, e não o elenco inteiro:
+antes treze partidas devolviam 50 KB.
+
+### Fase
+```
+GET    /api/v1/fase[?idCompeticao=]     POST   /api/v1/fase
+GET    /api/v1/fase/{id}                PUT    /api/v1/fase/{id}
+DELETE /api/v1/fase/{id}
+GET    /api/v1/fase/{id}/validacao      diz se dá para montar, e o que falta
+POST   /api/v1/fase/{id}/confrontos     gera
+PUT    /api/v1/fase/{id}/confrontos     recalcula, com opções
+GET    /api/v1/fase/{id}/classificacao
+GET    /api/v1/fase/atributo?tipoFase=  o catálogo de configuração do tipo
+GET    /api/v1/fase/{id}/atributo       o catálogo com os valores da instância
+PUT    /api/v1/fase/{id}/atributo/{codigo} -> { "valor": "…" }
+```
+
+Formatos: `PONTOS_CORRIDOS`, `GRUPOS`, `ELIMINATORIA` — os três com estratégia
+registrada. As duas rotas de atributo são o que permite um formulário de
+configuração se montar a partir do que a estratégia declara.
+
+### Apoio
+```
+GET    /api/v1/modalidade   GET /api/v1/modalidade/{id}      (só leitura)
+GET    /api/v1/federacao    POST /api/v1/federacao
+PUT    /api/v1/federacao/{id}   DELETE /api/v1/federacao/{id}
+GET    /api/v1/arbitro      POST /api/v1/arbitro
+PUT    /api/v1/arbitro/{id}     DELETE /api/v1/arbitro/{id}
+GET    /api/v1/sancao       POST /api/v1/sancao
+PUT    /api/v1/sancao/{id}      DELETE /api/v1/sancao/{id}
+GET    /api/v1/sancao_atleta    POST /api/v1/sancao_atleta
+PUT    /api/v1/sancao_atleta/{id}
+PUT    /api/v1/sancao_atleta/{id}/inativar
+DELETE /api/v1/sancao_atleta/{id}
+GET    /api/v1/tabela/competicao/{id}
+```

@@ -126,9 +126,36 @@ Os dois manifestos publicam a porta 5433, então rode **um de cada vez**.
 | Alteração em | O que roda | Tempo |
 |---|---|---|
 | `backend/` | `mvn test` (compila e roda os testes) | ~2 s |
-| `frontend/` | `yarn build` (inclui a checagem de tipos) | ~9 s |
+| `frontend/` | `yarn cores` e `yarn build` (o build inclui a checagem de tipos) | ~9 s |
 | ambos | os dois | ~11 s |
 | só `documentos/`, `deploy/` | nada | instantâneo |
+
+### As três verificações do front
+
+| Comando | O que garante |
+|---|---|
+| `yarn build` | compila e os tipos batem |
+| `yarn cores` | nenhuma cor fora dos tokens |
+| `yarn contrato` | a API no ar responde a forma que as telas esperam |
+
+`yarn contrato` é o que `yarn build` não cobre: build verde prova que o código
+compila, não que a resposta do servidor tem a forma que a tela lê. Cada caso
+pede uma rota de verdade e valida o corpo com o mesmo Zod das telas. Foi ele
+que pegou o dia em que o placar parou de ser extraído e a tabela de
+classificação passou a calcular tudo zero — com o build passando.
+
+Ele confere também duas coisas derivadas: que o placar vem em toda partida, e
+que as duas leituras do elenco concordam entre si.
+
+Precisa do ambiente no ar, então não está no pre-commit — rode antes de abrir
+PR que mexa em contrato.
+
+`yarn cores` recusa cor fixa em `app/` e `src/` — `bg-red-500`, `text-black`,
+`text-[#1a1a1a]`. Toda cor tem que sair de um token de `app/globals.css`, senão
+o tema escuro fica com texto preto sobre fundo preto. Não é regra de ESLint
+porque classe do Tailwind é string e nenhuma regra padrão olha dentro dela; um
+grep custa zero e o erro custa uma tela ilegível. Há uma amostra de todos os
+tokens em `/tokens`.
 
 O front não tem script de `typecheck` isolado; a checagem acontece dentro do
 `next build`, que é por isso o comando escolhido.
@@ -176,16 +203,28 @@ podman play kube deploy/postgres-local.yaml
 ./deploy/carregar-dados-de-teste.sh
 ```
 
-Aplica as migrações e carrega 2 administrações, 6 competições, 96 times,
-1440 atletas e 78 partidas — os mesmos registros, com os mesmos nomes, que
-estavam em `frontend/src/features/administracoes/mocks/`.
+Aplica as migrações e carrega 3 administrações, 7 competições, 128 equipes,
+1952 atletas e 78 partidas. Seis das competições são os mesmos registros, com
+os mesmos nomes, que alimentavam as telas quando elas eram mockadas.
+
+A sétima, **Copa Laboratório - 32 equipes** (administração "Laboratório de
+fases"), não vem dos mocks: são 32 equipes de futebol de campo com 16 atletas
+cada, inscritas, em rascunho, **sem fase nem partida**. Serve para montar
+sequências de fases do zero e conferir os confrontos da primeira rodada — as
+competições dos mocks já têm partidas que não pertencem a fase nenhuma, o
+estado que o sistema antigo produzia.
 
 O script **apaga os dados existentes** antes de carregar. É idempotente: rode
 quantas vezes quiser para voltar ao estado conhecido.
 
-Os arquivos em `frontend/src/features/administracoes/mocks/` **não alimentam
-mais as telas** — elas leem da API. Eles continuam no repositório por serem a
-fonte do gerador descrito abaixo.
+Os arquivos de mock **não alimentam mais as telas** — elas leem da API.
+Continuam no repositório por serem a fonte do gerador descrito abaixo, e por
+isso moraram em `frontend/src/features/administracoes/mocks/` até o renome do
+vocabulário: como são escritos em inglês (`Team`, `players`, `homeTeam`, que é
+o que as expressões do gerador procuram), mantê-los dentro do front exigiria
+uma segunda cópia dos tipos em inglês lá. Foram para
+`backend/tools/dados-de-origem/`, ao lado de quem os lê, com as formas
+declaradas no próprio diretório.
 
 ### De onde o SQL vem
 
@@ -196,8 +235,8 @@ escrito à mão:
 python3 backend/tools/gerar_dados_de_teste.py
 ```
 
-O gerador lê os arquivos de mock e emite o SQL. Se os mocks mudarem, regere em
-vez de editar o `.sql`.
+O gerador lê `backend/tools/dados-de-origem/` e emite o SQL. Se a origem
+mudar, regere em vez de editar o `.sql`.
 
 ### Por que não é uma migração
 

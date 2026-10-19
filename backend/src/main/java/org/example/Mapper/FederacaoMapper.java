@@ -1,7 +1,5 @@
 package org.example.Mapper;
 
-import org.example.Exception.FederacaoCreateException;
-import org.example.Exception.FederacaoUpdateException;
 import org.example.Models.Federacao;
 import org.example.Models.Request.FederacaoCreateRequest;
 import org.example.Models.Request.FederacaoUpdateRequest;
@@ -17,7 +15,6 @@ public class FederacaoMapper
     }
 
     public static Federacao toEntity ( FederacaoCreateRequest federacaoRequest )
-            throws FederacaoCreateException
     {
         Federacao federacao = new Federacao();
         federacao.setNomeFederacao( federacaoRequest.nome() );
@@ -26,7 +23,6 @@ public class FederacaoMapper
     }
 
     public static Federacao toEntity ( FederacaoUpdateRequest updateRequest, Federacao federacao )
-            throws FederacaoUpdateException
     {
         federacao.setNomeFederacao( updateRequest.nome() );
 

@@ -16,24 +16,38 @@ public class ArbitroMapper
     {
     }
 
-    public static Arbitro toEntity ( ArbitroCreateRequest arbitroRequest, Federacao federacao )
+    public static Arbitro toEntity ( ArbitroCreateRequest arbitroRequest )
             throws ArbitroCreateException
     {
         Arbitro arbitro = new Arbitro();
         arbitro.setNome( arbitroRequest.nome() );
         arbitro.setCategoria( arbitroRequest.categoria() );
-        arbitro.setFederacao( federacao.getNomeFederacao() );
+        // Lia do próprio objeto recém-criado, então nascia sempre nulo: a
+        // federação escolhida era descartada em silêncio.
+        arbitro.setFederacao( arbitroRequest.federacao() );
 
         return arbitro;
     }
 
+    /** Campo ausente é campo que não muda. */
     public static Arbitro toEntity ( ArbitroUpdateResquest updateResquest, Arbitro arbitro )
-            throws ArbitroUpdateRequest
     {
-        arbitro.setNome( updateResquest.nome() );
-        arbitro.setCategoria( updateResquest.categoria() );
-        arbitro.setFederacao( updateResquest.federacao() );
-        arbitro.setPartidasApitadas( updateResquest.partidasApitadas() );
+        if ( updateResquest.nome() != null && !updateResquest.nome().isBlank() )
+        {
+            arbitro.setNome( updateResquest.nome() );
+        }
+        if ( updateResquest.categoria() != null )
+        {
+            arbitro.setCategoria( updateResquest.categoria() );
+        }
+        if ( updateResquest.federacao() != null )
+        {
+            arbitro.setFederacao( updateResquest.federacao() );
+        }
+        if ( updateResquest.partidasApitadas() != null )
+        {
+            arbitro.setPartidasApitadas( updateResquest.partidasApitadas() );
+        }
 
         return arbitro;
     }
@@ -46,14 +60,18 @@ public class ArbitroMapper
         }
 
         return new ArbitroResponse( arbitro.getId(), arbitro.getNome(),
-                arbitro.getFederacao(), arbitro.getPartidasApitadas() );
+                arbitro.getFederacao(), arbitro.getCategoria(),
+                arbitro.getPartidasApitadas() );
     }
 
     public static List<ArbitroResponse> toResponse ( List<Arbitro> arbitros )
     {
-        if ( arbitros == null || arbitros.isEmpty() )
+        // Lista vazia devolve lista vazia, não null: `null` sai como corpo
+        // vazio no 200, e aí o cliente estoura ao interpretar o JSON em vez de
+        // receber `[]`. Coleção que existe sem elementos é `[]`.
+        if ( arbitros == null )
         {
-            return null;
+            return List.of();
         }
 
         return arbitros.stream().map( ArbitroMapper::toResponse ).toList();

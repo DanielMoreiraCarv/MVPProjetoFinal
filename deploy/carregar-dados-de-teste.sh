@@ -44,7 +44,7 @@ podman exec -i "$CONTAINER" psql -U tcc -d tcc -v ON_ERROR_STOP=1 -q < "$SQL"
 
 podman exec "$CONTAINER" psql -U tcc -d tcc -tAc "
 select 'administrações: ' || (select count(*) from administracao)
-    || ' | competições: ' || (select count(*) from campeonato)
-    || ' | times: '       || (select count(*) from time)
-    || ' | atletas: '     || (select count(*) from jogadores)
+    || ' | competições: ' || (select count(*) from competicao)
+    || ' | equipes: '     || (select count(*) from equipe)
+    || ' | atletas: '     || (select count(*) from atleta)
     || ' | partidas: '    || (select count(*) from partida);"

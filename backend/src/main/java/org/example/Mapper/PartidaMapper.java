@@ -1,35 +1,17 @@
 package org.example.Mapper;
 
-import org.example.Exception.PartidaCreateException;
-import org.example.Exception.PartidaUpdateException;
-import org.example.Models.Arbitro;
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
+import org.example.Models.Equipe;
 import org.example.Models.Partida;
-import org.example.Models.Request.PartidaUpdateRequest;
+import org.example.Models.Response.EquipeResumoResponse;
 import org.example.Models.Response.PartidaResponse;
-import org.example.Models.Time;
+
+import java.util.List;
 
 public class PartidaMapper
 {
     private PartidaMapper ()
     {
-    }
-
-    public static Partida toEntity ( PartidaUpdateRequest partidaRequest )
-            throws PartidaCreateException
-    {
-        Partida partida = new Partida();
-        aplicarRequest( partidaRequest, partida );
-
-        return partida;
-    }
-
-    public static Partida toEntity ( PartidaUpdateRequest updateRequest, Partida partida )
-            throws PartidaUpdateException
-    {
-        aplicarRequest( updateRequest, partida );
-
-        return partida;
     }
 
     public static PartidaResponse toResponse ( Partida partida )
@@ -39,90 +21,61 @@ public class PartidaMapper
             return null;
         }
 
-        Campeonato campeonato = partida.getCampeonato();
-        Time mandante = partida.getTimeMandante();
-        Time visitante = partida.getTimeVisitante();
+        Competicao competicao = partida.getCompeticao();
 
-        return new PartidaResponse( partida.getId(), TimeMapper.toResponse( mandante ),
-                TimeMapper.toResponse( visitante ),
-                campeonato == null ? null : campeonato.getNome(),
-                campeonato == null ? null : campeonato.getId(),
-                resolverNomeVencedor( partida ), partida.isRealizada(), partida.getEnumFasePartida(),
+        return new PartidaResponse(
+                partida.getId(),
+                resumo( partida.getEquipeMandante() ),
+                resumo( partida.getEquipeVisitante() ),
+                competicao == null ? null : competicao.getNome(),
+                competicao == null ? null : competicao.getId(),
+                resolverNomeVencedor( partida ),
+                partida.isRealizada(),
+                partida.getEnumFasePartida(),
                 ArbitroMapper.toResponse( partida.getArbitro() ),
-                partida.getResultadoMandante() + " x " + partida.getResultadoVisitante() );
+                partida.getPlacarMandante(),
+                partida.getPlacarVisitante(),
+                partida.getDataHora(),
+                partida.getLocal() );
     }
 
-    private static void aplicarRequest ( PartidaUpdateRequest request, Partida partida )
+    public static List<PartidaResponse> toResponse ( List<Partida> partidas )
     {
-        partida.setTimeMandante( toTime( request.idMandante() ) );
-        partida.setTimeVisitante( toTime( request.idVisitante() ) );
-        partida.setCampeonato( toCampeonato( request.idCampeonato() ) );
-        if ( request.resultadoVisitante() != null )
+        if ( partidas == null )
         {
-            partida.setResultadoVisitante( request.resultadoVisitante() );
+            return List.of();
         }
-        if ( request.resultadoMandante() != null )
+        return partidas.stream().map( PartidaMapper::toResponse ).toList();
+    }
+
+    private static EquipeResumoResponse resumo ( Equipe equipe )
+    {
+        if ( equipe == null )
         {
-            partida.setResultadoMandante( request.resultadoMandante() );
+            return null;
         }
-        partida.setArbitro( toArbitro( request.idArbitro() ) );
+        return new EquipeResumoResponse( equipe.getId(), equipe.getNome() );
     }
 
     private static String resolverNomeVencedor ( Partida partida )
     {
-        if ( partida.getIdVencedor() == null )
+        if ( partida.getIdEquipeVencedora() == null )
         {
             return null;
         }
 
-        Time mandante = partida.getTimeMandante();
-        if ( mandante != null && partida.getIdVencedor().equals( mandante.getId() ) )
+        Equipe mandante = partida.getEquipeMandante();
+        if ( mandante != null && partida.getIdEquipeVencedora().equals( mandante.getId() ) )
         {
             return mandante.getNome();
         }
 
-        Time visitante = partida.getTimeVisitante();
-        if ( visitante != null && partida.getIdVencedor().equals( visitante.getId() ) )
+        Equipe visitante = partida.getEquipeVisitante();
+        if ( visitante != null && partida.getIdEquipeVencedora().equals( visitante.getId() ) )
         {
             return visitante.getNome();
         }
 
         return null;
-    }
-
-    private static Time toTime ( Long id )
-    {
-        if ( id == null )
-        {
-            return null;
-        }
-
-        Time time = new Time();
-        time.setId( id );
-        return time;
-    }
-
-    private static Campeonato toCampeonato ( Long id )
-    {
-        if ( id == null )
-        {
-            return null;
-        }
-
-        Campeonato campeonato = new Campeonato();
-        campeonato.setId( id );
-        return campeonato;
-    }
-
-    private static Arbitro toArbitro ( Long id )
-    {
-        if ( id == null )
-        {
-            return null;
-        }
-
-        Arbitro arbitro = new Arbitro();
-        arbitro.setId( id );
-        return arbitro;
     }
 }

@@ -22,7 +22,7 @@ public class ModalidadeMapper
         }
 
         return new ModalidadeResponse( modalidade.getId(), modalidade.getCodigo(),
-                modalidade.getNome(), modalidade.getJogadoresEmQuadra() );
+                modalidade.getNome(), modalidade.getAtletasEmQuadra() );
     }
 
     public static List<ModalidadeResponse> toResponse ( List<Modalidade> modalidades )

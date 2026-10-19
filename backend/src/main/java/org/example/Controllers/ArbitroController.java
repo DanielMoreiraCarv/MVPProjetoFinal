@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Exception.ArbitroUpdateRequest;
 import org.example.Mapper.ArbitroMapper;
 import org.example.Models.Arbitro;
@@ -17,7 +18,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/arbitro")
-@CrossOrigin(origins = "*")
 public class ArbitroController
 {
     @Autowired
@@ -29,46 +29,34 @@ public class ArbitroController
     @PostMapping
     public ResponseEntity<?> criarArbitro ( @RequestBody ArbitroCreateRequest request )
     {
-        Federacao federacao = request.federacao() == null
-                ? null
-                : federacaoService.buscarPorId( request.federacao() );
-
-        if ( federacao == null )
-        {
-            return ResponseEntity.badRequest().body( "Federação não encontrada" );
-        }
 
         Arbitro arbitro =
-                arbitroService.criarArbitro( ArbitroMapper.toEntity( request, federacao ) );
+                arbitroService.criarArbitro( ArbitroMapper.toEntity( request ) );
 
         return ResponseEntity.status( HttpStatus.CREATED )
                              .body( ArbitroMapper.toResponse( arbitro ) );
     }
 
-    @PutMapping
-    public ResponseEntity<?> atualizarArbitro ( @RequestBody ArbitroUpdateResquest request )
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizarArbitro ( @PathVariable Long id,
+            @RequestBody ArbitroUpdateResquest request )
     {
-        Arbitro arbitro = arbitroService.buscarPorId( request.id() );
+        Arbitro arbitro = arbitroService.buscarPorId( id );
 
         if ( arbitro == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Árbitro", id );
         }
 
-        Arbitro arbitroAtualizado = arbitroService.atualizarArbitro( request.id(),
-                request );
+        Arbitro arbitroAtualizado = arbitroService.atualizarArbitro( id, request );
 
         return ResponseEntity.ok( ArbitroMapper.toResponse( arbitroAtualizado ) );
     }
 
     @GetMapping
     public ResponseEntity<?> listarArbitros (  ){
-        List<Arbitro> lstArbitros = arbitroService.listarTodos() ;
-
-        if (  lstArbitros == null )
-        {
-            return ResponseEntity.notFound().build();
-        }
+        // Lista vazia não é 404: a coleção existe, só não tem elemento.
+        List<Arbitro> lstArbitros = arbitroService.listarTodos();
 
         return ResponseEntity.ok( ArbitroMapper.toResponse( lstArbitros ) );
     }
@@ -79,7 +67,7 @@ public class ArbitroController
         Arbitro arbitro = arbitroService.buscarPorId( id );
         if ( arbitro == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Árbitro", id );
         }
 
         return ResponseEntity.ok( ArbitroMapper.toResponse( arbitro ) );
@@ -91,7 +79,7 @@ public class ArbitroController
         Arbitro arbitro = arbitroService.buscarPorId( id );
 
         if ( arbitro == null ){
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Árbitro", id );
         }
 
         arbitroService.deletarArbitro( id );

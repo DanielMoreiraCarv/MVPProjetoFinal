@@ -1,12 +1,12 @@
 package org.example.Services;
 
 import org.example.Mapper.SancaoMapper;
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.EnumTipoEsporte;
 import org.example.Models.Request.SancaoRequest;
 import org.example.Models.Response.SancaoResponse;
 import org.example.Models.Sancao;
-import org.example.Repositories.CampeonatoRepository;
+import org.example.Repositories.CompeticaoRepository;
 import org.example.Repositories.SancaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,24 +20,24 @@ public class SancaoService
     private SancaoRepository sancaoRepository;
 
     @Autowired
-    private CampeonatoService campeonatoService;
+    private CompeticaoService competicaoService;
 
     public SancaoResponse criarSancao ( SancaoRequest request )
     {
-        Campeonato campeonato = campeonatoService.buscarPorId( request.idCampeonato() );
+        Competicao competicao = competicaoService.buscarPorId( request.idCompeticao() );
 
-        if ( campeonato == null )
+        if ( competicao == null )
         {
-            throw new IllegalArgumentException( "Campeonato não encontrado" );
+            throw new IllegalArgumentException( "Competicao não encontrado" );
         }
 
         if ( hasSansaoJaCadastrada( request ) )
         {
-            throw new IllegalArgumentException( "Sanção para esse esporte no campeonato já foi " +
+            throw new IllegalArgumentException( "Sanção para esse esporte na competição já foi " +
                                                 "definido" );
         }
 
-        Sancao sancao = sancaoRepository.save( SancaoMapper.toEntity( request, campeonato ) );
+        Sancao sancao = sancaoRepository.save( SancaoMapper.toEntity( request, competicao ) );
 
         return SancaoMapper.toResponse( sancao );
     }
@@ -50,14 +50,14 @@ public class SancaoService
             throw new IllegalArgumentException("Sanção não encontrada");
         }
 
-        Campeonato campeonato = campeonatoService.buscarPorId( request.idCampeonato() );
+        Competicao competicao = competicaoService.buscarPorId( request.idCompeticao() );
 
-        if(campeonato == null){
-            throw new IllegalArgumentException("Campeonato não encontrado");
+        if(competicao == null){
+            throw new IllegalArgumentException("Competicao não encontrado");
         }
 
-        sancao.setCampeonato(  campeonato ) ;
-        sancao.setEnumTipoEsporte( EnumTipoEsporte.valueOf( request.tipoEsporte() ) );
+        sancao.setCompeticao(  competicao ) ;
+        sancao.setEnumTipoEsporte( EnumTipoEsporte.deCodigo( request.tipoEsporte() ) );
         sancao.setQuantidadePartidasPadrao( request.qtdPartidas() );
 
         return SancaoMapper.toResponse( sancaoRepository.save( sancao ) );
@@ -93,7 +93,7 @@ public class SancaoService
 
     public Boolean hasSansaoJaCadastrada ( SancaoRequest request )
     {
-        return sancaoRepository.countSancoesCompeticoesEEsporte( request.idCampeonato(),
-                EnumTipoEsporte.valueOf( request.tipoEsporte() ) ) > 0;
+        return sancaoRepository.countSancoesCompeticoesEEsporte( request.idCompeticao(),
+                EnumTipoEsporte.deCodigo( request.tipoEsporte() ) ) > 0;
     }
 }

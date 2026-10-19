@@ -1,118 +1,147 @@
 package org.example.Controllers;
 
+import jakarta.validation.Valid;
+import org.example.Exception.NaoEncontradoException;
+import org.example.Mapper.SumulaMapper;
+import org.example.Models.Request.EventoDaSumulaRequest;
+import org.example.Models.Request.SumulaCreateRequest;
+import org.example.Models.Request.SumulaFinalizacaoRequest;
+import org.example.Models.Request.SumulaUpdateRequest;
+import org.example.Models.Response.SumulaResponse;
 import org.example.Models.Sumula;
-import org.example.Services.PartidaService;
 import org.example.Services.SumulaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Toda rota daqui fala `SumulaResponse`, pelo mesmo motivo da partida: a
+ * entidade `Sumula` referencia `Partida`, que referencia a súmula de volta.
+ */
 @RestController
-@RequestMapping("/api/v1/sumulas")
-@CrossOrigin(origins = "*")
-public class SumulaController {
-
+@RequestMapping("/api/v1/sumula")
+public class SumulaController
+{
     @Autowired
     private SumulaService sumulaService;
 
-    @Autowired
-    private PartidaService partidaService;
-
     @PostMapping
-    public ResponseEntity<Sumula> criar(@RequestParam Long idPartida, @RequestBody Sumula sumula) {
-        try {
-            Sumula nova = sumulaService.criarSumula(idPartida, sumula);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nova);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+    public ResponseEntity<SumulaResponse> criar(@Valid @RequestBody SumulaCreateRequest request)
+    {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(SumulaMapper.toResponse(sumulaService.criar(request)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Sumula> buscarPorId(@PathVariable Long id) {
-        Sumula sumula = sumulaService.buscarPorId(id);
-        if (sumula != null) {
-            return ResponseEntity.ok(sumula);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<SumulaResponse> buscarPorId(@PathVariable Long id)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(sumulaService.exigirPorId(id)));
     }
 
+    /** `?assinada=true|false` filtra; sem o parâmetro, traz todas. */
     @GetMapping
-    public ResponseEntity<List<Sumula>> listarTodas() {
-        List<Sumula> sumulas = sumulaService.listarTodas();
-        return ResponseEntity.ok(sumulas);
-    }
+    public ResponseEntity<List<SumulaResponse>> listar(
+            @RequestParam(required = false) Boolean assinada)
+    {
+        if (assinada == null)
+        {
+            return ResponseEntity.ok(SumulaMapper.toResponse(sumulaService.listarTodas()));
+        }
 
-    @GetMapping("/status/assinadas")
-    public ResponseEntity<List<Sumula>> listarAssinadas() {
-        List<Sumula> sumulas = sumulaService.listarAssinadas();
-        return ResponseEntity.ok(sumulas);
-    }
-
-    @GetMapping("/status/pendentes")
-    public ResponseEntity<List<Sumula>> listarPendentes() {
-        List<Sumula> sumulas = sumulaService.listarPendentes();
-        return ResponseEntity.ok(sumulas);
+        return ResponseEntity.ok(SumulaMapper.toResponse(
+                assinada ? sumulaService.listarAssinadas() : sumulaService.listarPendentes()));
     }
 
     @GetMapping("/partida/{idPartida}")
-    public ResponseEntity<Sumula> buscarPorPartida(@PathVariable Long idPartida) {
+    public ResponseEntity<SumulaResponse> buscarPorPartida(@PathVariable Long idPartida)
+    {
         Sumula sumula = sumulaService.buscarPorPartida(idPartida);
-        if (sumula != null) {
-            return ResponseEntity.ok(sumula);
+
+        if (sumula == null)
+        {
+            throw new NaoEncontradoException(
+                    "A partida " + idPartida + " ainda não tem súmula.");
         }
-        return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok(SumulaMapper.toResponse(sumula));
     }
 
     @GetMapping("/arbitro/{idArbitro}")
-    public ResponseEntity<List<Sumula>> listarPorArbitro(@PathVariable Long idArbitro) {
-        List<Sumula> sumulas = sumulaService.listarPorArbitro(idArbitro);
-        return ResponseEntity.ok(sumulas);
+    public ResponseEntity<List<SumulaResponse>> listarPorArbitro(@PathVariable Long idArbitro)
+    {
+        return ResponseEntity.ok(
+                SumulaMapper.toResponse(sumulaService.listarPorArbitro(idArbitro)));
     }
 
     @PostMapping("/{id}/finalizar")
-    public ResponseEntity<Sumula> finalizarSumula(
+    public ResponseEntity<SumulaResponse> finalizar(
             @PathVariable Long id,
-            @RequestParam int golsMandante,
-            @RequestParam int golsVisitante,
-            @RequestParam String relato) {
-        Sumula finalizada = sumulaService.finalizarSumula(id, golsMandante, golsVisitante, relato);
-        if (finalizada != null) {
-            return ResponseEntity.ok(finalizada);
-        }
-        return ResponseEntity.notFound().build();
+            @Valid @RequestBody SumulaFinalizacaoRequest request)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(sumulaService.finalizarSumula(
+                id, request.placarMandante(), request.placarVisitante(), request.observacoes())));
     }
 
+    /**
+     * Ocorrência é texto livre, e é esse o limite: sem a entidade `Evento` não
+     * dá para derivar artilharia, cartão nem suspensão daqui (RF73, RF76).
+     */
     @PostMapping("/{id}/ocorrencia")
-    public ResponseEntity<Sumula> adicionarOcorrencia(
+    public ResponseEntity<SumulaResponse> adicionarOcorrencia(
             @PathVariable Long id,
-            @RequestParam String evento) {
-        Sumula atualizada = sumulaService.adicionarOcorrencia(id, evento);
-        if (atualizada != null) {
-            return ResponseEntity.ok(atualizada);
+            @RequestBody String ocorrencia)
+    {
+        if (ocorrencia == null || ocorrencia.isBlank())
+        {
+            throw new IllegalArgumentException("A ocorrência não pode ser vazia.");
         }
-        return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok(
+                SumulaMapper.toResponse(sumulaService.adicionarOcorrencia(id, ocorrencia)));
+    }
+
+    /** O que um atleta fez: gol, gol contra, cartão, falta. */
+    @PostMapping("/{id}/evento")
+    public ResponseEntity<SumulaResponse> registrarEvento(
+            @PathVariable Long id,
+            @Valid @RequestBody EventoDaSumulaRequest request)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(
+                sumulaService.registrarEvento(id, request.idAtleta(), request.tipo())));
+    }
+
+    @DeleteMapping("/{id}/evento/{idEvento}")
+    public ResponseEntity<SumulaResponse> removerEvento(
+            @PathVariable Long id,
+            @PathVariable Long idEvento)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(sumulaService.removerEvento(id, idEvento)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Sumula> atualizar(@PathVariable Long id, @RequestBody Sumula sumulaAtualizada) {
-        Sumula atualizada = sumulaService.atualizarSumula(id, sumulaAtualizada);
-        if (atualizada != null) {
-            return ResponseEntity.ok(atualizada);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<SumulaResponse> atualizar(
+            @PathVariable Long id,
+            @RequestBody SumulaUpdateRequest request)
+    {
+        return ResponseEntity.ok(SumulaMapper.toResponse(sumulaService.atualizar(id, request)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        Sumula sumula = sumulaService.buscarPorId(id);
-        if (sumula != null) {
-            sumulaService.deletarSumula(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deletar(@PathVariable Long id)
+    {
+        sumulaService.exigirPorId(id);
+        sumulaService.deletarSumula(id);
+        return ResponseEntity.noContent().build();
     }
 }

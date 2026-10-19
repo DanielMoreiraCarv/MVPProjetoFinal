@@ -12,7 +12,7 @@ public record FaseUpdateRequest(
 
         EnumFasePartida fasePartida,
 
-        Long idCampeonato,
+        Long idCompeticao,
 
         Integer qtdClassificados,
 

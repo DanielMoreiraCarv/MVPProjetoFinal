@@ -2,16 +2,18 @@ package org.example.Models.Response;
 
 import org.example.Models.EnumFasePartida;
 
+import java.time.OffsetDateTime;
+
 public record PartidaResponse(
         Long id,
 
-        TimeResponse timeMandante,
+        EquipeResumoResponse equipeMandante,
 
-        TimeResponse timeVisitante,
+        EquipeResumoResponse equipeVisitante,
 
-        String nomeCampeonato,
+        String nomeCompeticao,
 
-        Long idCampeonato,
+        Long idCompeticao,
 
         String vencedor,
 
@@ -21,7 +23,16 @@ public record PartidaResponse(
 
         ArbitroResponse arbitro,
 
-        String resultado
+        // Números, não "2 x 1": o cliente estava partindo uma string ao meio
+        // para recuperar dois inteiros que o servidor já tinha.
+        Integer placarMandante,
+
+        Integer placarVisitante,
+
+        /** ISO-8601 com fuso. Nulo enquanto a partida não foi agendada. */
+        OffsetDateTime dataHora,
+
+        String local
 )
 {
 }

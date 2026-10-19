@@ -9,9 +9,11 @@ public record FaseCreateRequest(
 
         String fasePartida,
 
-        Long idCampeonato,
+        Long idCompeticao,
 
-        Integer qtdClassificados
+        Integer qtdClassificados,
+
+        Long idFaseSucessora
 )
 {
 }

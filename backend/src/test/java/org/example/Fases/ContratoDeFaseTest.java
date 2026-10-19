@@ -1,16 +1,16 @@
 package org.example.Fases;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Modalidade;
-import org.example.Models.Time;
+import org.example.Models.Equipe;
 import org.example.Repositories.AtributoFaseRepository;
-import org.example.Repositories.CampeonatoRepository;
+import org.example.Repositories.CompeticaoRepository;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.ModalidadeRepository;
-import org.example.Repositories.TimeRepository;
+import org.example.Repositories.EquipeRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ContratoDeFaseTest
 {
     /**
-     * Estes testes falam com o Postgres do ambiente local. Sem ele no ar eles
+     * O contrato é verificado contra a estratégia de grupos, e não contra um
+ * dublê: o dublê existia porque `PONTOS_CORRIDOS` não tinha implementação e o
+ * tipo estava livre. Com os três tipos implementados, um quarto registrado só
+ * para teste colide no registro — e um contrato verificado contra a
+ * implementação real vale mais do que contra uma inventada para passar.
+ *
+ * Estes testes falam com o Postgres do ambiente local. Sem ele no ar eles
      * falham, de propósito: teste que se ignora sozinho passa despercebido
      * justamente quando deveria acusar algo. A verificação aqui existe só para
      * a falha dizer o que fazer, em vez de estourar no meio da subida do
@@ -57,14 +63,16 @@ class ContratoDeFaseTest
 
     @Autowired private OrquestradorDeFases orquestrador;
     @Autowired private RegistroDeEstrategias registro;
-    @Autowired private EstrategiaFalsa estrategia;
+    @Autowired private EstrategiaDeGrupos estrategia;
+    @Autowired private org.example.Repositories.PartidaRepository partidaRepository;
+    @Autowired private org.example.Services.FaseService faseService;
     @Autowired private AtributoFaseRepository atributoRepository;
     @Autowired private FaseRepository faseRepository;
-    @Autowired private CampeonatoRepository campeonatoRepository;
-    @Autowired private TimeRepository timeRepository;
+    @Autowired private CompeticaoRepository competicaoRepository;
+    @Autowired private EquipeRepository timeRepository;
     @Autowired private ModalidadeRepository modalidadeRepository;
 
-    private Campeonato campeonato;
+    private Competicao competicao;
 
     @BeforeEach
     void prepararCampeonatoComQuatroTimes ()
@@ -74,19 +82,19 @@ class ContratoDeFaseTest
                                                             .save( new Modalidade( "FUTEBOL_DE_CAMPO",
                                                                     "Futebol de campo", 11 ) ) );
 
-        List<Time> times = new ArrayList<>();
+        List<Equipe> equipes = new ArrayList<>();
         for ( int i = 1; i <= 4; i++ )
         {
-            Time time = new Time();
-            time.setNome( "Time de teste " + i );
-            time.setModalidade( modalidade );
-            times.add( timeRepository.save( time ) );
+            Equipe equipe = new Equipe();
+            equipe.setNome( "Equipe de teste " + i );
+            equipe.setModalidade( modalidade );
+            equipes.add( timeRepository.save( equipe ) );
         }
 
-        campeonato = new Campeonato();
-        campeonato.setNome( "Campeonato de teste do contrato" );
-        campeonato.setLstTimes( times );
-        campeonato = campeonatoRepository.save( campeonato );
+        competicao = new Competicao();
+        competicao.setNome( "Competicao de teste do contrato" );
+        competicao.setLstEquipes( equipes );
+        competicao = competicaoRepository.save( competicao );
     }
 
     private Fase novaFase ()
@@ -94,28 +102,28 @@ class ContratoDeFaseTest
         Fase fase = new Fase();
         fase.setNome( "Fase de teste" );
         fase.setOrdem( 1 );
-        fase.setFasePartida( EnumFasePartida.PONTOS_CORRIDOS );
-        fase.setCampeonato( campeonato );
+        fase.setFasePartida( EnumFasePartida.GRUPOS );
+        fase.setCompeticao( competicao );
         return faseRepository.save( fase );
     }
 
     @Test
     void estrategiaEhResolvidaPeloTipoEstatico ()
     {
-        assertTrue( registro.conhece( EnumFasePartida.PONTOS_CORRIDOS ) );
-        assertEquals( EnumFasePartida.PONTOS_CORRIDOS,
-                registro.para( EnumFasePartida.PONTOS_CORRIDOS ).tipo() );
+        assertTrue( registro.conhece( EnumFasePartida.GRUPOS ) );
+        assertEquals( EnumFasePartida.GRUPOS,
+                registro.para( EnumFasePartida.GRUPOS ).tipo() );
     }
 
     @Test
     void atributosDeclaradosPelaEstrategiaChegamNaTabela ()
     {
         List<String> codigos = atributoRepository
-                .findByTipoFase( EnumFasePartida.PONTOS_CORRIDOS ).stream()
+                .findByTipoFase( EnumFasePartida.GRUPOS ).stream()
                 .map( a -> a.getCodigo() ).toList();
 
-        assertTrue( codigos.contains( EstrategiaFalsa.TAMANHO ) );
-        assertTrue( codigos.contains( EstrategiaFalsa.IDA_E_VOLTA ) );
+        assertTrue( codigos.contains( EstrategiaDeGrupos.TAMANHO_DO_GRUPO ) );
+        assertTrue( codigos.contains( EstrategiaDeGrupos.IDA_E_VOLTA ) );
     }
 
     @Test
@@ -127,20 +135,157 @@ class ContratoDeFaseTest
         assertTrue( entrada.stream().allMatch( c -> c.posicao() == 1 ) );
     }
 
+    /** Um grupo só, todos contra todos, mandante sempre vence. */
+    private void jogarAteOFim ( Fase fase )
+    {
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "4" );
+        orquestrador.configurar( fase );
+        for ( var partida : partidaRepository.findByFaseId( fase.getId() ) )
+        {
+            partida.setPlacarMandante( 1 );
+            partida.setPlacarVisitante( 0 );
+            partida.setRealizada( true );
+            partidaRepository.save( partida );
+        }
+    }
+
+    /** As rotas em lote da PR #34, sobre o código novo: tudo ou nada. */
+    @Test
+    void atributosEmLoteGravamTudoOuNada ()
+    {
+        Fase fase = novaFase();
+
+        faseService.definirAtributos( fase, Map.of(
+                EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2",
+                EstrategiaDeGrupos.IDA_E_VOLTA, "true" ) );
+        var configuracao = orquestrador.configuracaoDe( fase );
+        assertEquals( 2, configuracao.inteiroOu( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, 0 ) );
+        assertTrue( configuracao.booleano( EstrategiaDeGrupos.IDA_E_VOLTA ) );
+
+        IllegalArgumentException tipoErrado = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> faseService.definirAtributos( fase, Map.of(
+                        EstrategiaDeGrupos.PONTOS_VITORIA, "4",
+                        EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "dois" ) ) );
+        assertTrue( tipoErrado.getMessage().contains( "espera INTEIRO" ), tipoErrado.getMessage() );
+        assertEquals( 3, orquestrador.configuracaoDe( fase ).inteiroOu( EstrategiaDeGrupos.PONTOS_VITORIA, 0 ),
+                "um campo inválido não pode deixar o outro gravado" );
+
+        org.junit.jupiter.api.Assertions.assertThrows( IllegalArgumentException.class,
+                () -> faseService.definirAtributos( fase, Map.of( "inexistente", "1" ) ) );
+    }
+
+    @Test
+    void apagarAFaseSeguinteDesencadeiaAAnterior ()
+    {
+        Fase sucessora = novaFase();
+        Fase primeira = novaFase();
+        primeira.setFaseSucessora( sucessora );
+        faseRepository.save( primeira );
+
+        faseService.deleteFase( sucessora );
+        faseRepository.flush();
+
+        assertTrue( faseRepository.findById( sucessora.getId() ).isEmpty() );
+        assertEquals( null, faseRepository.findById( primeira.getId() ).orElseThrow().getFaseSucessora(),
+                "a anterior seguia apontando para ela, e a exclusão estourava a chave estrangeira" );
+    }
+
+    @Test
+    void criarFaseJaEncadeadaGravaASucessora ()
+    {
+        Fase sucessora = novaFase();
+
+        var criada = faseService.criarFase( new org.example.Models.Request.FaseCreateRequest(
+                "Primeira", 1, "GRUPOS", competicao.getId(), 2, sucessora.getId() ) );
+
+        assertEquals( sucessora.getId(), criada.idFaseSucessora(),
+                "o pedido de criação declarava a sucessora e o servidor a descartava" );
+    }
+
+    @Test
+    void valorEmBrancoApagaOAtributo ()
+    {
+        Fase fase = novaFase();
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "2" );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "" );
+
+        assertTrue( orquestrador.validar( fase ).ehValido(),
+                "trocar de número de grupos para tamanho do grupo ficava impossível" );
+    }
+
+    @Test
+    void sucessoraRecebeSoOsClassificadosDaAnterior ()
+    {
+        Fase sucessora = novaFase();
+        sucessora.setOrdem( 2 );
+        sucessora.setFasePartida( EnumFasePartida.ELIMINATORIA );
+        faseRepository.save( sucessora );
+
+        Fase primeira = novaFase();
+        primeira.setQuantidadeClassificados( 2 );
+        primeira.setFaseSucessora( sucessora );
+        jogarAteOFim( faseRepository.save( primeira ) );
+
+        assertEquals( 2, orquestrador.entradaDe( sucessora ).size(),
+                "a fase seguinte recebeu quem não se classificou" );
+    }
+
+    @Test
+    void sucessoraSoRecebeQuandoAAnteriorTermina ()
+    {
+        Fase sucessora = novaFase();
+        sucessora.setOrdem( 2 );
+        sucessora.setFasePartida( EnumFasePartida.ELIMINATORIA );
+        faseRepository.save( sucessora );
+
+        Fase primeira = novaFase();
+        primeira.setQuantidadeClassificados( 2 );
+        primeira.setFaseSucessora( sucessora );
+        faseRepository.save( primeira );
+        orquestrador.definirAtributo( primeira, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "4" );
+        orquestrador.configurar( primeira );
+
+        assertTrue( orquestrador.entradaDe( sucessora ).isEmpty(),
+                "a fase seguinte tomava a classificação provisória — todos zerados — como entrada" );
+
+        // A chave já tem forma: a quantidade de classificados da anterior diz o tamanho.
+        Chaveamento chave = orquestrador.chaveamentoDe( sucessora );
+        assertEquals( 2, chave.participantes() );
+        assertEquals( "Final", chave.etapas().get( 0 ).nome() );
+        assertEquals( null, chave.etapas().get( 0 ).confrontos().get( 0 ).idMandante() );
+    }
+
+    @Test
+    void semTotalValeOQueAvancaPorGrupo ()
+    {
+        Fase sucessora = novaFase();
+        sucessora.setOrdem( 2 );
+        faseRepository.save( sucessora );
+
+        Fase primeira = novaFase();
+        primeira.setFaseSucessora( sucessora );
+        jogarAteOFim( faseRepository.save( primeira ) );
+
+        // Um grupo de 4, e por padrão avançam 2 por grupo.
+        assertEquals( 2, orquestrador.entradaDe( sucessora ).size() );
+    }
+
     @Test
     void atributoObrigatorioAusenteInvalidaAFase ()
     {
         ResultadoDaValidacao resultado = orquestrador.validar( novaFase() );
 
         assertFalse( resultado.ehValido() );
-        assertTrue( resultado.mensagem().contains( EstrategiaFalsa.TAMANHO ) );
+        assertTrue( resultado.mensagem().contains( "tamanho do grupo" ) );
     }
 
     @Test
     void atributoInformadoTornaAFaseValida ()
     {
         Fase fase = novaFase();
-        orquestrador.definirAtributo( fase, EstrategiaFalsa.TAMANHO, "2" );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "2" );
 
         assertTrue( orquestrador.validar( fase ).ehValido() );
     }
@@ -149,12 +294,12 @@ class ContratoDeFaseTest
     void valorPadraoVigoraQuandoOAtributoNaoEhInformado ()
     {
         Fase fase = novaFase();
-        orquestrador.definirAtributo( fase, EstrategiaFalsa.TAMANHO, "2" );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "2" );
 
-        assertFalse( orquestrador.configuracaoDe( fase ).booleano( EstrategiaFalsa.IDA_E_VOLTA ) );
+        assertFalse( orquestrador.configuracaoDe( fase ).booleano( EstrategiaDeGrupos.IDA_E_VOLTA ) );
 
-        orquestrador.definirAtributo( fase, EstrategiaFalsa.IDA_E_VOLTA, "true" );
-        assertTrue( orquestrador.configuracaoDe( fase ).booleano( EstrategiaFalsa.IDA_E_VOLTA ) );
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.IDA_E_VOLTA, "true" );
+        assertTrue( orquestrador.configuracaoDe( fase ).booleano( EstrategiaDeGrupos.IDA_E_VOLTA ) );
     }
 
     @Test
@@ -170,13 +315,23 @@ class ContratoDeFaseTest
     void validacaoDaPropriaEstrategiaTambemVale ()
     {
         Fase fase = novaFase();
-        // 4 times não se dividem em grupos de 3
-        orquestrador.definirAtributo( fase, EstrategiaFalsa.TAMANHO, "3" );
+
+        // 4 equipes em 3 grupos não dividem igualmente, e `permiteGruposDesiguais`
+        // está desligado.
+        //
+        // O teste pedia antes `tamanhoDoGrupo = 3`, contra o dublê, que tratava
+        // o atributo como tamanho exato. A estratégia real o trata como pista
+        // para derivar a quantidade de grupos — com 4 equipes e tamanho 3 ela
+        // forma 2 grupos de 2, que passa na validação. A diferença está
+        // registrada em documentos/redesign-do-front.md: pedir grupos de 3 e
+        // receber grupos de 2 é surpresa, e é decisão de domínio, não de teste.
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "3" );
 
         ResultadoDaValidacao resultado = orquestrador.validar( fase );
 
         assertFalse( resultado.ehValido() );
-        assertTrue( resultado.mensagem().contains( "não se dividem" ) );
+        assertTrue( resultado.mensagem().contains( "não se dividem" ),
+                "a recusa não explicou a divisão: " + resultado.mensagem() );
     }
 
     @Test
@@ -195,16 +350,30 @@ class ContratoDeFaseTest
         assertEquals( orquestrador.classificacaoDe( fase ), orquestrador.classificacaoDe( fase ) );
     }
 
+    /**
+     * O contrato promete que `atualizar` é idempotente: chamar duas vezes
+     * seguidas não muda nada além do que a primeira chamada mudou.
+     *
+     * Antes isto era verificado contando chamadas num dublê, o que provava que
+     * o orquestrador delegava — não que a delegação fosse idempotente. Contra
+     * a estratégia real dá para verificar o que importa: o número de
+     * confrontos não muda.
+     */
     @Test
-    void atualizarAceitaOpcoesEPodeSerChamadoMaisDeUmaVez ()
+    void atualizarAceitaOpcoesEEhIdempotente ()
     {
         Fase fase = novaFase();
-        estrategia.chamadasDeAtualizar.clear();
+        orquestrador.definirAtributo( fase, EstrategiaDeGrupos.TAMANHO_DO_GRUPO, "2" );
+        orquestrador.configurar( fase );
+
+        int depoisDeConfigurar = partidaRepository.findByFaseId( fase.getId() ).size();
 
         orquestrador.atualizar( fase, null );
         orquestrador.atualizar( fase, Map.of( "recalcularJogados", "true" ) );
 
-        assertEquals( List.of( "atualizar:0", "atualizar:1" ), estrategia.chamadasDeAtualizar );
+        assertEquals( depoisDeConfigurar,
+                partidaRepository.findByFaseId( fase.getId() ).size(),
+                "atualizar gerou confrontos a mais" );
     }
 
     @Test
@@ -224,7 +393,7 @@ class ContratoDeFaseTest
                 assertThrows( jakarta.validation.ConstraintViolationException.class,
                         () -> new Classificado( 1, null ) );
 
-        assertTrue( erro.getMessage().contains( "referenciar um time" ) );
+        assertTrue( erro.getMessage().contains( "referenciar uma equipe" ) );
     }
 
     @Test
@@ -233,7 +402,7 @@ class ContratoDeFaseTest
         Classificado classificado = new Classificado( 3, 42L );
 
         assertEquals( 3, classificado.posicao() );
-        assertEquals( 42L, classificado.idTime() );
+        assertEquals( 42L, classificado.idEquipe() );
     }
 
     @Test

@@ -13,7 +13,7 @@ import java.util.Map;
  * uma classificação — e é isso que permite encadear fases de tipos diferentes
  * sem que uma conheça a outra.
  *
- * Quem recebe decide quantos aproveita: uma fase que precisa de 10 times usa
+ * Quem recebe decide quantos aproveita: uma fase que precisa de 10 equipes usa
  * os 10 primeiros da lista que veio.
  */
 public interface EstrategiaDeFase
@@ -36,10 +36,21 @@ public interface EstrategiaDeFase
         return false;
     }
 
+    /**
+     * O mesmo, já com a configuração da fase: a eliminatória tolera empate
+     * quando a fase pede para desempatar pela ordem recebida. O orquestrador
+     * consulta esta, e não a de cima — consultar a de cima deixava o atributo
+     * sem efeito.
+     */
+    default boolean aceitaEmpateNaEntrada ( ConfiguracaoDaFase configuracao )
+    {
+        return aceitaEmpateNaClassificacao();
+    }
+
     /** Confere se a configuração e a entrada permitem montar a fase. */
     ResultadoDaValidacao validar ( ConfiguracaoDaFase configuracao, List<Classificado> entrada );
 
-    /** Monta a fase a partir da entrada: distribui os times e gera as partidas. */
+    /** Monta a fase a partir da entrada: distribui as equipes e gera as partidas. */
     void configurar ( Fase fase, ConfiguracaoDaFase configuracao, List<Classificado> entrada );
 
     /**
@@ -61,4 +72,30 @@ public interface EstrategiaDeFase
      * recebe.
      */
     List<Classificado> classificacao ( Fase fase, ConfiguracaoDaFase configuracao );
+
+    /**
+     * Quantas equipes avançam quando a fase não diz o total: na fase de
+     * grupos, grupos vezes os que avançam por grupo; na eliminatória, as que
+     * restam no fim. Nulo é "todas".
+     */
+    default Integer quantosAvancamPorPadrao ( ConfiguracaoDaFase configuracao, int entram )
+    {
+        return null;
+    }
+
+    /** Se a fase se decide por pontos — grupos e pontos corridos —, e não por eliminação. */
+    default boolean temTabelaDePontos ()
+    {
+        return false;
+    }
+
+    /**
+     * A tabela de pontos com quem entra na fase, inclusive quem ainda não
+     * jogou: zerado desde o início, e não ausente até o primeiro jogo.
+     */
+    default List<LinhaDaTabela> tabela ( Fase fase, ConfiguracaoDaFase configuracao,
+            List<Classificado> entrada )
+    {
+        return List.of();
+    }
 }

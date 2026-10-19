@@ -1,5 +1,6 @@
 package org.example.Controllers;
 
+import org.example.Exception.NaoEncontradoException;
 import org.example.Mapper.TabelaMapper;
 import org.example.Models.Tabela;
 import org.example.Services.TabelaService;
@@ -30,20 +31,20 @@ public class TabelaController
 
         if ( tabela == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Tabela", id );
         }
 
         return ResponseEntity.ok( TabelaMapper.toResponse( tabela ) );
     }
 
-    @GetMapping("/campeonato/{id}")
+    @GetMapping("/competicao/{id}")
     public ResponseEntity<?> buscarTabelaPorCampenato ( @PathVariable Long id )
     {
-        Tabela tabela = tabelaService.buscarPorCampeonato( id );
+        Tabela tabela = tabelaService.buscarPorCompeticao( id );
 
         if ( tabela == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Tabela", id );
         }
 
         return ResponseEntity.ok( TabelaMapper.toResponse( tabela ) );

@@ -7,7 +7,7 @@ public record ModalidadeResponse(
 
         String nome,
 
-        int jogadoresEmQuadra
+        int atletasEmQuadra
 )
 {
 }

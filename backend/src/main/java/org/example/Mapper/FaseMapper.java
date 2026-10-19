@@ -1,6 +1,6 @@
 package org.example.Mapper;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Request.FaseCreateRequest;
@@ -21,9 +21,12 @@ public class FaseMapper
         fase.setOrdem(request.ordem());
         fase.setFasePartida( EnumFasePartida.valueOf( request.fasePartida() ) );
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setId( request.idCampeonato() );
-        fase.setCampeonato( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setId( request.idCompeticao() );
+        fase.setCompeticao( competicao );
+        // O create aceitava `qtdClassificados` e nunca o gravava: a resposta
+        // devolvia null e ninguém via que o valor tinha sido descartado.
+        fase.setQuantidadeClassificados( request.qtdClassificados() );
         return fase;
     }
 
@@ -35,9 +38,9 @@ public class FaseMapper
         fase.setOrdem( request.ordem() );
         fase.setFasePartida( request.fasePartida() );
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setId( request.idCampeonato() );
-        fase.setCampeonato( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setId( request.idCompeticao() );
+        fase.setCompeticao( competicao );
 
         fase.setQuantidadeClassificados( request.qtdClassificados() );
 
@@ -55,16 +58,24 @@ public class FaseMapper
         }
 
         return new FaseResponse( fase.getId(), fase.getNome(), fase.getOrdem(),
-                fase.getFasePartida().getDescricao(), fase.getQuantidadeClassificados(),
-                fase.getFaseSucessora() == null ? null : fase.getFaseSucessora().getId() );
+                // O nome da constante, e não a descrição: o pedido exige
+                // "PONTOS_CORRIDOS" e a resposta devolvia "Pontos Corridos",
+                // então o cliente tinha que traduzir nos dois sentidos para
+                // marcar o formato atual num seletor.
+                fase.getFasePartida() == null ? null : fase.getFasePartida().name(),
+                fase.getQuantidadeClassificados(),
+                fase.getFaseSucessora() == null ? null : fase.getFaseSucessora().getId(), null, null );
 
     }
 
     public static List<FaseResponse> toResponse ( List<Fase> fases )
     {
-        if ( fases == null || fases.isEmpty() )
+        // Lista vazia devolve lista vazia, não null: `null` sai como corpo
+        // vazio no 200, e o cliente estoura ao interpretar em vez de receber
+        // `[]`. Coleção que existe sem elementos é `[]`.
+        if ( fases == null )
         {
-            return null;
+            return List.of();
         }
 
         return fases.stream().map( FaseMapper::toResponse ).toList();

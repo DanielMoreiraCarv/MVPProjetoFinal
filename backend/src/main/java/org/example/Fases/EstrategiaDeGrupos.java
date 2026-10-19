@@ -6,7 +6,7 @@ import org.example.Models.EnumFasePartida;
 import org.example.Models.EnumTipoDeDado;
 import org.example.Models.Fase;
 import org.example.Models.Partida;
-import org.example.Models.Time;
+import org.example.Models.Equipe;
 import org.example.Repositories.PartidaRepository;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +31,7 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
     public static final String IDA_E_VOLTA = "idaEVolta";
     public static final String GRUPOS_DESIGUAIS = "permiteGruposDesiguais";
     public static final String CRITERIOS = "criteriosDeDesempate";
+    public static final String CLASSIFICADOS_POR_GRUPO = "classificadosPorGrupo";
     public static final String PONTOS_VITORIA = "pontosPorVitoria";
     public static final String PONTOS_EMPATE = "pontosPorEmpate";
     public static final String PONTOS_DERROTA = "pontosPorDerrota";
@@ -55,7 +56,9 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
                 new AtributoFase( tipo(), NUMERO_DE_GRUPOS, EnumTipoDeDado.INTEIRO, false, null,
                         "Quantos grupos formar. Informe este ou o tamanho do grupo." ),
                 new AtributoFase( tipo(), TAMANHO_DO_GRUPO, EnumTipoDeDado.INTEIRO, false, null,
-                        "Quantos times por grupo. Informe este ou o número de grupos." ),
+                        "Quantas equipes por grupo. Informe este ou o número de grupos." ),
+                new AtributoFase( tipo(), CLASSIFICADOS_POR_GRUPO, EnumTipoDeDado.INTEIRO, false, "2",
+                        "Quantas equipes de cada grupo avançam para a fase seguinte." ),
                 new AtributoFase( tipo(), IDA_E_VOLTA, EnumTipoDeDado.BOOLEANO, false, "false",
                         "Se cada confronto tem partida de volta" ),
                 new AtributoFase( tipo(), GRUPOS_DESIGUAIS, EnumTipoDeDado.BOOLEANO, false, "false",
@@ -71,7 +74,7 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
                         "Pontos por derrota" ) );
     }
 
-    /** Os times só precisam ser distribuídos nos grupos; a ordem exata não importa. */
+    /** As equipes só precisam ser distribuídos nos grupos; a ordem exata não importa. */
     @Override
     public boolean aceitaEmpateNaClassificacao ()
     {
@@ -88,12 +91,14 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
         if ( temNumero == temTamanho )
         {
-            erros.add( "informe exatamente um entre " + NUMERO_DE_GRUPOS + " e " + TAMANHO_DO_GRUPO );
+            erros.add( temNumero
+                    ? "Informe o número de grupos ou o tamanho do grupo, não os dois."
+                    : "Informe o número de grupos ou o tamanho do grupo." );
         }
 
         if ( entrada.size() < 2 )
         {
-            erros.add( "uma fase de grupos precisa de ao menos 2 times, recebeu " + entrada.size() );
+            erros.add( "Uma fase de grupos precisa de ao menos 2 equipes; entram " + entrada.size() + "." );
         }
 
         if ( erros.isEmpty() )
@@ -102,20 +107,48 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
             if ( quantidade < 1 )
             {
-                erros.add( "número de grupos precisa ser ao menos 1" );
+                erros.add( "O número de grupos precisa ser ao menos 1." );
             }
             else if ( quantidade > entrada.size() )
             {
-                erros.add( "há mais grupos (" + quantidade + ") do que times (" + entrada.size() + ")" );
+                erros.add( "Há mais grupos (" + quantidade + ") do que equipes (" + entrada.size() + ")." );
             }
             else if ( entrada.size() % quantidade != 0 && !configuracao.booleano( GRUPOS_DESIGUAIS ) )
             {
-                erros.add( "os " + entrada.size() + " times não se dividem igualmente em "
-                        + quantidade + " grupos; habilite " + GRUPOS_DESIGUAIS + " para permitir" );
+                erros.add( "As " + entrada.size() + " equipes não se dividem igualmente em "
+                        + quantidade + " grupos. Ajuste o número de grupos ou permita grupos de tamanhos diferentes." );
+            }
+            else
+            {
+                int porGrupo = configuracao.inteiroOu( CLASSIFICADOS_POR_GRUPO, 2 );
+                int menorGrupo = entrada.size() / quantidade;
+                if ( porGrupo < 1 )
+                {
+                    erros.add( "Avança ao menos uma equipe por grupo." );
+                }
+                else if ( porGrupo > menorGrupo )
+                {
+                    erros.add( "Avançam " + porGrupo + " por grupo, mas o menor grupo tem " + menorGrupo
+                            + " equipes." );
+                }
             }
         }
 
         return new ResultadoDaValidacao( erros );
+    }
+
+    /**
+     * Grupos vezes os que avançam por grupo — a conta que o organizador faz de
+     * cabeça. Sem saber quantos grupos ainda, não há como dizer.
+     */
+    @Override
+    public Integer quantosAvancamPorPadrao ( ConfiguracaoDaFase configuracao, int entram )
+    {
+        if ( !configuracao.informado( NUMERO_DE_GRUPOS ) && !configuracao.informado( TAMANHO_DO_GRUPO ) )
+        {
+            return null;
+        }
+        return numeroDeGrupos( configuracao, entram ) * configuracao.inteiroOu( CLASSIFICADOS_POR_GRUPO, 2 );
     }
 
     private int numeroDeGrupos ( ConfiguracaoDaFase configuracao, int totalDeTimes )
@@ -143,14 +176,14 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
         List<Classificado> ordenada = new ArrayList<>( entrada );
         ordenada.sort( Comparator.comparingInt( Classificado::posicao )
-                                 .thenComparing( Classificado::idTime ) );
+                                 .thenComparing( Classificado::idEquipe ) );
 
         for ( int i = 0; i < ordenada.size(); i++ )
         {
             int volta = i / quantidade;
             int passo = i % quantidade;
             int indice = volta % 2 == 0 ? passo + 1 : quantidade - passo;
-            grupos.get( indice ).add( ordenada.get( i ).idTime() );
+            grupos.get( indice ).add( ordenada.get( i ).idEquipe() );
         }
 
         return grupos;
@@ -175,20 +208,20 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
     private List<Classificado> entradaDasPartidas ( Fase fase )
     {
-        List<Classificado> times = new ArrayList<>();
+        List<Classificado> equipes = new ArrayList<>();
         for ( Partida partida : partidaRepository.findByFaseId( fase.getId() ) )
         {
-            adicionarSeNovo( times, partida.getIdTimeMandante() );
-            adicionarSeNovo( times, partida.getIdTimeVisitante() );
+            adicionarSeNovo( equipes, partida.getIdEquipeMandante() );
+            adicionarSeNovo( equipes, partida.getIdEquipeVisitante() );
         }
-        return times;
+        return equipes;
     }
 
-    private void adicionarSeNovo ( List<Classificado> times, Long idTime )
+    private void adicionarSeNovo ( List<Classificado> equipes, Long idEquipe )
     {
-        if ( idTime != null && times.stream().noneMatch( c -> c.idTime().equals( idTime ) ) )
+        if ( idEquipe != null && equipes.stream().noneMatch( c -> c.idEquipe().equals( idEquipe ) ) )
         {
-            times.add( new Classificado( 1, idTime ) );
+            equipes.add( new Classificado( 1, idEquipe ) );
         }
     }
 
@@ -207,19 +240,19 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
         for ( Map.Entry<Integer, List<Long>> grupo : grupos.entrySet() )
         {
-            List<Long> times = grupo.getValue();
+            List<Long> equipes = grupo.getValue();
 
-            for ( int i = 0; i < times.size(); i++ )
+            for ( int i = 0; i < equipes.size(); i++ )
             {
-                for ( int j = i + 1; j < times.size(); j++ )
+                for ( int j = i + 1; j < equipes.size(); j++ )
                 {
-                    adicionarSeAusente( novas, existentes, fase, grupo.getKey(), times.get( i ),
-                            times.get( j ), 1 );
+                    adicionarSeAusente( novas, existentes, fase, grupo.getKey(), equipes.get( i ),
+                            equipes.get( j ), 1 );
 
                     if ( idaEVolta )
                     {
-                        adicionarSeAusente( novas, existentes, fase, grupo.getKey(), times.get( j ),
-                                times.get( i ), 2 );
+                        adicionarSeAusente( novas, existentes, fase, grupo.getKey(), equipes.get( j ),
+                                equipes.get( i ), 2 );
                     }
                 }
             }
@@ -232,8 +265,8 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
             int grupo, Long mandante, Long visitante, int rodada )
     {
         boolean jaExiste = existentes.stream()
-                                     .anyMatch( p -> mandante.equals( p.getIdTimeMandante() )
-                                             && visitante.equals( p.getIdTimeVisitante() )
+                                     .anyMatch( p -> mandante.equals( p.getIdEquipeMandante() )
+                                             && visitante.equals( p.getIdEquipeVisitante() )
                                              && Integer.valueOf( rodada ).equals( p.getRodada() ) );
 
         if ( jaExiste )
@@ -243,20 +276,20 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
 
         Partida partida = new Partida();
         partida.setFase( fase );
-        partida.setCampeonato( fase.getCampeonato() );
+        partida.setCompeticao( fase.getCompeticao() );
         partida.setGrupo( grupo );
         partida.setRodada( rodada );
         partida.setEnumFasePartida( tipo() );
-        partida.setTimeMandante( referencia( mandante ) );
-        partida.setTimeVisitante( referencia( visitante ) );
+        partida.setEquipeMandante( referencia( mandante ) );
+        partida.setEquipeVisitante( referencia( visitante ) );
         novas.add( partida );
     }
 
-    private Time referencia ( Long idTime )
+    private Equipe referencia ( Long idEquipe )
     {
-        Time time = new Time();
-        time.setId( idTime );
-        return time;
+        Equipe equipe = new Equipe();
+        equipe.setId( idEquipe );
+        return equipe;
     }
 
     @Override
@@ -301,6 +334,43 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
         return ordem;
     }
 
+    @Override
+    public boolean temTabelaDePontos ()
+    {
+        return true;
+    }
+
+    @Override
+    public List<LinhaDaTabela> tabela ( Fase fase, ConfiguracaoDaFase configuracao,
+            List<Classificado> entrada )
+    {
+        Map<Integer, List<Desempenho>> porGrupo = desempenhoPorGrupo( fase, configuracao );
+        Comparator<Desempenho> comparador = CriterioDeDesempate.comparadorDe( configuracao.lista( CRITERIOS ) );
+
+        // Sem confrontos gerados ainda não há grupo: a tabela é única, com
+        // quem vai entrar na fase, todos zerados.
+        if ( porGrupo.isEmpty() )
+        {
+            List<LinhaDaTabela> unica = new ArrayList<>();
+            for ( Classificado classificado : entrada )
+            {
+                unica.add( new LinhaDaTabela( null, unica.size() + 1, new Desempenho( classificado.idEquipe() ) ) );
+            }
+            return unica;
+        }
+
+        boolean variosGrupos = porGrupo.size() > 1;
+        List<LinhaDaTabela> linhas = new ArrayList<>();
+        porGrupo.forEach( ( grupo, equipes ) -> {
+            equipes.sort( comparador );
+            for ( int i = 0; i < equipes.size(); i++ )
+            {
+                linhas.add( new LinhaDaTabela( variosGrupos ? grupo : null, i + 1, equipes.get( i ) ) );
+            }
+        } );
+        return linhas;
+    }
+
     private Map<Integer, List<Desempenho>> desempenhoPorGrupo ( Fase fase,
             ConfiguracaoDaFase configuracao )
     {
@@ -315,8 +385,8 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
             int grupo = partida.getGrupo() == null ? 1 : partida.getGrupo();
             Map<Long, Desempenho> doGrupo = porGrupo.computeIfAbsent( grupo, g -> new LinkedHashMap<>() );
 
-            Long mandante = partida.getIdTimeMandante();
-            Long visitante = partida.getIdTimeVisitante();
+            Long mandante = partida.getIdEquipeMandante();
+            Long visitante = partida.getIdEquipeVisitante();
 
             if ( mandante == null || visitante == null )
             {
@@ -326,20 +396,20 @@ public class EstrategiaDeGrupos implements EstrategiaDeFase
             Desempenho deMandante = doGrupo.computeIfAbsent( mandante, Desempenho::new );
             Desempenho deVisitante = doGrupo.computeIfAbsent( visitante, Desempenho::new );
 
-            // Time que ainda não jogou aparece na tabela zerado, e não ausente.
+            // Equipe que ainda não jogou aparece na tabela zerado, e não ausente.
             if ( !partida.isRealizada() )
             {
                 continue;
             }
 
-            deMandante.registrar( partida.getResultadoMandante(), partida.getResultadoVisitante(),
+            deMandante.registrar( partida.getPlacarMandante(), partida.getPlacarVisitante(),
                     porVitoria, porEmpate, porDerrota );
-            deVisitante.registrar( partida.getResultadoVisitante(), partida.getResultadoMandante(),
+            deVisitante.registrar( partida.getPlacarVisitante(), partida.getPlacarMandante(),
                     porVitoria, porEmpate, porDerrota );
         }
 
         Map<Integer, List<Desempenho>> resultado = new LinkedHashMap<>();
-        porGrupo.forEach( ( grupo, times ) -> resultado.put( grupo, new ArrayList<>( times.values() ) ) );
+        porGrupo.forEach( ( grupo, equipes ) -> resultado.put( grupo, new ArrayList<>( equipes.values() ) ) );
         return resultado;
     }
 }

@@ -16,7 +16,7 @@ public class RegrasBas {
         return 2;
     }
 
-    public boolean verificarExclusaoJogador(int faltasCometidas) {
+    public boolean verificarExclusaoAtleta(int faltasCometidas) {
         return faltasCometidas >= LIMITE_FALTAS_INDIVIDUAL;
     }
 

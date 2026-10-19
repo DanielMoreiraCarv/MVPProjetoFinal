@@ -7,7 +7,7 @@ public record SancaoResponse(
 
         String tipoEsporte,
 
-        Long idCampeonato
+        Long idCompeticao
 )
 {
 }

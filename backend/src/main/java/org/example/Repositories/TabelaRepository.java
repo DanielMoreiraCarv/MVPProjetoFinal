@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface TabelaRepository extends JpaRepository<Tabela, Long> {
     
-    Optional<Tabela> findByIdCampeonato(Long idCampeonato);
+    Optional<Tabela> findByIdCompeticao(Long idCompeticao);
     
     List<Tabela> findAll();
 }

@@ -1,19 +1,27 @@
 package org.example.Models.Request;
 
+import java.time.OffsetDateTime;
+
+/**
+ * Campo ausente é campo que não muda — o corpo diz o que alterar, não o
+ * estado inteiro da partida.
+ */
 public record PartidaUpdateRequest(
-        Long id,
+        Long idEquipeMandante,
 
-        Long idMandante,
+        Long idEquipeVisitante,
 
-        Long idVisitante,
+        Long idCompeticao,
 
-        Long idCampeonato,
+        Long idArbitro,
 
-        Integer resultadoVisitante,
+        Integer placarMandante,
 
-        Integer resultadoMandante,
+        Integer placarVisitante,
 
-        Long idArbitro
+        OffsetDateTime dataHora,
+
+        String local
 )
 {
 }

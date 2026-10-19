@@ -1,6 +1,8 @@
 package org.example.Models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.time.OffsetDateTime;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,7 +21,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "PARTIDA")
+@Table(name = "partida")
 public class Partida {
 
     @Id
@@ -27,68 +29,76 @@ public class Partida {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "ID_TIME_MANDANTE")
-    private Time timeMandante;
+    @JoinColumn(name = "equipe_mandante_id")
+    private Equipe equipeMandante;
 
     @ManyToOne
-    @JoinColumn(name = "ID_TIME_VISITANTE")
-    private Time timeVisitante;
+    @JoinColumn(name = "equipe_visitante_id")
+    private Equipe equipeVisitante;
 
     @ManyToOne
-    @JoinColumn(name = "ID_CAMPEONATO")
-    private Campeonato campeonato;
+    @JoinColumn(name = "competicao_id")
+    private Competicao competicao;
 
     @ManyToOne
-    @JoinColumn(name = "ID_FASE")
+    @JoinColumn(name = "fase_id")
     private Fase fase;
 
     // Metadados que a fase grava ao gerar o confronto.
-    @Column(name = "GRUPO")
+    @Column(name = "grupo")
     private Integer grupo;
 
-    @Column(name = "RODADA")
+    @Column(name = "rodada")
     private Integer rodada;
 
-    @Column(name = "ID_TABELA")
+    @Column(name = "tabela_id")
     private Long idTabela;
 
-    @Column(name = "ID_VENCEDOR")
-    private Long idVencedor;
+    @Column(name = "equipe_vencedora_id")
+    private Long idEquipeVencedora;
 
-    @Column(name = "RESULTADO_VISITANTE")
-    private int resultadoVisitante;
+    @Column(name = "placar_visitante")
+    private int placarVisitante;
 
-    @Column(name = "RESULTADO_MANDANTE")
-    private int resultadoMandante;
+    @Column(name = "placar_mandante")
+    private int placarMandante;
 
-    @Column(name = "REALIZADA")
+    @Column(name = "realizada")
     private boolean realizada;
 
+    // Instante, não relógio de parede: uma partida marcada para 09:00 em
+    // Fortaleza é um ponto no tempo, e o fuso faz parte do agendamento.
+    @Column(name = "data_hora")
+    private OffsetDateTime dataHora;
+
+    @Column(name = "local", length = 180)
+    private String local;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "ENUM_FASE_PARTIDA")
+    @Column(name = "enum_fase_partida")
     private EnumFasePartida enumFasePartida;
 
     @ManyToOne
-    @JoinColumn(name = "ARBITRO_ID")
+    @JoinColumn(name = "arbitro_id")
     private Arbitro arbitro;
 
     @JsonIgnore
     @OneToOne(mappedBy = "partida", cascade = CascadeType.ALL, orphanRemoval = true)
     private Sumula sumula;
 
-    public Long getIdTimeMandante ()
+    public Long getIdEquipeMandante ()
     {
-        return timeMandante == null ? null : timeMandante.getId();
+        return equipeMandante == null ? null : equipeMandante.getId();
     }
 
-    public Long getIdTimeVisitante ()
+    public Long getIdEquipeVisitante ()
     {
-        return timeVisitante == null ? null : timeVisitante.getId();
+        return equipeVisitante == null ? null : equipeVisitante.getId();
     }
 
-    public Long getIdCampeonato ()
+    public Long getIdCompeticao ()
     {
-        return campeonato == null ? null : campeonato.getId();
+        return competicao == null ? null : competicao.getId();
     }
 
     public Long getIdFase ()
@@ -116,29 +126,29 @@ public class Partida {
 
     // CONSTRUTOR PRINCIPAL
     public Partida ( Long id,
-            Long idTimeMandante,
-            Long idTimeVisitante,
-            Long idCampeonato,
+            Long idEquipeMandante,
+            Long idEquipeVisitante,
+            Long idCompeticao,
             Long idTabela,
-            Long idVencedor,
-            int resultadoVisitante,
-            int resultadoMandante )
+            Long idEquipeVencedora,
+            int placarVisitante,
+            int placarMandante )
     {
 
         this.id = id;
-        Time mandante = new Time();
-        mandante.setId( idTimeMandante );
-        this.timeMandante = mandante;
-        Time visitante = new Time();
-        visitante.setId( idTimeVisitante );
-        this.timeVisitante = visitante;
-        Campeonato campeonato = new Campeonato();
-        campeonato.setId( idCampeonato );
-        this.campeonato = campeonato;
+        Equipe mandante = new Equipe();
+        mandante.setId( idEquipeMandante );
+        this.equipeMandante = mandante;
+        Equipe visitante = new Equipe();
+        visitante.setId( idEquipeVisitante );
+        this.equipeVisitante = visitante;
+        Competicao competicao = new Competicao();
+        competicao.setId( idCompeticao );
+        this.competicao = competicao;
         this.idTabela = idTabela;
-        this.idVencedor = idVencedor;
-        this.resultadoVisitante = resultadoVisitante;
-        this.resultadoMandante = resultadoMandante;
+        this.idEquipeVencedora = idEquipeVencedora;
+        this.placarVisitante = placarVisitante;
+        this.placarMandante = placarMandante;
         this.realizada = false;
     }
 }
