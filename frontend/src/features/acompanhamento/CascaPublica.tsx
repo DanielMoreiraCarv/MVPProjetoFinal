@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlternarTema } from "@/src/components/AlternarTema";
+import { Emblema, NomeDoApp } from "@/src/components/Emblema";
 import { Monograma } from "@/src/components/Monograma";
 import { CompartilharDialog } from "@/src/features/compartilhar/CompartilharDialog";
 import { Competicao, ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
@@ -15,9 +16,9 @@ import { enderecoPublicoDaCompeticao } from "@/src/lib/visao-publica";
 
 /** A marca do app, que leva à apresentação. A mesma na entrada e no acompanhamento. */
 export const MarcaDoApp = () => (
-    <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-        <Monograma nome="Meu Torneio" destacado className="size-8" />
-        <span className="text-sm">Meu Torneio</span>
+    <Link href="/" className="flex items-center gap-2">
+        <Emblema />
+        <NomeDoApp />
     </Link>
 );
 

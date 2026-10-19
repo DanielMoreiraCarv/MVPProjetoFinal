@@ -7,6 +7,7 @@ import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlternarTema } from "@/src/components/AlternarTema";
+import { Emblema, NomeDoApp } from "@/src/components/Emblema";
 import { Monograma } from "@/src/components/Monograma";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
@@ -142,10 +143,10 @@ export const ConteudoDoMenu = ({
             <Link
                 href={PAINEL}
                 onClick={aoNavegar}
-                className="flex items-center gap-2 font-semibold tracking-tight"
+                className="flex items-center gap-2"
             >
-                <Monograma nome="Meu Torneio" destacado className="size-8" />
-                {!recolhido && <span className="text-sm">Meu Torneio</span>}
+                <Emblema />
+                {!recolhido && <NomeDoApp />}
             </Link>
         </div>
 

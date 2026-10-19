@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NomeDoApp } from "@/src/components/Emblema";
 import { ConteudoDoMenu } from "@/src/components/layout/MenuLateral";
 import { PaletaDeCompeticoes } from "@/src/components/layout/PaletaDeCompeticoes";
 import { ProvedorDeEscopo } from "@/src/lib/escopo";
@@ -81,7 +82,7 @@ export const Casca = ({
                                 </Drawer.Popup>
                             </Drawer.Portal>
                         </Drawer.Root>
-                        <span className="text-sm font-semibold tracking-tight">Meu Torneio</span>
+                        <NomeDoApp />
                     </div>
 
                     <main className="flex min-w-0 flex-1 flex-col">{children}</main>
