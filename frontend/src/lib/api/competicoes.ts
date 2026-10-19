@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiFetch } from "./client";
+import { Acesso, apiFetch, rotaPara } from "./client";
 import { Competicao, EstadoDaCompeticao } from "@/src/lib/types/competicao";
 
 const modalidadeAninhadaSchema = z.object({
@@ -29,6 +29,7 @@ const competicaoResponseSchema = z.object({
     isMataMata: z.boolean().nullable(),
     estado: z.string().nullable(),
     equipes: z.array(equipeAninhadaSchema).nullable(),
+    publica: z.boolean().nullable().optional(),
 });
 
 type CompeticaoResponse = z.infer<typeof competicaoResponseSchema>;
@@ -69,6 +70,7 @@ const paraCompeticao = (resposta: CompeticaoResponse): Competicao => {
         isMataMata: resposta.isMataMata ?? false,
         categoria: resposta.categoria ?? "",
         estado: (resposta.estado as Competicao["estado"]) ?? undefined,
+        publica: resposta.publica ?? false,
     };
 };
 
@@ -78,8 +80,17 @@ export const listarCompeticoes = async (idAdministracao?: number): Promise<Compe
     return z.array(competicaoResponseSchema).parse(resposta).map(paraCompeticao);
 };
 
-export const buscarCompeticao = async (id: number): Promise<Competicao> =>
-    paraCompeticao(competicaoResponseSchema.parse(await apiFetch<unknown>(`/competicao/${id}`)));
+export const buscarCompeticao = async (id: number, acesso: Acesso = "gestao"): Promise<Competicao> =>
+    paraCompeticao(
+        competicaoResponseSchema.parse(await apiFetch<unknown>(rotaPara(acesso, `/competicao/${id}`))),
+    );
+
+/** As competições abertas ao público, para a vitrine da apresentação. */
+export const listarCompeticoesAbertas = async (): Promise<Competicao[]> =>
+    z
+        .array(competicaoResponseSchema)
+        .parse(await apiFetch<unknown>(rotaPara("publico", "/competicao")))
+        .map(paraCompeticao);
 
 export const criarCompeticao = async (entrada: CompeticaoInput): Promise<Competicao> => {
     const resposta = await apiFetch<unknown>("/competicao", {
@@ -141,6 +152,20 @@ export const removerEquipeDaCompeticao = async (
     );
 
 /** Publica, encerra ou cancela (RF18). Transição inválida é recusada com o motivo. */
+/** Abre ou fecha a competição ao acompanhamento por link, sem login. */
+export const mudarVisibilidadeDaCompeticao = async (
+    id: number,
+    publica: boolean,
+): Promise<Competicao> =>
+    paraCompeticao(
+        competicaoResponseSchema.parse(
+            await apiFetch<unknown>(`/competicao/${id}/visibilidade`, {
+                method: "PUT",
+                body: JSON.stringify({ publica }),
+            }),
+        ),
+    );
+
 export const mudarEstadoDaCompeticao = async (
     id: number,
     estado: EstadoDaCompeticao,
@@ -180,8 +205,10 @@ export type FaseDaEstrutura = Estrutura["fases"][number];
  * depois, contra a entrada que elas vão ter —, para dizer o que não fecha
  * antes de gerar qualquer partida.
  */
-export const buscarEstrutura = async (idCompeticao: number): Promise<Estrutura> =>
-    estruturaSchema.parse(await apiFetch<unknown>(`/competicao/${idCompeticao}/estrutura`));
+export const buscarEstrutura = async (idCompeticao: number, acesso: Acesso = "gestao"): Promise<Estrutura> =>
+    estruturaSchema.parse(
+        await apiFetch<unknown>(rotaPara(acesso, `/competicao/${idCompeticao}/estrutura`)),
+    );
 
 /**
  * O botão único: valida a estrutura inteira e, se fechar, gera a primeira fase

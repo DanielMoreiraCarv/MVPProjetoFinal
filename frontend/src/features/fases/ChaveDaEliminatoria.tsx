@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useEnderecoDaPartida } from "@/src/lib/visao-publica";
 import { Chaveamento, ConfrontoDaChave, EtapaDaChave, LadoDaChave } from "@/src/lib/api/fases";
 
 /** A partir das oitavas a chave cabe desenhada; antes disso vira lista por etapa. */
@@ -53,6 +54,7 @@ const Cartao = ({
     className?: string;
     style?: React.CSSProperties;
 }) => {
+    const enderecoDaPartida = useEnderecoDaPartida();
     const corpo = (
         <>
             <Lado
@@ -79,7 +81,7 @@ const Cartao = ({
     // O cartão leva à partida quando ela existe; com ida e volta, à da ida.
     return confronto.idsDasPartidas.length > 0 ? (
         <Link
-            href={`/competicao/${idCompeticao}/partida/${confronto.idsDasPartidas[0]}`}
+            href={enderecoDaPartida(idCompeticao, confronto.idsDasPartidas[0])}
             className={cn(classes, "hover:border-ring")}
             style={style}
             title={titulo}

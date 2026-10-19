@@ -20,7 +20,7 @@ export type SecaoDeMenu = {
  */
 export const SECOES_GLOBAIS: SecaoDeMenu[] = [
     {
-        itens: [{ rotulo: "Início", href: "/", conceito: "inicio" }],
+        itens: [{ rotulo: "Início", href: "/inicio", conceito: "inicio" }],
     },
     {
         titulo: "Cadastro",

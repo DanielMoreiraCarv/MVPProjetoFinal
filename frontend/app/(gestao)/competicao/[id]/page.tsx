@@ -13,6 +13,7 @@ import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/component
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
 import { Secao } from "@/src/components/layout/Secao";
 import { CompeticaoDialog } from "@/src/features/administracoes/CompeticaoDialog";
+import { CompartilharDaGestao } from "@/src/features/compartilhar/CompartilharDaGestao";
 import { InscreverEquipeDialog } from "@/src/features/campeonatos/InscreverEquipeDialog";
 import { ListaDeInscritas } from "@/src/features/campeonatos/ListaDeInscritas";
 import { ClassificacaoPorFase } from "@/src/features/fases/ClassificacaoPorFase";
@@ -134,6 +135,7 @@ const CompeticaoDetalhePage = () => {
                                     {ROTULO_DO_ESTADO[estado]}
                                 </Badge>
                             )}
+                            <CompartilharDaGestao />
                             <CompeticaoDialog
                                 competicao={competicao}
                                 aoSalvar={aoSalvar}

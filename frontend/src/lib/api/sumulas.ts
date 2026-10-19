@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { apiFetch, ApiError } from "./client";
+import { Acesso, apiFetch, ApiError, rotaPara } from "./client";
 import { ModoDaSumula, Sumula, TIPOS_DE_EVENTO, TipoDeEvento } from "@/src/lib/types/sumula";
 
 const sumulaResponseSchema = z.object({
@@ -54,9 +54,12 @@ const paraSumula = (resposta: SumulaResponse, idPartida: number): Sumula => ({
 });
 
 /** Nem toda partida tem súmula: devolve null em vez de estourar no 404. */
-export const buscarSumulaDaPartida = async (idPartida: number): Promise<Sumula | null> => {
+export const buscarSumulaDaPartida = async (
+    idPartida: number,
+    acesso: Acesso = "gestao",
+): Promise<Sumula | null> => {
     try {
-        const resposta = await apiFetch<unknown>(`/sumula/partida/${idPartida}`);
+        const resposta = await apiFetch<unknown>(rotaPara(acesso, `/sumula/partida/${idPartida}`));
         return paraSumula(sumulaResponseSchema.passthrough().parse(resposta), idPartida);
     } catch (causa) {
         if (causa instanceof ApiError && causa.status === 404) return null;

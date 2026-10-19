@@ -1,5 +1,14 @@
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
+/**
+ * Quem lê. O acompanhamento por link usa as rotas `/publico`, que o servidor
+ * só responde para competição aberta ao público e sem dado pessoal de atleta.
+ */
+export type Acesso = "gestao" | "publico";
+
+export const rotaPara = (acesso: Acesso, caminho: string) =>
+    acesso === "publico" ? `/publico${caminho}` : caminho;
+
 /** Uma falha atribuída a um campo do formulário que foi enviado. */
 export type DetalheDeErro = { campo: string; mensagem: string };
 

@@ -15,6 +15,7 @@ import {
     migalhasDaCompeticao,
 } from "@/src/components/layout/CabecalhoDaPagina";
 import { Secao } from "@/src/components/layout/Secao";
+import { CompartilharDaGestao } from "@/src/features/compartilhar/CompartilharDaGestao";
 import { AgendarPartidaDialog } from "@/src/features/partidas/AgendarPartidaDialog";
 import { EscalarArbitroDialog } from "@/src/features/partidas/EscalarArbitroDialog";
 import { PartidaDialog } from "@/src/features/partidas/PartidaDialog";
@@ -99,9 +100,17 @@ const PartidaPage = () => {
                 migalhas={migalhasDaCompeticao(atual, { rotulo: "Calendário", href: `/competicao/${idCompeticao}/partida` })}
                 acoes={
                     partida && (
-                        <Badge variant={encerrada ? "secondary" : "outline"}>
-                            {encerrada ? "Encerrada" : "Agendada"}
-                        </Badge>
+                        <>
+                            <Badge variant={encerrada ? "secondary" : "outline"}>
+                                {encerrada ? "Encerrada" : "Agendada"}
+                            </Badge>
+                            <CompartilharDaGestao
+                                partida={{
+                                    id: partida.id,
+                                    rotulo: `${partida.equipeMandante} × ${partida.equipeVisitante}`,
+                                }}
+                            />
+                        </>
                     )
                 }
             />

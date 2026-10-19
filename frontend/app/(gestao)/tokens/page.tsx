@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { AmostraDeEstados } from "@/app/tokens/AmostraDeEstados";
+import { AmostraDeEstados } from "./AmostraDeEstados";
 import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
 import { Secao } from "@/src/components/layout/Secao";
 import { ICONES } from "@/src/lib/icones";

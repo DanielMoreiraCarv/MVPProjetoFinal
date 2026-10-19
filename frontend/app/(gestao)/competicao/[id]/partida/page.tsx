@@ -15,6 +15,7 @@ import { Escolha } from "@/src/components/Escolha";
 import { PartidaDialog } from "@/src/features/partidas/PartidaDialog";
 import { ListaDePartidas } from "@/src/features/partidas/ListaDePartidas";
 import { buscarCompeticao } from "@/src/lib/api/competicoes";
+import { CompartilharDaGestao } from "@/src/features/compartilhar/CompartilharDaGestao";
 import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
 import { useEscopo } from "@/src/lib/escopo";
 import { Equipe } from "@/src/lib/types/equipe";
@@ -112,11 +113,14 @@ const CalendarioPage = () => {
                 descricao="Todas as partidas da competição, das agendadas às encerradas."
                 migalhas={migalhasDaCompeticao(atual)}
                 acoes={
-                    <PartidaDialog
-                        idCompeticao={id}
-                        equipes={equipesInscritas}
-                        aoSalvar={(criada) => setPartidas((todas) => [...todas, criada])}
-                    />
+                    <>
+                        <CompartilharDaGestao />
+                        <PartidaDialog
+                            idCompeticao={id}
+                            equipes={equipesInscritas}
+                            aoSalvar={(criada) => setPartidas((todas) => [...todas, criada])}
+                        />
+                    </>
                 }
             />
             <CorpoDaPagina>

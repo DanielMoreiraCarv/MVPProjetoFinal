@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,8 @@ import { AlternarTema } from "@/src/components/AlternarTema";
 import { Monograma } from "@/src/components/Monograma";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
+import { sair } from "@/src/lib/sessao/acoes";
+import { Organizador, PAINEL } from "@/src/lib/sessao/sessao";
 import { SeletorDeEscopo } from "@/src/components/layout/SeletorDeEscopo";
 import {
     ItemDeMenu,
@@ -85,11 +87,41 @@ const Secao = ({
     </div>
 );
 
+/** Quem está na sessão, e a saída. Recolhido, sobra o monograma e o botão. */
+const Sessao = ({ organizador, recolhido }: { organizador: Organizador; recolhido: boolean }) => (
+    <form
+        action={sair}
+        className={cn(
+            "flex items-center gap-2 border-t border-sidebar-border px-3 py-3",
+            recolhido && "flex-col px-1",
+        )}
+    >
+        <Monograma nome={organizador.nome} className="size-8" />
+        {!recolhido && (
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{organizador.nome}</p>
+                <p className="truncate text-xs text-muted-foreground">{organizador.email}</p>
+            </div>
+        )}
+        <Button
+            type="submit"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Sair"
+            title="Sair"
+        >
+            <LogOut />
+        </Button>
+    </form>
+);
+
 export const ConteudoDoMenu = ({
+    organizador,
     recolhido = false,
     aoNavegar,
     aoRecolher,
 }: {
+    organizador: Organizador;
     recolhido?: boolean;
     aoNavegar?: () => void;
     aoRecolher?: () => void;
@@ -108,7 +140,7 @@ export const ConteudoDoMenu = ({
             )}
         >
             <Link
-                href="/"
+                href={PAINEL}
                 onClick={aoNavegar}
                 className="flex items-center gap-2 font-semibold tracking-tight"
             >
@@ -131,6 +163,8 @@ export const ConteudoDoMenu = ({
                 />
             ))}
         </nav>
+
+        <Sessao organizador={organizador} recolhido={recolhido} />
 
         <div
             className={cn(

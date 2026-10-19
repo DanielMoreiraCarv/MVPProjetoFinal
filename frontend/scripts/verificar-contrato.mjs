@@ -55,6 +55,7 @@ const competicao = z.object({
     isMataMata: z.boolean().nullable(),
     equipes: z.array(z.object({ id: z.number(), nome: z.string() }).passthrough()).nullable(),
     estado: z.enum(["RASCUNHO", "EM_ANDAMENTO", "ENCERRADA", "CANCELADA"]),
+    publica: z.boolean(),
 });
 
 const partida = z.object({
@@ -139,6 +140,14 @@ const casos = [
         z.array(atributoDeFase),
         "/fase/atributo?tipoFase=PONTOS_CORRIDOS",
     ],
+    // O acompanhamento por link lê pelas rotas públicas, com os mesmos
+    // schemas. A competição 1 é aberta ao público no conjunto de teste.
+    ["GET /publico/competicao", z.array(competicao.passthrough()), "/publico/competicao"],
+    ["GET /publico/competicao/1", competicao.passthrough(), "/publico/competicao/1"],
+    ["GET /publico/partida/competicao/1", z.array(partida.passthrough()), "/publico/partida/competicao/1"],
+    ["GET /publico/partida/1", partida.passthrough(), "/publico/partida/1"],
+    ["GET /publico/equipe/1/atleta", z.array(atleta.passthrough()), "/publico/equipe/1/atleta"],
+    ["GET /publico/fase?idCompeticao=1", z.array(fase.passthrough()), "/publico/fase?idCompeticao=1"],
 ];
 
 let falhas = 0;
@@ -187,5 +196,16 @@ console.log(
     `elenco da equipe 1: ${aninhados.size} aninhados, ${filtrados.size} filtrados — ${iguais ? "iguais" : "DIVERGEM"}`,
 );
 if (!iguais) falhas++;
+
+// Pela rota pública, atleta sai sem CPF e sem idade, e competição fechada
+// não sai — a 2 é privada no conjunto de teste.
+const elencoPublico = await pegar("/publico/equipe/1/atleta");
+const comDadoPessoal = elencoPublico.filter((a) => a.cpf != null || a.idade != null).length;
+console.log(`elenco público da equipe 1: ${comDadoPessoal} atleta(s) com CPF ou idade`);
+if (comDadoPessoal > 0) falhas++;
+
+const fechada = await fetch(`${base}/publico/competicao/2`);
+console.log(`competição 2 (privada) pela rota pública: HTTP ${fechada.status}`);
+if (fechada.status !== 404) falhas++;
 
 process.exit(falhas ? 1 : 0);

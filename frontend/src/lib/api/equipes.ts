@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiFetch } from "./client";
+import { Acesso, apiFetch, rotaPara } from "./client";
 import { Atleta } from "@/src/lib/types/atleta";
 import { Equipe } from "@/src/lib/types/equipe";
 
@@ -105,10 +105,10 @@ export const removerEquipe = async (id: number): Promise<void> => {
  * serve quando só o elenco interessa — e as duas leem a mesma coluna, então
  * não podem discordar.
  */
-export const listarElenco = async (idEquipe: number): Promise<Atleta[]> =>
+export const listarElenco = async (idEquipe: number, acesso: Acesso = "gestao"): Promise<Atleta[]> =>
     z
         .array(atletaAninhadoSchema)
-        .parse(await apiFetch<unknown>(`/equipe/${idEquipe}/atleta`))
+        .parse(await apiFetch<unknown>(rotaPara(acesso, `/equipe/${idEquipe}/atleta`)))
         .map(paraAtletaDoElenco);
 
 /** Traz um atleta já cadastrado para a equipe. */

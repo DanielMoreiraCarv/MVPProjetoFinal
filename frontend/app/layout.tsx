@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 
 import "./globals.css";
+import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { Casca } from "@/src/components/layout/Casca";
 import { SCRIPT_DO_TEMA } from "@/src/lib/tema";
 
 // Uma família para texto. A mono existe para número em coluna — placar,
@@ -32,7 +32,10 @@ export default function RootLayout({
                 <script dangerouslySetInnerHTML={{ __html: SCRIPT_DO_TEMA }} />
             </head>
             <body className="min-h-svh">
-                <Casca>{children}</Casca>
+                <ToastProvider>
+                    {children}
+                    <ToastViewport className="print:hidden" />
+                </ToastProvider>
             </body>
         </html>
     );

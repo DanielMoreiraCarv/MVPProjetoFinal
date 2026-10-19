@@ -18,6 +18,7 @@ import {
     migalhasDaCompeticao,
 } from "@/src/components/layout/CabecalhoDaPagina";
 import { Secao } from "@/src/components/layout/Secao";
+import { CompartilharDaGestao } from "@/src/features/compartilhar/CompartilharDaGestao";
 import { COLUNAS_DA_SUMULA, ultimoLancamento } from "@/src/features/sumula/eventos";
 import { FolhaDaSumula } from "@/src/features/sumula/FolhaDaSumula";
 import { PlacarDaSumula } from "@/src/features/sumula/PlacarDaSumula";
@@ -207,6 +208,12 @@ const SumulaPage = () => {
                                 <Printer />
                                 {sumula ? "Salvar PDF" : "Imprimir em branco"}
                             </Button>
+                            <CompartilharDaGestao
+                                partida={{
+                                    id: partida.id,
+                                    rotulo: `${partida.equipeMandante} × ${partida.equipeVisitante}`,
+                                }}
+                            />
                         </>
                     )
                 }

@@ -31,6 +31,7 @@ export const competicaoSchema = z.object({
     isMataMata: z.boolean().optional(),
     categoria: z.string().optional(),
     estado: estadoDaCompeticaoSchema.optional(),
+    publica: z.boolean().optional(),
 })
 
 export type Competicao = z.infer<typeof competicaoSchema>
