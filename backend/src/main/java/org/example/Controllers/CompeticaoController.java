@@ -10,6 +10,7 @@ import org.example.Models.Equipe;
 import org.example.Models.Request.CompeticaoCreateRequest;
 import org.example.Models.Request.CompeticaoEstadoRequest;
 import org.example.Models.Request.CompeticaoUpdateRequest;
+import org.example.Models.Request.CompeticaoVisibilidadeRequest;
 import org.example.Models.Response.EstruturaResponse;
 import org.example.Models.Response.CompeticaoResponse;
 import org.example.Services.CompeticaoService;
@@ -146,6 +147,22 @@ public class CompeticaoController
     )
     {
         Competicao competicao = competicaoService.mudarEstado( id, request.estado() );
+
+        return ResponseEntity.ok( CompeticaoMapper.toResponse( competicao ) );
+    }
+
+    /**
+     * Abre ou fecha a competição ao acompanhamento público. Fica fora do PUT
+     * geral pelo mesmo motivo do estado: editar a descrição não pode, por
+     * descuido de um corpo incompleto, tirar do ar o link que a torcida usa.
+     */
+    @PutMapping("/{id}/visibilidade")
+    public ResponseEntity<CompeticaoResponse> mudarVisibilidade (
+            @PathVariable Long id,
+            @Valid @RequestBody CompeticaoVisibilidadeRequest request
+    )
+    {
+        Competicao competicao = competicaoService.mudarVisibilidade( id, request.publica() );
 
         return ResponseEntity.ok( CompeticaoMapper.toResponse( competicao ) );
     }

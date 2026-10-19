@@ -65,6 +65,9 @@ public class Competicao {
     @Column(name = "categoria", length = 20)
     private String categoria;
 
+    @Column(name = "publica", nullable = false)
+    private boolean publica;
+
     public Competicao() {
     }
 
@@ -150,6 +153,14 @@ public class Competicao {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public boolean isPublica() {
+        return publica;
+    }
+
+    public void setPublica(boolean publica) {
+        this.publica = publica;
     }
 
     /**

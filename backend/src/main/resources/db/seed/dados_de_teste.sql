@@ -41,6 +41,10 @@ insert into competicao (id, nome, descricao, categoria, administracao_id, mata_m
 insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata, estado) values
     (7, 'Copa Laboratório - 32 equipes', '32 equipes de futebol de campo inscritas, sem fases nem partidas.', 'Masculino', 3, false, 'RASCUNHO');
 
+-- Duas abertas ao público, para o link de acompanhamento ter o que mostrar:
+-- uma de pontos corridos e uma de mata-mata.
+update competicao set publica = true where id in (1, 6);
+
 insert into modalidade (codigo, nome, atletas_em_quadra, ativo) values
     ('FUTEBOL_DE_CAMPO', 'Futebol de campo', 11, true),
     ('FUTSAL', 'Futsal', 5, true),

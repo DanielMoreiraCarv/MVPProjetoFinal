@@ -21,7 +21,9 @@ public record CompeticaoResponse(
 
         Long idAdministracao,
 
-        EnumEstadoCompeticao estado
+        EnumEstadoCompeticao estado,
+
+        Boolean publica
 )
 {
 }
