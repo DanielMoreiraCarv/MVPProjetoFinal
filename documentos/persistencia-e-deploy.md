@@ -34,6 +34,13 @@ Nenhuma credencial no repositório. A aplicação lê três variáveis:
 | `DB_POOL_SIZE` | `5` | `5` |
 | `JPA_SHOW_SQL` | `false` | `false` |
 | `FLYWAY_MIGRAR_NO_BOOT` | `false` | `false` — quem migra é o pipeline |
+| `JWT_SEGREDO` | vazio: segredo aleatório a cada boot | **obrigatório**, ≥ 32 bytes (`openssl rand -base64 48`), igual em todas as instâncias |
+| `JWT_VALIDADE_MINUTOS` | `15` | validade do token de acesso |
+| `JWT_RENOVACAO_DIAS` | `7` | validade do token de renovação |
+| `AUTH_TENTATIVAS_ATE_BLOQUEAR` / `AUTH_BLOQUEIO_MINUTOS` | `5` / `15` | bloqueio de login por senha errada |
+| `AUTH_CADASTRO_ABERTO` | `true` | `false` fecha o `/auth/cadastro` |
+| `AUTH_EXIGIR_LOGIN` | `false` | `true` quando o front tiver login: GET segue público, escrita exige token |
+| `ADMIN_EMAIL` / `ADMIN_SENHA` / `ADMIN_NOME` | vazio | cria o primeiro ADMINISTRADOR no boot, se o e-mail não existir |
 
 O pipeline de deploy usa uma conexão à parte, em `DB_MIGRACAO_URL`. Ver §5.
 
