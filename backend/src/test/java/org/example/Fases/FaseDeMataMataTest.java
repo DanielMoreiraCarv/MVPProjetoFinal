@@ -1,17 +1,17 @@
 package org.example.Fases;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Modalidade;
 import org.example.Models.Partida;
-import org.example.Models.Time;
-import org.example.Repositories.CampeonatoRepository;
+import org.example.Models.Equipe;
+import org.example.Repositories.CompeticaoRepository;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.ModalidadeRepository;
 import org.example.Repositories.PartidaRepository;
-import org.example.Repositories.TimeRepository;
+import org.example.Repositories.EquipeRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,13 +47,14 @@ class FaseDeMataMataTest
     }
 
     @Autowired private OrquestradorDeFases orquestrador;
+    @Autowired private org.example.Services.PartidaService partidaService;
     @Autowired private PartidaRepository partidaRepository;
     @Autowired private FaseRepository faseRepository;
-    @Autowired private CampeonatoRepository campeonatoRepository;
-    @Autowired private TimeRepository timeRepository;
+    @Autowired private CompeticaoRepository competicaoRepository;
+    @Autowired private EquipeRepository timeRepository;
     @Autowired private ModalidadeRepository modalidadeRepository;
 
-    private List<Time> times = new ArrayList<>();
+    private List<Equipe> equipes = new ArrayList<>();
 
     private Fase faseCom ( int quantidadeDeTimes, Map<String, String> atributos )
     {
@@ -61,25 +62,25 @@ class FaseDeMataMataTest
                 .orElseGet( () -> modalidadeRepository.save(
                         new Modalidade( "FUTEBOL_DE_CAMPO", "Futebol de campo", 11 ) ) );
 
-        times = new ArrayList<>();
+        equipes = new ArrayList<>();
         for ( int i = 1; i <= quantidadeDeTimes; i++ )
         {
-            Time time = new Time();
-            time.setNome( "Time " + i );
-            time.setModalidade( modalidade );
-            times.add( timeRepository.save( time ) );
+            Equipe equipe = new Equipe();
+            equipe.setNome( "Equipe " + i );
+            equipe.setModalidade( modalidade );
+            equipes.add( timeRepository.save( equipe ) );
         }
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setNome( "Campeonato eliminatório" );
-        campeonato.setLstTimes( times );
-        campeonato = campeonatoRepository.save( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setNome( "Competicao eliminatório" );
+        competicao.setLstEquipes( equipes );
+        competicao = competicaoRepository.save( competicao );
 
         Fase aCriar = new Fase();
         aCriar.setNome( "Mata-mata" );
         aCriar.setOrdem( 1 );
         aCriar.setFasePartida( EnumFasePartida.ELIMINATORIA );
-        aCriar.setCampeonato( campeonato );
+        aCriar.setCompeticao( competicao );
         Fase fase = faseRepository.save( aCriar );
 
         atributos.forEach( ( codigo, valor ) -> orquestrador.definirAtributo( fase, codigo, valor ) );
@@ -90,9 +91,9 @@ class FaseDeMataMataTest
     private void configurarSemeado ( Fase fase )
     {
         List<Classificado> entrada = new ArrayList<>();
-        for ( int i = 0; i < times.size(); i++ )
+        for ( int i = 0; i < equipes.size(); i++ )
         {
-            entrada.add( new Classificado( i + 1, times.get( i ).getId() ) );
+            entrada.add( new Classificado( i + 1, equipes.get( i ).getId() ) );
         }
 
         orquestrador.configuracaoDe( fase );
@@ -106,8 +107,8 @@ class FaseDeMataMataTest
         {
             if ( Integer.valueOf( rodada ).equals( partida.getRodada() ) && !partida.isRealizada() )
             {
-                partida.setResultadoMandante( mandanteVence ? 2 : 0 );
-                partida.setResultadoVisitante( mandanteVence ? 0 : 2 );
+                partida.setPlacarMandante( mandanteVence ? 2 : 0 );
+                partida.setPlacarVisitante( mandanteVence ? 0 : 2 );
                 partida.setRealizada( true );
                 partidaRepository.save( partida );
             }
@@ -119,6 +120,69 @@ class FaseDeMataMataTest
         return partidaRepository.findByFaseId( fase.getId() ).stream()
                                 .filter( p -> Integer.valueOf( rodada ).equals( p.getRodada() ) )
                                 .toList();
+    }
+
+    /**
+     * Pelo orquestrador, e não semeando à mão: os outros testes contornam o
+     * empate da primeira fase, e por isso nenhum percebeu que o atributo que
+     * o resolve não tinha efeito.
+     */
+    @Test
+    void primeiraFaseDesempatadaPelaOrdemGeraOsConfrontos ()
+    {
+        Fase fase = faseCom( 8, Map.of( EstrategiaDeMataMata.DESCONSIDERAR_EMPATES, "true" ) );
+
+        assertTrue( orquestrador.validar( fase ).ehValido(), orquestrador.validar( fase ).mensagem() );
+        orquestrador.configurar( fase );
+        assertEquals( 4, daRodada( fase, 1 ).size() );
+    }
+
+    @Test
+    void primeiraFaseSemDesempateDizComoResolver ()
+    {
+        ResultadoDaValidacao resultado = orquestrador.validar( faseCom( 8, Map.of() ) );
+
+        assertFalse( resultado.ehValido() );
+        assertTrue( resultado.mensagem().contains( "Aceitar empates na entrada" ), resultado.mensagem() );
+    }
+
+    @Test
+    void chaveamentoDesenhaAChaveInteiraDesdeOInicio ()
+    {
+        Fase fase = faseCom( 8, Map.of( EstrategiaDeMataMata.DESCONSIDERAR_EMPATES, "true" ) );
+        orquestrador.configurar( fase );
+
+        Chaveamento chave = orquestrador.chaveamentoDe( fase );
+
+        assertEquals( 8, chave.participantes() );
+        assertEquals( List.of( "Quartas de final", "Semifinal", "Final" ),
+                chave.etapas().stream().map( EtapaDaChave::nome ).toList() );
+        // Na ordem de desenho, cada par vizinho alimenta o mesmo jogo da etapa seguinte.
+        List<ConfrontoDaChave> quartas = chave.etapas().get( 0 ).confrontos();
+        assertEquals( 4, quartas.size() );
+        assertEquals( quartas.get( 0 ).alimenta(), quartas.get( 1 ).alimenta() );
+        assertEquals( quartas.get( 2 ).alimenta(), quartas.get( 3 ).alimenta() );
+        // A semifinal ainda não existe, mas a chave já diz de onde vem cada lado.
+        ConfrontoDaChave semi = chave.etapas().get( 1 ).confrontos().get( 0 );
+        assertEquals( null, semi.idMandante() );
+        assertTrue( semi.origemMandante().startsWith( "Vencedor do jogo" ) );
+    }
+
+    @Test
+    void encerrarORestoDaRodadaGeraAProximaSozinho ()
+    {
+        Fase fase = faseCom( 4, Map.of( EstrategiaDeMataMata.DESCONSIDERAR_EMPATES, "true" ) );
+        orquestrador.configurar( fase );
+
+        for ( Partida partida : daRodada( fase, 1 ) )
+        {
+            partidaService.definirResultado( partida.getId(), 1, 0 );
+        }
+
+        assertEquals( 1, daRodada( fase, 2 ).size(),
+                "a final só aparecia se alguém chamasse a rota de atualizar a fase" );
+        ConfrontoDaChave finalDaChave = orquestrador.chaveamentoDe( fase ).etapas().get( 1 ).confrontos().get( 0 );
+        assertTrue( finalDaChave.idMandante() != null && finalDaChave.idVisitante() != null );
     }
 
     @Test
@@ -139,8 +203,8 @@ class FaseDeMataMataTest
         List<Partida> primeira = daRodada( fase, 1 );
 
         assertTrue( primeira.stream().anyMatch(
-                p -> p.getIdTimeMandante().equals( times.get( 0 ).getId() )
-                        && p.getIdTimeVisitante().equals( times.get( 3 ).getId() ) ) );
+                p -> p.getIdEquipeMandante().equals( equipes.get( 0 ).getId() )
+                        && p.getIdEquipeVisitante().equals( equipes.get( 3 ).getId() ) ) );
     }
 
     @Test
@@ -162,7 +226,7 @@ class FaseDeMataMataTest
         encerrarRodada( fase, 1, true );
         orquestrador.atualizar( fase, null );
 
-        // Com 8 times parando em 4, uma rodada basta: ninguém mais é eliminado.
+        // Com 8 equipes parando em 4, uma rodada basta: ninguém mais é eliminado.
         assertEquals( 0, daRodada( fase, 2 ).size() );
         assertEquals( 4, orquestrador.classificacaoDe( fase ).stream()
                                      .filter( c -> c.posicao() == 1 ).count() );
@@ -260,20 +324,20 @@ class FaseDeMataMataTest
         encerrarRodada( fase, 1, true );
         orquestrador.atualizar( fase, null );
 
-        List<Long> antes = daRodada( fase, 2 ).stream().map( Partida::getIdTimeMandante ).toList();
+        List<Long> antes = daRodada( fase, 2 ).stream().map( Partida::getIdEquipeMandante ).toList();
 
         // Inverte o resultado da primeira partida da primeira rodada.
         Partida corrigida = daRodada( fase, 1 ).get( 0 );
-        corrigida.setResultadoMandante( 0 );
-        corrigida.setResultadoVisitante( 2 );
+        corrigida.setPlacarMandante( 0 );
+        corrigida.setPlacarVisitante( 2 );
         partidaRepository.save( corrigida );
 
         orquestrador.atualizar( fase, null );
 
-        List<Long> depois = daRodada( fase, 2 ).stream().map( Partida::getIdTimeMandante ).toList();
+        List<Long> depois = daRodada( fase, 2 ).stream().map( Partida::getIdEquipeMandante ).toList();
 
         assertEquals( 1, daRodada( fase, 2 ).size() );
-        assertFalse( antes.equals( depois ) && antes.contains( corrigida.getIdTimeMandante() ) );
+        assertFalse( antes.equals( depois ) && antes.contains( corrigida.getIdEquipeMandante() ) );
     }
 
     @Test
@@ -287,8 +351,8 @@ class FaseDeMataMataTest
         encerrarRodada( fase, 2, true );
 
         Partida corrigida = daRodada( fase, 1 ).get( 0 );
-        corrigida.setResultadoMandante( 0 );
-        corrigida.setResultadoVisitante( 2 );
+        corrigida.setPlacarMandante( 0 );
+        corrigida.setPlacarVisitante( 2 );
         partidaRepository.save( corrigida );
 
         assertThrows( IllegalStateException.class, () -> orquestrador.atualizar( fase, null ) );

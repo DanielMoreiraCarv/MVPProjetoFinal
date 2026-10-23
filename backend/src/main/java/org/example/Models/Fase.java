@@ -7,32 +7,32 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "FASE")
+@Table(name = "fase")
 public class Fase
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "NOME")
+    @Column(name = "nome")
     private String nome;
 
     //indica a ordem na fase na competição(ex: 1 -> primeira fase)
-    @Column(name = "ORDEM")
+    @Column(name = "ordem")
     private Integer ordem;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "TIPO_FASE")
-    EnumFasePartida fasePartida;
+    @Column(name = "tipo_fase")
+    private EnumFasePartida fasePartida;
 
     @ManyToOne
-    @JoinColumn(name = "ID_CAMPEONATO")
-    private Campeonato campeonato;
+    @JoinColumn(name = "competicao_id")
+    private Competicao competicao;
 
-    @Column(name = "QUANTIDADE_CLASSIFICADOS")
+    @Column(name = "quantidade_classificados")
     private Integer quantidadeClassificados;
 
     @OneToOne
-    @JoinColumn(name = "ID_FASE_SUCESSORA")
+    @JoinColumn(name = "fase_sucessora_id")
     private Fase faseSucessora;
 }

@@ -1,16 +1,19 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
-import { Player } from "@/src/lib/types/player";
+import { Atleta } from "@/src/lib/types/atleta";
 
-const jogadorResponseSchema = z.object({
+const atletaResponseSchema = z.object({
     id: z.number(),
     nome: z.string(),
     idade: z.number().nullable(),
     numCamisa: z.number().nullable(),
     cpf: z.string().nullable(),
+    pontos: z.number().nullable().optional(),
+    gols: z.number().nullable().optional(),
+    assistencias: z.number().nullable().optional(),
 });
 
-type JogadorResponse = z.infer<typeof jogadorResponseSchema>;
+type AtletaResponse = z.infer<typeof atletaResponseSchema>;
 
 export interface AtletaInput {
     nome: string;
@@ -18,39 +21,71 @@ export interface AtletaInput {
     numCamisa?: number;
     cpf?: string;
     idModalidade?: number;
-    idTime: number;
+    idEquipe: number;
 }
 
-const paraPlayer = (resposta: JogadorResponse): Player => ({
+/**
+ * A atualização sobrescreve todos os campos citados no contrato: o que não
+ * for enviado vira nulo, inclusive a modalidade. Então aqui é o formulário
+ * inteiro, não só o que mudou — o contrário do que vale para a equipe.
+ */
+export interface AtletaUpdateInput {
+    nome: string;
+    idade?: number;
+    numCamisa?: number;
+    cpf?: string;
+    idModalidade?: number;
+}
+
+const paraAtleta = (resposta: AtletaResponse): Atleta => ({
     id: resposta.id,
-    name: resposta.nome,
-    number: resposta.numCamisa ?? undefined,
-    age: resposta.idade ?? undefined,
-    // suspensão ainda não é derivada de eventos; ver Sancao no backend
-    suspended: false,
+    nome: resposta.nome,
+    numCamisa: resposta.numCamisa ?? undefined,
+    idade: resposta.idade ?? undefined,
+    cpf: resposta.cpf ?? undefined,
+    pontos: resposta.pontos ?? undefined,
+    gols: resposta.gols ?? undefined,
+    assistencias: resposta.assistencias ?? undefined,
 });
 
-export const listarAtletasDoTime = async (idTime: number): Promise<Player[]> => {
-    const resposta = await apiFetch<unknown>(`/jogador?idTime=${idTime}`);
-    return z.array(jogadorResponseSchema.passthrough()).parse(resposta).map(paraPlayer);
+/**
+ * Todos os atletas cadastrados, ou só os de uma equipe.
+ *
+ * O cadastro é global: atleta existe fora da equipe e pode trocar de equipe.
+ * A resposta não diz de qual equipe cada um é — quem precisa disso cruza com
+ * `listarEquipes()`, que traz o elenco aninhado.
+ */
+export const listarAtletas = async (idEquipe?: number): Promise<Atleta[]> => {
+    const filtro = idEquipe ? `?idEquipe=${idEquipe}` : "";
+    return z
+        .array(atletaResponseSchema)
+        .parse(await apiFetch<unknown>(`/atleta${filtro}`))
+        .map(paraAtleta);
 };
 
-export const criarAtleta = async (entrada: AtletaInput): Promise<Player> => {
-    const resposta = await apiFetch<unknown>("/jogador", {
+export const listarAtletasDaEquipe = (idEquipe: number): Promise<Atleta[]> =>
+    listarAtletas(idEquipe);
+
+export const criarAtleta = async (entrada: AtletaInput): Promise<Atleta> => {
+    const resposta = await apiFetch<unknown>("/atleta", {
         method: "POST",
         body: JSON.stringify(entrada),
     });
-    return paraPlayer(jogadorResponseSchema.passthrough().parse(resposta));
+    return paraAtleta(atletaResponseSchema.parse(resposta));
 };
 
-export const atualizarAtleta = async (id: number, entrada: AtletaInput): Promise<Player> => {
-    const resposta = await apiFetch<unknown>("/jogador", {
+export const atualizarAtleta = async (
+    id: number,
+    entrada: AtletaUpdateInput,
+): Promise<Atleta> => {
+    const resposta = await apiFetch<unknown>(`/atleta/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ id, ...entrada }),
+        body: JSON.stringify(entrada),
     });
-    return paraPlayer(jogadorResponseSchema.passthrough().parse(resposta));
+    return paraAtleta(atletaResponseSchema.parse(resposta));
 };
 
+/** Apaga o cadastro do atleta. Sair da equipe é `removerDoElenco`. */
 export const removerAtleta = async (id: number): Promise<void> => {
-    await apiFetch<void>(`/jogador/${id}`, { method: "DELETE" });
+    await apiFetch<void>(`/atleta/${id}`, { method: "DELETE" });
 };

@@ -8,13 +8,23 @@ e novo em cima do mesmo cenário.
     python3 backend/tools/gerar_dados_de_teste.py
 
 Regenera backend/src/main/resources/db/seed/dados_de_teste.sql.
+
+A entrada vive em `dados-de-origem/`, ao lado deste arquivo, e continua em
+inglês (`Team`, `players`, `homeTeam`): é o formato em que foi escrita e é o que
+as expressões daqui leem. A saída segue o vocabulário do glossário — competição,
+equipe, atleta.
+
+Esses arquivos moravam em `frontend/src/features/administracoes/mocks/`, onde
+alimentavam as telas antes de elas lerem da API. Vieram para cá quando o front
+passou ao vocabulário do glossário: manter uma cópia dos tipos em inglês dentro
+do front só para eles seria carregar dois vocabulários no mesmo projeto.
 """
 import json
 import re
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
-MOCKS = RAIZ / "frontend/src/features/administracoes/mocks"
+ORIGEM = Path(__file__).resolve().parent / "dados-de-origem"
 SAIDA = RAIZ / "backend/src/main/resources/db/seed/dados_de_teste.sql"
 
 CATEGORIA = {"Masculino": "Masculino", "Feminino": "Feminino"}
@@ -34,7 +44,7 @@ ESTAGIO = {
 
 
 def texto(caminho):
-    return (MOCKS / caminho).read_text()
+    return (ORIGEM / caminho).read_text()
 
 
 def aspas(valor):
@@ -43,17 +53,17 @@ def aspas(valor):
     return "'" + str(valor).replace("'", "''") + "'"
 
 
-def ler_times():
+def ler_equipes():
     """teams.ts: const tN: Team = { id, name, players: [ p("tNpM", nome, numero, idade) ] }"""
     conteudo = texto("teams.ts")
-    times, atletas = [], []
+    equipes, atletas = [], []
 
     for bloco in re.finditer(
         r'const t(\d+): Team = \{\s*id:\s*(\d+),\s*name:\s*"([^"]+)",.*?players:\s*\[(.*?)\]\s*\}',
         conteudo, re.S,
     ):
-        id_time, nome_time, corpo = int(bloco.group(2)), bloco.group(3), bloco.group(4)
-        times.append((id_time, nome_time))
+        id_equipe, nome_equipe, corpo = int(bloco.group(2)), bloco.group(3), bloco.group(4)
+        equipes.append((id_equipe, nome_equipe))
 
         for atleta in re.finditer(
             r'p\(\s*"t(\d+)p(\d+)"\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(true|false)\s*)?\)',
@@ -65,10 +75,10 @@ def ler_times():
                 "nome": atleta.group(3),
                 "numero": int(atleta.group(4)),
                 "idade": int(atleta.group(5)),
-                "id_time": id_time,
+                "equipe_id": id_equipe,
             })
 
-    return times, atletas
+    return equipes, atletas
 
 
 def ler_competicoes():
@@ -86,8 +96,8 @@ def ler_competicoes():
             "nome": bloco.group(2),
             "descricao": bloco.group(3),
             "categoria": CATEGORIA.get(bloco.group(4), bloco.group(4)),
-            "primeiro_time": int(bloco.group(5)) + 1,
-            "ultimo_time": int(bloco.group(6)),
+            "primeira_equipe": int(bloco.group(5)) + 1,
+            "ultima_equipe": int(bloco.group(6)),
             "estagio": bloco.group(7),
         })
 
@@ -126,8 +136,8 @@ def ler_partidas():
         if not re.search(r"\{\s*id:\s*\d+", linha):
             continue
 
-        gols_mandante = campo(linha, "homeScore", r"(\d+)")
-        gols_visitante = campo(linha, "awayScore", r"(\d+)")
+        resultado_mandante = campo(linha, "homeScore", r"(\d+)")
+        resultado_visitante = campo(linha, "awayScore", r"(\d+)")
         # stageName aparece como s.Quartas ou s["Semi-finais"]
         estagio = campo(linha, "stageName", r's\.(\w+)') or campo(linha, "stageName", r's\["([^"]+)"\]')
 
@@ -135,8 +145,8 @@ def ler_partidas():
             "id": int(campo(linha, "id", r"(\d+)")),
             "mandante": campo(linha, "homeTeam"),
             "visitante": campo(linha, "awayTeam"),
-            "gols_mandante": int(gols_mandante) if gols_mandante else 0,
-            "gols_visitante": int(gols_visitante) if gols_visitante else 0,
+            "placar_mandante": int(resultado_mandante) if resultado_mandante else 0,
+            "placar_visitante": int(resultado_visitante) if resultado_visitante else 0,
             "vencedor": campo(linha, "winner"),
             "competicao": campo(linha, "competitionName"),
             "estagio": estagio,
@@ -144,6 +154,65 @@ def ler_partidas():
         })
 
     return partidas
+
+
+BAIRROS = [
+    "Aldeota", "Meireles", "Benfica", "Messejana", "Parangaba", "Montese", "Fátima", "Papicu",
+    "Varjota", "Mucuripe", "Cocó", "Dionísio Torres", "Joaquim Távora", "Bela Vista", "Pici",
+    "Antônio Bezerra", "Barra do Ceará", "Jacarecanga", "Centro", "Iracema", "Serrinha",
+    "Itaperi", "Cambeba", "Edson Queiroz", "Sapiranga", "Lagoa Redonda", "Passaré", "Mondubim",
+    "Maraponga", "Conjunto Ceará", "Jangurussu", "Henrique Jorge",
+]
+PRENOMES = [
+    "Ana", "Bruno", "Caio", "Davi", "Enzo", "Felipe", "Gabriel", "Heitor", "Igor", "João",
+    "Kauã", "Lucas", "Marcos", "Nicolas", "Otávio", "Pedro", "Rafael", "Samuel", "Thiago",
+    "Vitor", "Wesley", "Yuri", "Arthur", "Bernardo", "Cauã", "Diego", "Eduardo", "Francisco",
+]
+SOBRENOMES = [
+    "Almeida", "Barbosa", "Cavalcante", "Dias", "Esteves", "Farias", "Gomes", "Holanda",
+    "Lima", "Macedo", "Nogueira", "Oliveira", "Pinheiro", "Queiroz", "Rocha", "Sampaio",
+    "Teixeira", "Uchoa", "Vasconcelos", "Xavier",
+]
+ATLETAS_POR_EQUIPE = 16  # onze titulares e cinco no banco
+
+
+def laboratorio_de_fases(primeiro_id_equipe, id_competicao, id_administracao):
+    """Uma competição para montar fases do zero: 32 equipes de futebol de
+    campo inscritas, em rascunho, sem fase nem partida.
+
+    As competições vindas dos mocks já têm partidas sem fase — o estado que o
+    sistema de antes produzia — e por isso não servem para conferir se a
+    primeira rodada de uma estrutura nova sai certa. Esta não vem dos mocks: é
+    gerada aqui, de forma determinística, para o arquivo não mudar a cada
+    execução.
+    """
+    administracao = {
+        "id": id_administracao,
+        "nome": "Laboratório de fases",
+        "descricao": "Competições sem estrutura, para montar sequências de fases e conferir os confrontos gerados.",
+    }
+    competicao = {
+        "id": id_competicao,
+        "nome": "Copa Laboratório - 32 equipes",
+        "descricao": "32 equipes de futebol de campo inscritas, sem fases nem partidas.",
+        "categoria": "Masculino",
+    }
+
+    equipes, atletas = [], []
+    for i, bairro in enumerate(BAIRROS):
+        id_equipe = primeiro_id_equipe + i
+        equipes.append((id_equipe, f"EC {bairro}"))
+        for numero in range(1, ATLETAS_POR_EQUIPE + 1):
+            k = i * ATLETAS_POR_EQUIPE + numero
+            atletas.append({
+                "id": id_equipe * 1000 + numero,
+                "nome": f"{PRENOMES[k % len(PRENOMES)]} {SOBRENOMES[(k * 7) % len(SOBRENOMES)]}",
+                "numero": numero,
+                "idade": 18 + (k * 5) % 18,
+                "equipe_id": id_equipe,
+            })
+
+    return administracao, competicao, equipes, atletas
 
 
 def lote(linhas, por_linha=4):
@@ -155,12 +224,20 @@ def lote(linhas, por_linha=4):
 
 
 def gerar():
-    times, atletas = ler_times()
+    equipes, atletas = ler_equipes()
     competicoes = ler_competicoes()
     administracoes = ler_administracoes()
     partidas = ler_partidas()
 
-    nome_para_time = {nome: id_time for id_time, nome in times}
+    nome_para_equipe = {nome: id_equipe for id_equipe, nome in equipes}
+
+    laboratorio, copa, equipes_da_copa, atletas_da_copa = laboratorio_de_fases(
+        primeiro_id_equipe=max(id_equipe for id_equipe, _ in equipes) + 1,
+        id_competicao=max(c["id"] for c in competicoes) + 1,
+        id_administracao=max(a["id"] for a in administracoes) + 1,
+    )
+    equipes = equipes + equipes_da_copa
+    atletas = atletas + atletas_da_copa
     nome_para_competicao = {c["nome"]: c["id"] for c in competicoes}
 
     partes = [f"""-- Dados de teste, gerados por backend/tools/gerar_dados_de_teste.py
@@ -170,28 +247,30 @@ def gerar():
 --
 -- Só para ambiente local. Não é migração e nunca roda em produção.
 --
--- Conteúdo: {len(administracoes)} administrações, {len(competicoes)} competições,
--- {len(times)} times, {len(atletas)} atletas e {len(partidas)} partidas.
+-- Conteúdo: {len(administracoes) + 1} administrações, {len(competicoes) + 1} competições,
+-- {len(equipes)} equipes, {len(atletas)} atletas e {len(partidas)} partidas.
 
 begin;
 
-delete from sumula_ocorrencias;
+delete from evento_sumula;
+delete from sumula_ocorrencia;
 delete from sumula;
 delete from partida;
-delete from campeonato_times;
-delete from team_players;
-delete from sancao_jogador;
-delete from jogadores;
-delete from time;
+delete from competicao_equipe;
+delete from sancao_atleta;
+delete from atleta;
+delete from equipe;
+delete from valor_atributo_fase;
 delete from fase;
 delete from sancao;
-delete from campeonato_modalidades;
-delete from campeonato;
+delete from competicao_modalidade;
+delete from competicao;
 delete from administracao;
 """]
 
     # Administração
     linhas = [f"({a['id']}, {aspas(a['nome'])}, {aspas(a['descricao'])})" for a in administracoes]
+    linhas.append(f"({laboratorio['id']}, {aspas(laboratorio['nome'])}, {aspas(laboratorio['descricao'])})")
     partes.append("insert into administracao (id, nome, descricao) values\n" + lote(linhas, 1) + ";\n")
 
     # Competição — os mocks são todos de futebol de campo
@@ -205,13 +284,20 @@ delete from administracao;
             f"{aspas(c['categoria'])}, {adm}, {mata_mata})"
         )
     partes.append(
-        "insert into campeonato (id, nome, descricao, categoria, id_administracao, mata_mata) values\n"
+        "insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata) values\n"
         + lote(linhas, 1) + ";\n"
+    )
+
+    # Em rascunho: é o único estado em que a Estrutura deixa montar as fases.
+    partes.append(
+        "insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata, estado) values\n"
+        f"    ({copa['id']}, {aspas(copa['nome'])}, {aspas(copa['descricao'])}, "
+        f"{aspas(copa['categoria'])}, {laboratorio['id']}, false, 'RASCUNHO');\n"
     )
 
     # O catálogo normalmente é populado no boot da aplicação. O seed insere por
     # conta própria para não depender de a aplicação ter subido antes.
-    partes.append("""insert into modalidade (codigo, nome, jogadores_em_quadra, ativo) values
+    partes.append("""insert into modalidade (codigo, nome, atletas_em_quadra, ativo) values
     ('FUTEBOL_DE_CAMPO', 'Futebol de campo', 11, true),
     ('FUTSAL', 'Futsal', 5, true),
     ('SOCIETY', 'Society', 7, true),
@@ -221,67 +307,65 @@ delete from administracao;
 on conflict (codigo) do nothing;
 """)
 
-    partes.append("""insert into campeonato_modalidades (campeonato_id, modalidade_id)
-select c.id, m.id from campeonato c
+    partes.append("""insert into competicao_modalidade (competicao_id, modalidade_id)
+select c.id, m.id from competicao c
 cross join modalidade m
 where m.codigo = 'FUTEBOL_DE_CAMPO';
 """)
 
-    # Time
+    # Equipe
     linhas = [
-        f"({id_time}, {aspas(nome)}, (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO'))"
-        for id_time, nome in times
+        f"({id_equipe}, {aspas(nome)}, (select id from modalidade where codigo = 'FUTEBOL_DE_CAMPO'))"
+        for id_equipe, nome in equipes
     ]
-    partes.append("insert into time (id, nome, id_modalidade) values\n" + lote(linhas, 2) + ";\n")
+    partes.append("insert into equipe (id, nome, modalidade_id) values\n" + lote(linhas, 2) + ";\n")
 
     # Atleta
     linhas = [
-        f"({a['id']}, {aspas(a['nome'])}, {a['idade']}, {a['numero']}, {a['id_time']}, false)"
+        f"({a['id']}, {aspas(a['nome'])}, {a['idade']}, {a['numero']}, {a['equipe_id']}, false)"
         for a in atletas
     ]
     partes.append(
-        "insert into jogadores (id, nome, idade, num_camisa, id_time, expulso) values\n"
+        "insert into atleta (id, nome, idade, num_camisa, equipe_id, expulso) values\n"
         + lote(linhas, 3) + ";\n"
     )
 
-    partes.append("""insert into team_players (team_id, player_id)
-select id_time, id from jogadores;
-""")
-
-    # Inscrição do time na competição
+    # Inscrição da equipe na competição
     linhas = [
         f"({c['id']}, {t})"
         for c in competicoes
-        for t in range(c["primeiro_time"], c["ultimo_time"] + 1)
-    ]
-    partes.append("insert into campeonato_times (campeonato_id, team_id) values\n" + lote(linhas, 8) + ";\n")
+        for t in range(c["primeira_equipe"], c["ultima_equipe"] + 1)
+    ] + [f"({copa['id']}, {id_equipe})" for id_equipe, _ in equipes_da_copa]
+    partes.append(
+        "insert into competicao_equipe (competicao_id, equipe_id) values\n" + lote(linhas, 8) + ";\n"
+    )
 
     # Partida
     linhas, ignoradas = [], 0
     for p in partidas:
-        mandante = nome_para_time.get(p["mandante"])
-        visitante = nome_para_time.get(p["visitante"])
+        mandante = nome_para_equipe.get(p["mandante"])
+        visitante = nome_para_equipe.get(p["visitante"])
         competicao = nome_para_competicao.get(p["competicao"])
 
-        # Partidas de fase futura ainda não têm os dois times definidos nos
+        # Partidas de fase futura ainda não têm as duas equipes definidas nos
         # mocks — vêm como "Vencedor Partida 11". Ficam de fora.
         if not (mandante and visitante and competicao):
             ignoradas += 1
             continue
 
-        vencedor = nome_para_time.get(p["vencedor"]) if p["vencedor"] else None
+        vencedor = nome_para_equipe.get(p["vencedor"]) if p["vencedor"] else None
         formato = "PONTOS_CORRIDOS" if p["estagio"] == "PontosCorridos" else "ELIMINATORIA"
         linhas.append(
             f"({p['id']}, {mandante}, {visitante}, {competicao}, "
-            f"{p['gols_mandante']}, {p['gols_visitante']}, "
+            f"{p['placar_mandante']}, {p['placar_visitante']}, "
             f"{vencedor or 'null'}, {str(p['realizada']).lower()}, {aspas(formato)})"
         )
 
     partes.append(
         f"-- {ignoradas} partidas dos mocks ficaram de fora: são confrontos de fase\n"
-        f"-- futura, cujos times ainda dependem do vencedor de uma partida anterior.\n"
-        "insert into partida (id, id_time_mandante, id_time_visitante, id_campeonato,\n"
-        "                     resultado_mandante, resultado_visitante, id_vencedor,\n"
+        f"-- futura, cujas equipes ainda dependem do vencedor de uma partida anterior.\n"
+        "insert into partida (id, equipe_mandante_id, equipe_visitante_id, competicao_id,\n"
+        "                     placar_mandante, placar_visitante, equipe_vencedora_id,\n"
         "                     realizada, enum_fase_partida) values\n"
         + lote(linhas, 1) + ";\n"
     )
@@ -290,9 +374,9 @@ select id_time, id from jogadores;
 do $$
 begin
     perform setval('administracao_id_seq', (select coalesce(max(id), 1) from administracao));
-    perform setval('campeonato_id_seq', (select coalesce(max(id), 1) from campeonato));
-    perform setval('time_id_seq', (select coalesce(max(id), 1) from time));
-    perform setval('jogadores_id_seq', (select coalesce(max(id), 1) from jogadores));
+    perform setval('competicao_id_seq', (select coalesce(max(id), 1) from competicao));
+    perform setval('equipe_id_seq', (select coalesce(max(id), 1) from equipe));
+    perform setval('atleta_id_seq', (select coalesce(max(id), 1) from atleta));
     perform setval('partida_id_seq', (select coalesce(max(id), 1) from partida));
 end $$;
 
@@ -302,9 +386,9 @@ commit;
     SAIDA.parent.mkdir(parents=True, exist_ok=True)
     SAIDA.write_text("\n".join(partes))
 
-    print(f"{len(administracoes)} administrações")
-    print(f"{len(competicoes)} competições")
-    print(f"{len(times)} times")
+    print(f"{len(administracoes) + 1} administrações")
+    print(f"{len(competicoes) + 1} competições ({copa['nome']}: {len(equipes_da_copa)} equipes, sem fases)")
+    print(f"{len(equipes)} equipes")
     print(f"{len(atletas)} atletas")
     print(f"{len(partidas) - ignoradas} partidas ({ignoradas} ignoradas)")
     print(f"-> {SAIDA.relative_to(RAIZ)}")

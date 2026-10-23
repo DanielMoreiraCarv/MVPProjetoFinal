@@ -1,10 +1,16 @@
 package org.example.Services;
 
+import org.example.Fases.ConfiguracaoDaFase;
 import org.example.Fases.OrquestradorDeFases;
+import org.example.Fases.RegistroDeEstrategias;
 import org.example.Fases.ResultadoDaValidacao;
 import org.example.Mapper.FaseMapper;
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
+import org.example.Models.AtributoFase;
+import org.example.Models.EnumFasePartida;
+import org.example.Models.Response.AtributoFaseResponse;
+import org.example.Mapper.AtributoFaseMapper;
 import org.example.Models.Fase;
 import org.example.Models.Partida;
 import org.example.Models.Request.FaseCreateRequest;
@@ -12,6 +18,8 @@ import org.example.Models.Request.FaseUpdateRequest;
 import org.example.Models.Response.FaseResponse;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.PartidaRepository;
+import org.example.Repositories.ValorAtributoFaseRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,10 +33,16 @@ public class FaseService
     private FaseRepository faseRepository;
 
     @Autowired
-    private CampeonatoService campeonatoService;
+    private CompeticaoService competicaoService;
 
     @Autowired
     private OrquestradorDeFases orquestrador;
+
+    @Autowired
+    private RegistroDeEstrategias registro;
+
+    @Autowired
+    private ValorAtributoFaseRepository valorAtributoFaseRepository;
 
     @Autowired
     private PartidaRepository partidaRepository;
@@ -36,6 +50,19 @@ public class FaseService
     public FaseResponse criarFase ( FaseCreateRequest request )
     {
         Fase fase = FaseMapper.toEntity( request );
+
+        // O pedido declarava a sucessora e ela era descartada, como já tinha
+        // acontecido com a quantidade de classificados.
+        if ( request.idFaseSucessora() != null )
+        {
+            Fase sucessora = buscarFasePorId( request.idFaseSucessora() );
+            if ( sucessora == null )
+            {
+                throw new IllegalArgumentException( "Fase sucessora não encontrada" );
+            }
+            fase.setFaseSucessora( sucessora );
+        }
+
         return FaseMapper.toResponse( faseRepository.save( fase ) );
     }
 
@@ -48,9 +75,9 @@ public class FaseService
         return faseRepository.findAll();
     }
 
-    public List<Fase> buscarFasePorCampeonato ( Long idCampeonato )
+    public List<Fase> buscarFasePorCompeticao ( Long idCompeticao )
     {
-        return faseRepository.findFaseByCampeonatoId( idCampeonato ).orElse( null );
+        return faseRepository.findFaseByCompeticaoId( idCompeticao ).orElse( null );
     }
 
     public FaseResponse atualizarFase ( FaseUpdateRequest request, Fase fase )
@@ -60,12 +87,17 @@ public class FaseService
             fase.setOrdem( request.ordem() );
             fase.setFasePartida(  request.fasePartida() );
 
-            Campeonato campeonato = campeonatoService.buscarPorId( request.idCampeonato() );
-            if(campeonato==null){
-                throw new IllegalArgumentException("Campeonato precisa ser informado");
+            Competicao competicao = competicaoService.buscarPorId( request.idCompeticao() );
+            if(competicao==null){
+                throw new IllegalArgumentException("Competicao precisa ser informado");
             }
-            fase.setCampeonato( campeonato );
+            fase.setCompeticao( competicao );
 
+            fase.setQuantidadeClassificados( request.qtdClassificados() );
+
+            // Sucessora nula desencadeia: antes o `if` só permitia trocar o
+            // vínculo, nunca removê-lo, e uma fase encadeada por engano ficava
+            // impossível de apagar pelos dois lados.
             if(request.idFaseSucessora()!=null){
                 Fase sucessoro =  buscarFasePorId( request.idFaseSucessora() );
                 if(sucessoro==null){
@@ -73,14 +105,33 @@ public class FaseService
                 }
                 fase.setFaseSucessora( sucessoro );
             }
-
+            else {
+                fase.setFaseSucessora( null );
+            }
         }
 
         return FaseMapper.toResponse( faseRepository.save( fase ) );
     }
 
+    /**
+     * Apaga a fase e o que só existe por causa dela.
+     *
+     * Os valores de atributo referenciam a fase, então apagá-la sem apagá-los
+     * antes violava a chave estrangeira — e o erro chegava como conflito
+     * genérico, sem dizer o que estava segurando.
+     */
+    @Transactional
     public void deleteFase ( Fase fase )
     {
+        // Quem apontava para ela passa a não levar a lugar nenhum: sem isso a
+        // exclusão da fase seguinte estourava a chave estrangeira, e a tela só
+        // podia dizer "conflita com um vínculo em uso".
+        faseRepository.findByFaseSucessoraId( fase.getId() ).ifPresent( anterior -> {
+            anterior.setFaseSucessora( null );
+            faseRepository.save( anterior );
+        } );
+        valorAtributoFaseRepository.deleteByFaseId( fase.getId() );
+        partidaRepository.deleteAll( partidaRepository.findByFaseId( fase.getId() ) );
         faseRepository.delete( fase );
     }
 
@@ -104,8 +155,168 @@ public class FaseService
         return partidaRepository.findByFaseId( fase.getId() );
     }
 
+    public List<org.example.Fases.LinhaDaTabela> tabelaDe ( Fase fase )
+    {
+        if ( !orquestrador.temTabelaDePontos( fase ) )
+        {
+            throw new IllegalArgumentException( "A fase " + fase.getNome()
+                    + " é eliminatória: não tem tabela de pontos, só a ordem de classificação." );
+        }
+        return orquestrador.tabelaDe( fase );
+    }
+
+    /** A resposta da fase com as contagens que só o orquestrador sabe fazer. */
+    public FaseResponse comContagens ( Fase fase )
+    {
+        FaseResponse base = FaseMapper.toResponse( fase );
+        Integer entram = null;
+        Integer avancam = null;
+        if ( fase.getFasePartida() != null )
+        {
+            entram = orquestrador.quantosEntram( fase );
+            avancam = orquestrador.quantosAvancam( fase );
+        }
+        return new FaseResponse( base.id(), base.nome(), base.ordem(), base.fasePartida(),
+                base.qtdClassificados(), base.idFaseSucessora(), entram, avancam );
+    }
+
+    public List<org.example.Fases.ValidacaoDaFase> validarEstrutura ( Long idCompeticao )
+    {
+        List<Fase> fases = buscarFasePorCompeticao( idCompeticao );
+        return orquestrador.validarEstrutura( fases == null ? List.of() : fases );
+    }
+
+    /**
+     * O botão único: valida a estrutura inteira e, só se tudo fechar, gera
+     * a primeira fase e publica a competição. As seguintes nascem quando a
+     * anterior termina. Gerar fase por fase deixava nascer partidas de uma
+     * estrutura que não fechava — e o erro só aparecia na fase seguinte.
+     */
+    @Transactional
+    public List<Partida> gerarPartidasDaCompeticao ( Long idCompeticao )
+    {
+        List<Fase> fases = buscarFasePorCompeticao( idCompeticao );
+        if ( fases == null || fases.isEmpty() )
+        {
+            throw new IllegalArgumentException( "A competição ainda não tem fases: monte a estrutura antes de gerar as partidas." );
+        }
+        if ( fases.stream().anyMatch( fase -> !partidaRepository.findByFaseId( fase.getId() ).isEmpty() ) )
+        {
+            throw new IllegalStateException( "As partidas desta competição já foram geradas." );
+        }
+
+        List<String> problemas = orquestrador.validarEstrutura( fases ).stream()
+                .filter( validacao -> !validacao.resultado().ehValido() )
+                .map( validacao -> validacao.fase().getNome() + ": " + String.join( " ", validacao.resultado().erros() ) )
+                .toList();
+        if ( !problemas.isEmpty() )
+        {
+            throw new IllegalArgumentException( "A estrutura não fecha, e nenhuma partida foi gerada. "
+                    + String.join( " ", problemas ) );
+        }
+
+        Fase primeira = fases.stream()
+                .filter( fase -> faseRepository.findByFaseSucessoraId( fase.getId() ).isEmpty() )
+                .min( java.util.Comparator.comparing( ( Fase f ) -> f.getOrdem() == null ? 0 : f.getOrdem() ) )
+                .orElseThrow();
+
+        var competicao = competicaoService.buscarPorId( idCompeticao );
+        if ( competicao != null && competicao.getEstado() == org.example.Models.EnumEstadoCompeticao.RASCUNHO )
+        {
+            competicaoService.mudarEstado( idCompeticao, org.example.Models.EnumEstadoCompeticao.EM_ANDAMENTO );
+        }
+
+        orquestrador.configurar( primeira );
+        return partidaRepository.findByFaseId( primeira.getId() );
+    }
+
+    public org.example.Fases.Chaveamento chaveamentoDe ( Fase fase )
+    {
+        return orquestrador.chaveamentoDe( fase );
+    }
+
     public List<Classificado> classificacaoDe ( Fase fase )
     {
         return orquestrador.classificacaoDe( fase );
+    }
+
+    /** O catálogo que a estratégia do tipo declara. */
+    public List<AtributoFase> atributosDoTipo ( EnumFasePartida tipoFase )
+    {
+        if ( !registro.conhece( tipoFase ) )
+        {
+            throw new IllegalArgumentException(
+                    "Não há estratégia registrada para o tipo de fase " + tipoFase + "." );
+        }
+        return registro.para( tipoFase ).atributosSuportados();
+    }
+
+    /** O catálogo do tipo desta fase, com o valor gravado em cada campo. */
+    public List<AtributoFaseResponse> atributosDaFase ( Fase fase )
+    {
+        ConfiguracaoDaFase configuracao = orquestrador.configuracaoDe( fase );
+
+        return atributosDoTipo( fase.getFasePartida() ).stream()
+                .map( atributo -> AtributoFaseMapper.toResponse( atributo,
+                        configuracao.texto( atributo.getCodigo() ) ) )
+                .toList();
+    }
+
+    public void definirAtributo ( Fase fase, String codigo, String valor )
+    {
+        orquestrador.definirAtributo( fase, codigo, valor );
+    }
+
+    /**
+     * Grava vários atributos de uma vez (PR #34). Confere todos antes de
+     * gravar qualquer um: um atributo desconhecido ou com tipo errado recusa a
+     * requisição inteira, em vez de deixar metade gravada.
+     */
+    @Transactional
+    public List<AtributoFaseResponse> definirAtributos ( Fase fase, Map<String, String> valores )
+    {
+        if ( fase.getFasePartida() == null )
+        {
+            throw new IllegalArgumentException( "A fase não tem formato definido." );
+        }
+        if ( valores == null || valores.isEmpty() )
+        {
+            throw new IllegalArgumentException( "Informe ao menos um atributo." );
+        }
+
+        Map<String, org.example.Models.AtributoFase> aceitos = new java.util.HashMap<>();
+        atributosDoTipo( fase.getFasePartida() )
+                    .forEach( atributo -> aceitos.put( atributo.getCodigo(), atributo ) );
+
+        List<String> erros = new java.util.ArrayList<>();
+        valores.forEach( ( codigo, valor ) -> {
+            var atributo = aceitos.get( codigo );
+            if ( atributo == null )
+            {
+                erros.add( "A fase " + fase.getNome() + " não aceita o atributo " + codigo + "." );
+            }
+            else if ( valor != null && !valor.isBlank() && !tipoValido( atributo.getTipoDado(), valor ) )
+            {
+                erros.add( "O atributo " + codigo + " espera " + atributo.getTipoDado() + ", veio \"" + valor + "\"." );
+            }
+        } );
+        if ( !erros.isEmpty() )
+        {
+            throw new IllegalArgumentException( String.join( " ", erros ) );
+        }
+
+        valores.forEach( ( codigo, valor ) -> orquestrador.definirAtributo( fase, codigo, valor ) );
+        return atributosDaFase( fase );
+    }
+
+    private static boolean tipoValido ( org.example.Models.EnumTipoDeDado tipo, String valor )
+    {
+        String limpo = valor.trim();
+        return switch ( tipo )
+        {
+            case INTEIRO -> limpo.matches( "-?\\d+" );
+            case BOOLEANO -> limpo.equalsIgnoreCase( "true" ) || limpo.equalsIgnoreCase( "false" );
+            case TEXTO, LISTA_DE_TEXTO -> true;
+        };
     }
 }

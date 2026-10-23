@@ -10,17 +10,17 @@ import java.util.List;
 @Repository
 public interface PartidaRepository extends JpaRepository<Partida, Long> {
 
-    List<Partida> findByCampeonatoId(Long idCampeonato);
+    List<Partida> findByCompeticaoId(Long idCompeticao);
 
     List<Partida> findByRealizadaFalse();
 
     List<Partida> findByRealizadaTrue();
 
-    List<Partida> findByTimeMandanteId(Long idTimeMandante);
+    List<Partida> findByEquipeMandanteId(Long idEquipeMandante);
 
-    List<Partida> findByTimeVisitanteId(Long idTimeVisitante);
+    List<Partida> findByEquipeVisitanteId(Long idEquipeVisitante);
 
-    List<Partida> findByIdVencedor(Long idVencedor);
+    List<Partida> findByIdEquipeVencedora(Long idEquipeVencedora);
 
     List<Partida> findByEnumFasePartida(EnumFasePartida enumFasePartida);
 

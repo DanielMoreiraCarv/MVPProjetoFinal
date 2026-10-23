@@ -1,17 +1,17 @@
 package org.example.Fases;
 
-import org.example.Models.Campeonato;
+import org.example.Models.Competicao;
 import org.example.Models.Classificado;
 import org.example.Models.EnumFasePartida;
 import org.example.Models.Fase;
 import org.example.Models.Modalidade;
 import org.example.Models.Partida;
-import org.example.Models.Time;
-import org.example.Repositories.CampeonatoRepository;
+import org.example.Models.Equipe;
+import org.example.Repositories.CompeticaoRepository;
 import org.example.Repositories.FaseRepository;
 import org.example.Repositories.ModalidadeRepository;
 import org.example.Repositories.PartidaRepository;
-import org.example.Repositories.TimeRepository;
+import org.example.Repositories.EquipeRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +49,8 @@ class FaseDeGruposTest
     @Autowired private EstrategiaDeGrupos estrategia;
     @Autowired private PartidaRepository partidaRepository;
     @Autowired private FaseRepository faseRepository;
-    @Autowired private CampeonatoRepository campeonatoRepository;
-    @Autowired private TimeRepository timeRepository;
+    @Autowired private CompeticaoRepository competicaoRepository;
+    @Autowired private EquipeRepository timeRepository;
     @Autowired private ModalidadeRepository modalidadeRepository;
 
     private Fase faseCom ( int quantidadeDeTimes, Map<String, String> atributos )
@@ -59,25 +59,25 @@ class FaseDeGruposTest
                 .orElseGet( () -> modalidadeRepository.save(
                         new Modalidade( "FUTEBOL_DE_CAMPO", "Futebol de campo", 11 ) ) );
 
-        List<Time> times = new ArrayList<>();
+        List<Equipe> equipes = new ArrayList<>();
         for ( int i = 1; i <= quantidadeDeTimes; i++ )
         {
-            Time time = new Time();
-            time.setNome( "Time " + i );
-            time.setModalidade( modalidade );
-            times.add( timeRepository.save( time ) );
+            Equipe equipe = new Equipe();
+            equipe.setNome( "Equipe " + i );
+            equipe.setModalidade( modalidade );
+            equipes.add( timeRepository.save( equipe ) );
         }
 
-        Campeonato campeonato = new Campeonato();
-        campeonato.setNome( "Campeonato de grupos" );
-        campeonato.setLstTimes( times );
-        campeonato = campeonatoRepository.save( campeonato );
+        Competicao competicao = new Competicao();
+        competicao.setNome( "Competicao de grupos" );
+        competicao.setLstEquipes( equipes );
+        competicao = competicaoRepository.save( competicao );
 
         Fase aCriar = new Fase();
         aCriar.setNome( "Fase de grupos" );
         aCriar.setOrdem( 1 );
         aCriar.setFasePartida( EnumFasePartida.GRUPOS );
-        aCriar.setCampeonato( campeonato );
+        aCriar.setCompeticao( competicao );
         Fase fase = faseRepository.save( aCriar );
 
         atributos.forEach( ( codigo, valor ) -> orquestrador.definirAtributo( fase, codigo, valor ) );
@@ -86,8 +86,8 @@ class FaseDeGruposTest
 
     private void encerrar ( Partida partida, int golsMandante, int golsVisitante )
     {
-        partida.setResultadoMandante( golsMandante );
-        partida.setResultadoVisitante( golsVisitante );
+        partida.setPlacarMandante( golsMandante );
+        partida.setPlacarVisitante( golsVisitante );
         partida.setRealizada( true );
         partidaRepository.save( partida );
     }
@@ -98,7 +98,7 @@ class FaseDeGruposTest
         ResultadoDaValidacao resultado = orquestrador.validar( faseCom( 4, Map.of() ) );
 
         assertFalse( resultado.ehValido() );
-        assertTrue( resultado.mensagem().contains( "exatamente um" ) );
+        assertTrue( resultado.mensagem().contains( "Informe o número de grupos ou o tamanho do grupo" ) );
     }
 
     @Test
@@ -178,6 +178,133 @@ class FaseDeGruposTest
         assertEquals( depoisDeConfigurar, partidaRepository.findByFaseId( fase.getId() ).size() );
     }
 
+    /** Uma eliminatória depois da fase de grupos, para ver quem entra nela. */
+    private Fase eliminatoriaDepoisDe ( Fase grupos )
+    {
+        Fase seguinte = new Fase();
+        seguinte.setNome( "Mata-mata" );
+        seguinte.setOrdem( 2 );
+        seguinte.setFasePartida( EnumFasePartida.ELIMINATORIA );
+        seguinte.setCompeticao( grupos.getCompeticao() );
+        seguinte = faseRepository.save( seguinte );
+        grupos.setFaseSucessora( seguinte );
+        faseRepository.save( grupos );
+        return seguinte;
+    }
+
+    private void jogarTudo ( Fase fase )
+    {
+        int i = 0;
+        for ( Partida partida : partidaRepository.findByFaseId( fase.getId() ) )
+        {
+            // Placar variado para a tabela não sair toda empatada.
+            encerrar( partida, ( i * 7 ) % 4, ( i * 3 ) % 3 );
+            i++;
+        }
+    }
+
+    private java.util.Set<Long> topoDeCadaGrupo ( Fase fase, int quantos )
+    {
+        return orquestrador.tabelaDe( fase ).stream()
+                .filter( linha -> linha.posicao() <= quantos )
+                .map( linha -> linha.desempenho().getIdTime() )
+                .collect( java.util.stream.Collectors.toSet() );
+    }
+
+    @Test
+    void porPadraoAvancamOsDoisPrimeirosDeCadaGrupo ()
+    {
+        Fase grupos = faseCom( 8, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+        Fase seguinte = eliminatoriaDepoisDe( grupos );
+
+        assertEquals( 4, orquestrador.quantosAvancam( grupos ),
+                "2 grupos × 2 por grupo, sabido antes de qualquer jogo" );
+        assertEquals( 4, orquestrador.quantosEntram( seguinte ) );
+
+        orquestrador.configurar( grupos );
+        jogarTudo( grupos );
+
+        java.util.Set<Long> entraram = orquestrador.entradaDe( seguinte ).stream()
+                .map( Classificado::idEquipe ).collect( java.util.stream.Collectors.toSet() );
+        assertEquals( topoDeCadaGrupo( grupos, 2 ), entraram );
+    }
+
+    @Test
+    void totalMenorQueOPorGrupoLevaOsPrimeirosEOsMelhoresSegundos ()
+    {
+        Fase grupos = faseCom( 12, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "3" ) );
+        grupos.setQuantidadeClassificados( 4 );
+        faseRepository.save( grupos );
+        Fase seguinte = eliminatoriaDepoisDe( grupos );
+        orquestrador.configurar( grupos );
+        jogarTudo( grupos );
+
+        java.util.Set<Long> entraram = orquestrador.entradaDe( seguinte ).stream()
+                .map( Classificado::idEquipe ).collect( java.util.stream.Collectors.toSet() );
+
+        assertEquals( 4, entraram.size() );
+        assertTrue( entraram.containsAll( topoDeCadaGrupo( grupos, 1 ) ), "todos os primeiros entram" );
+        assertEquals( 1, entraram.stream().filter( id -> !topoDeCadaGrupo( grupos, 1 ).contains( id ) ).count(),
+                "e só o melhor dos segundos completa" );
+    }
+
+    @Test
+    void maisPorGrupoDoQueOGrupoTemEhRecusado ()
+    {
+        Fase grupos = faseCom( 8, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2",
+                EstrategiaDeGrupos.CLASSIFICADOS_POR_GRUPO, "5" ) );
+
+        ResultadoDaValidacao resultado = orquestrador.validar( grupos );
+
+        assertFalse( resultado.ehValido() );
+        assertTrue( resultado.mensagem().contains( "5 por grupo" ), resultado.mensagem() );
+    }
+
+    @Test
+    void totalMaiorQueQuemEntraEhRecusado ()
+    {
+        Fase grupos = faseCom( 8, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+        grupos.setQuantidadeClassificados( 10 );
+        faseRepository.save( grupos );
+
+        ResultadoDaValidacao resultado = orquestrador.validar( grupos );
+
+        assertFalse( resultado.ehValido() );
+        assertTrue( resultado.mensagem().contains( "Avançam 10" ), resultado.mensagem() );
+    }
+
+    @Test
+    void tabelaComecaComTodosZeradosAntesDeGerarOsConfrontos ()
+    {
+        Fase fase = faseCom( 4, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+
+        List<LinhaDaTabela> tabela = orquestrador.tabelaDe( fase );
+
+        assertEquals( 4, tabela.size(), "a tabela esperava o primeiro jogo para mostrar as equipes" );
+        assertTrue( tabela.stream().allMatch( linha -> linha.desempenho().getPontos() == 0
+                && linha.desempenho().getJogos() == 0 ) );
+    }
+
+    @Test
+    void tabelaSeparaPorGrupoEContaOsPontos ()
+    {
+        Fase fase = faseCom( 4, Map.of( EstrategiaDeGrupos.NUMERO_DE_GRUPOS, "2" ) );
+        orquestrador.configurar( fase );
+        Partida primeira = partidaRepository.findByFaseId( fase.getId() ).get( 0 );
+        encerrar( primeira, 2, 0 );
+
+        List<LinhaDaTabela> tabela = orquestrador.tabelaDe( fase );
+
+        assertEquals( 4, tabela.size() );
+        assertEquals( 2, tabela.stream().map( LinhaDaTabela::grupo ).distinct().count() );
+        LinhaDaTabela lider = tabela.stream()
+                .filter( linha -> linha.desempenho().getIdTime().equals( primeira.getIdEquipeMandante() ) )
+                .findFirst().orElseThrow();
+        assertEquals( 1, lider.posicao() );
+        assertEquals( 3, lider.desempenho().getPontos() );
+        assertEquals( 2, lider.desempenho().getSaldoDeGols() );
+    }
+
     @Test
     void timeSemJogoRealizadoApareceZeradoNaClassificacao ()
     {
@@ -194,16 +321,16 @@ class FaseDeGruposTest
         orquestrador.configurar( fase );
 
         List<Partida> partidas = partidaRepository.findByFaseId( fase.getId() );
-        Long vencedorGeral = partidas.get( 0 ).getIdTimeMandante();
+        Long vencedorGeral = partidas.get( 0 ).getIdEquipeMandante();
 
         // O mandante da primeira partida vence as suas; as demais ficam 0 a 0.
         for ( Partida partida : partidas )
         {
-            if ( vencedorGeral.equals( partida.getIdTimeMandante() ) )
+            if ( vencedorGeral.equals( partida.getIdEquipeMandante() ) )
             {
                 encerrar( partida, 3, 0 );
             }
-            else if ( vencedorGeral.equals( partida.getIdTimeVisitante() ) )
+            else if ( vencedorGeral.equals( partida.getIdEquipeVisitante() ) )
             {
                 encerrar( partida, 0, 3 );
             }
@@ -216,7 +343,7 @@ class FaseDeGruposTest
         List<Classificado> classificacao = orquestrador.classificacaoDe( fase );
 
         assertEquals( 1, classificacao.get( 0 ).posicao() );
-        assertEquals( vencedorGeral, classificacao.get( 0 ).idTime() );
+        assertEquals( vencedorGeral, classificacao.get( 0 ).idEquipe() );
     }
 
     @Test
@@ -232,16 +359,16 @@ class FaseDeGruposTest
         for ( Partida partida : partidas )
         {
             encerrar( partida, 2, 0 );
-            primeiros.add( partida.getIdTimeMandante() );
+            primeiros.add( partida.getIdEquipeMandante() );
         }
 
         List<Classificado> classificacao = orquestrador.classificacaoDe( fase );
 
         assertEquals( 4, classificacao.size() );
-        assertTrue( primeiros.contains( classificacao.get( 0 ).idTime() ) );
-        assertTrue( primeiros.contains( classificacao.get( 1 ).idTime() ) );
-        assertFalse( primeiros.contains( classificacao.get( 2 ).idTime() ) );
-        assertFalse( primeiros.contains( classificacao.get( 3 ).idTime() ) );
+        assertTrue( primeiros.contains( classificacao.get( 0 ).idEquipe() ) );
+        assertTrue( primeiros.contains( classificacao.get( 1 ).idEquipe() ) );
+        assertFalse( primeiros.contains( classificacao.get( 2 ).idEquipe() ) );
+        assertFalse( primeiros.contains( classificacao.get( 3 ).idEquipe() ) );
     }
 
     @Test

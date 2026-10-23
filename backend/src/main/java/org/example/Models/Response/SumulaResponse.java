@@ -6,21 +6,32 @@ import java.util.List;
 public record SumulaResponse(
         Long id,
 
-        PartidaResponse partidaResponse,
+        PartidaResponse partida,
 
         ArbitroResponse arbitro,
 
-        Integer pontosMandante,
+        Integer placarMandante,
 
-        Integer pontosVisitante,
+        Integer placarVisitante,
 
-        List<String> lstOcorrencias,
+        /**
+         * Texto livre, e é esse o limite conhecido: sem a entidade `Evento`
+         * não dá para derivar artilharia, contagem de cartão nem suspensão
+         * daqui (RF73, RF76, RF105).
+         */
+        List<String> ocorrencias,
 
-        List<String> lstObservacoes,
+        /** Era uma lista de um elemento só, o que obrigava o cliente a
+         *  desembrulhar um texto. */
+        String observacoes,
 
         Date dataFechamento,
 
-        Boolean assinada
+        Boolean assinada,
+
+        String modo,
+
+        List<EventoDaSumulaResponse> eventos
 )
 {
 }

@@ -20,8 +20,8 @@ public record Classificado(
         @Min(value = 1, message = "a posição na classificação começa em 1")
         int posicao,
 
-        @NotNull(message = "classificado precisa referenciar um time")
-        Long idTime)
+        @NotNull(message = "classificado precisa referenciar uma equipe")
+        Long idEquipe)
 {
     private static final Validator VALIDADOR =
             Validation.buildDefaultValidatorFactory().getValidator();
@@ -33,7 +33,7 @@ public record Classificado(
         // dentro do domínio, a validação é acionada aqui para a restrição
         // valer sempre, e ser declarada num lugar só.
         exigirValido( "posicao", posicao );
-        exigirValido( "idTime", idTime );
+        exigirValido( "idEquipe", idEquipe );
     }
 
     private static void exigirValido ( String campo, Object valor )

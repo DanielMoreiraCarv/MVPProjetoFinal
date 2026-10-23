@@ -1,9 +1,9 @@
 package org.example.Fases;
 
-/** Desempenho de um time dentro de uma fase, agregado a partir das partidas. */
+/** Desempenho de um equipe dentro de uma fase, agregado a partir das partidas. */
 public class Desempenho
 {
-    private final Long idTime;
+    private final Long idEquipe;
     private int jogos;
     private int vitorias;
     private int empates;
@@ -12,9 +12,9 @@ public class Desempenho
     private int golsContra;
     private int pontos;
 
-    public Desempenho ( Long idTime )
+    public Desempenho ( Long idEquipe )
     {
-        this.idTime = idTime;
+        this.idEquipe = idEquipe;
     }
 
     public void registrar ( int golsFeitos, int golsSofridos, int pontosPorVitoria,
@@ -41,7 +41,7 @@ public class Desempenho
         }
     }
 
-    public Long getIdTime () { return idTime; }
+    public Long getIdTime () { return idEquipe; }
     public int getJogos () { return jogos; }
     public int getVitorias () { return vitorias; }
     public int getEmpates () { return empates; }

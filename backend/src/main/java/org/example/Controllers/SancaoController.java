@@ -1,14 +1,11 @@
 package org.example.Controllers;
 
 
-import org.example.Mapper.SancaoJogadorMapper;
+import org.example.Exception.NaoEncontradoException;
 import org.example.Mapper.SancaoMapper;
-import org.example.Models.Request.SancaoJogadorRequest;
 import org.example.Models.Request.SancaoRequest;
 import org.example.Models.Response.SancaoResponse;
 import org.example.Models.Sancao;
-import org.example.Models.SancaoJogador;
-import org.example.Services.SancaoJogadorService;
 import org.example.Services.SancaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,18 +14,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * A regra de sanção de uma competição: quantas partidas de suspensão um tipo
+ * de infração custa.
+ *
+ * Este controller servia dois recursos ao mesmo tempo — a regra e a punição
+ * aplicada a um atleta — com a segunda pendurada em `/sancao/sancao`. A
+ * punição por atleta agora tem recurso próprio, em `/sancao_atleta`.
+ */
 @RestController
 @RequestMapping("/api/v1/sancao")
-@CrossOrigin(origins = "*")
 public class SancaoController
 {
     @Autowired
     private SancaoService sancaoService;
 
-    @Autowired
-    private SancaoJogadorService sancaoJogadorService;
-
-    //Controller das Regras das Sanções
 
     @PostMapping
     public ResponseEntity<?> criarSancao ( @RequestBody SancaoRequest request )
@@ -59,7 +59,7 @@ public class SancaoController
 
         if ( sancao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Sanção", id );
         }
 
         return ResponseEntity.ok( SancaoMapper.toResponse( sancao ) );
@@ -72,56 +72,11 @@ public class SancaoController
 
         if ( sancao == null )
         {
-            return ResponseEntity.notFound().build();
+            throw NaoEncontradoException.de( "Sanção", id );
         }
 
         sancaoService.deletarSancao( id );
 
         return ResponseEntity.ok().build();
-    }
-
-    //Controller das Sanções por Jogadores e Campeonatos
-
-
-    @PostMapping("/sancao")
-    public ResponseEntity<?> criarSancaoParaUmJogador (
-            SancaoJogadorRequest request )
-    {
-        SancaoJogador sancaoJogador = sancaoJogadorService.criarSancaoJogador( request );
-
-        return ResponseEntity.status( HttpStatus.CREATED )
-                             .body( SancaoJogadorMapper.toResponse( sancaoJogador ) );
-    }
-
-    @PutMapping("/sancao/{id}")
-    public ResponseEntity<?> editarSancaoParaUmJogador ( @PathVariable("id") Long id,
-            @RequestBody SancaoJogadorRequest request )
-    {
-        SancaoJogador sjA = sancaoJogadorService.update( request, id );
-
-        return ResponseEntity.ok( sjA );
-    }
-
-    @DeleteMapping("/sancao/inativar/{id}")
-    public ResponseEntity<?> inativarSancaoParaUmJogador ( @PathVariable Long id )
-    {
-        sancaoJogadorService.inativarSancaoJogador( id );
-
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/sancao/deletar/{id}")
-    public ResponseEntity<?> deletarSancaoParaUmJogador ( @PathVariable Long id )
-    {
-        sancaoJogadorService.deleteSancaoJogador( id );
-
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/sancao")
-    public ResponseEntity<?> findAll ()
-    {
-        List<SancaoResponse> lst = sancaoService.findAll();
-        return  ResponseEntity.ok( lst );
     }
 }

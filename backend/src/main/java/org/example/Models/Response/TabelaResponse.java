@@ -5,7 +5,7 @@ import java.util.List;
 public record TabelaResponse(
         Long id,
 
-        CampeonatoResponse campeonatoResponse,
+        CompeticaoResponse competicao,
 
         List<PartidaResponse> partidas
 )

@@ -12,18 +12,18 @@ import jakarta.persistence.Table;
 import java.util.List;
 
 @Entity
-@Table(name = "TABELA")
+@Table(name = "tabela")
 public class Tabela {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "ID_TABELA")
+    @JoinColumn(name = "tabela_id")
     private List<Partida> partidas;
 
-    @Column(name = "ID_CAMPEONATO")
-    private Long idCampeonato;
+    @Column(name = "competicao_id")
+    private Long idCompeticao;
 
     public Tabela() {
     }
@@ -44,11 +44,11 @@ public class Tabela {
         this.partidas = partidas;
     }
 
-    public Long getIdCampeonato() {
-        return idCampeonato;
+    public Long getIdCompeticao() {
+        return idCompeticao;
     }
 
-    public void setIdCampeonato(Long idCampeonato) {
-        this.idCampeonato = idCampeonato;
+    public void setIdCompeticao(Long idCompeticao) {
+        this.idCompeticao = idCompeticao;
     }
 }

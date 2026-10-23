@@ -122,7 +122,7 @@ erDiagram
 | `id` | BIGINT | PK, IDENTITY | |
 | `codigo` | VARCHAR(40) | NOT NULL, UNIQUE | `FUTEBOL_DE_CAMPO`, `FUTSAL`, `SOCIETY`, `VOLEIBOL`, `BASQUETE`, `HANDEBOL` |
 | `nome` | VARCHAR(80) | NOT NULL | rótulo de exibição |
-| `jogadores_em_quadra` | SMALLINT | NOT NULL | valida a escalação |
+| `atletas_em_quadra` | SMALLINT | NOT NULL | valida a escalação |
 | `ativo` | BOOLEAN | NOT NULL, DEFAULT TRUE | |
 
 **`tipo_evento`** — vocabulário de ocorrências por modalidade (`GOL`, `PONTO`, `CESTA_3`, `CARTAO_AMARELO`, `FALTA_TECNICA`, `SUBSTITUICAO`…). Permite que o registro da súmula seja específico do esporte sem ramificação no código.

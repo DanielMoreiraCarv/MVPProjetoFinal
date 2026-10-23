@@ -6,7 +6,7 @@ import org.example.Models.EnumFasePartida;
 import org.example.Models.EnumTipoDeDado;
 import org.example.Models.Fase;
 import org.example.Models.Partida;
-import org.example.Models.Time;
+import org.example.Models.Equipe;
 import org.example.Repositories.PartidaRepository;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +49,7 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     {
         return List.of(
                 new AtributoFase( tipo(), PARAR_EM_N_TIMES, EnumTipoDeDado.INTEIRO, false, "1",
-                        "Quantos times restam ao final. 1 é o campeão; 4 encerra num quadrangular." ),
+                        "Quantas equipes restam ao final. 1 é o campeão; 4 encerra num quadrangular." ),
                 new AtributoFase( tipo(), IDA_E_VOLTA, EnumTipoDeDado.BOOLEANO, false, "false",
                         "Se cada confronto tem partida de volta" ),
                 new AtributoFase( tipo(), DESCONSIDERAR_EMPATES, EnumTipoDeDado.BOOLEANO, false,
@@ -66,6 +66,18 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     }
 
     @Override
+    public Integer quantosAvancamPorPadrao ( ConfiguracaoDaFase configuracao, int entram )
+    {
+        return configuracao.inteiroOu( PARAR_EM_N_TIMES, 1 );
+    }
+
+    @Override
+    public boolean aceitaEmpateNaEntrada ( ConfiguracaoDaFase configuracao )
+    {
+        return configuracao.booleano( DESCONSIDERAR_EMPATES );
+    }
+
+    @Override
     public ResultadoDaValidacao validar ( ConfiguracaoDaFase configuracao,
             List<Classificado> entrada )
     {
@@ -75,21 +87,21 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
 
         if ( participantes < 2 )
         {
-            erros.add( "um mata-mata precisa de ao menos 2 times, recebeu " + participantes );
+            erros.add( "Uma eliminatória precisa de ao menos 2 equipes; entram " + participantes + "." );
         }
         else if ( pararEm < 1 )
         {
-            erros.add( PARAR_EM_N_TIMES + " precisa ser ao menos 1" );
+            erros.add( "As equipes ao final precisam ser ao menos 1." );
         }
         else if ( pararEm >= participantes )
         {
-            erros.add( "parar em " + pararEm + " times não elimina ninguém entre os "
-                    + participantes + " participantes" );
+            erros.add( "Terminar com " + pararEm + " equipes não elimina ninguém entre as "
+                    + participantes + " que entram." );
         }
         else if ( participantes % pararEm != 0 || !ehPotenciaDeDois( participantes / pararEm ) )
         {
-            erros.add( participantes + " times não chegam a " + pararEm
-                    + " por eliminações sucessivas pela metade" );
+            erros.add( participantes + " equipes não chegam a " + pararEm
+                    + " eliminando metade a cada rodada." );
         }
 
         return new ResultadoDaValidacao( erros );
@@ -109,7 +121,7 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     {
         List<Classificado> ordenada = new ArrayList<>( entrada );
         ordenada.sort( Comparator.comparingInt( Classificado::posicao )
-                                 .thenComparing( Classificado::idTime ) );
+                                 .thenComparing( Classificado::idEquipe ) );
         return ordenada;
     }
 
@@ -120,22 +132,22 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
         partidaRepository.deleteAll( partidaRepository.findByFaseId( fase.getId() ) );
 
         List<Long> semeados = ordenar( configuracao, entrada ).stream()
-                                                              .map( Classificado::idTime )
+                                                              .map( Classificado::idEquipe )
                                                               .toList();
         gerarRodada( fase, configuracao, semeados, 1 );
     }
 
     /** Semeadura 1 contra N, 2 contra N-1: os melhores só se cruzam no fim. */
-    private void gerarRodada ( Fase fase, ConfiguracaoDaFase configuracao, List<Long> times,
+    private void gerarRodada ( Fase fase, ConfiguracaoDaFase configuracao, List<Long> equipes,
             int rodada )
     {
         boolean idaEVolta = configuracao.booleano( IDA_E_VOLTA );
         List<Partida> novas = new ArrayList<>();
 
-        for ( int i = 0; i < times.size() / 2; i++ )
+        for ( int i = 0; i < equipes.size() / 2; i++ )
         {
-            Long mandante = times.get( i );
-            Long visitante = times.get( times.size() - 1 - i );
+            Long mandante = equipes.get( i );
+            Long visitante = equipes.get( equipes.size() - 1 - i );
 
             novas.add( confronto( fase, mandante, visitante, rodada ) );
 
@@ -152,19 +164,19 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
     {
         Partida partida = new Partida();
         partida.setFase( fase );
-        partida.setCampeonato( fase.getCampeonato() );
+        partida.setCompeticao( fase.getCompeticao() );
         partida.setRodada( rodada );
         partida.setEnumFasePartida( tipo() );
-        partida.setTimeMandante( referencia( mandante ) );
-        partida.setTimeVisitante( referencia( visitante ) );
+        partida.setEquipeMandante( referencia( mandante ) );
+        partida.setEquipeVisitante( referencia( visitante ) );
         return partida;
     }
 
-    private Time referencia ( Long idTime )
+    private Equipe referencia ( Long idEquipe )
     {
-        Time time = new Time();
-        time.setId( idTime );
-        return time;
+        Equipe equipe = new Equipe();
+        equipe.setId( idEquipe );
+        return equipe;
     }
 
     @Override
@@ -229,10 +241,129 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
         Set<Long> presentes = new LinkedHashSet<>();
         for ( Partida partida : partidas )
         {
-            if ( partida.getIdTimeMandante() != null ) presentes.add( partida.getIdTimeMandante() );
-            if ( partida.getIdTimeVisitante() != null ) presentes.add( partida.getIdTimeVisitante() );
+            if ( partida.getIdEquipeMandante() != null ) presentes.add( partida.getIdEquipeMandante() );
+            if ( partida.getIdEquipeVisitante() != null ) presentes.add( partida.getIdEquipeVisitante() );
         }
         return presentes.equals( new LinkedHashSet<>( esperados ) );
+    }
+
+    /**
+     * A chave inteira, das etapas jogadas às que ainda não existem.
+     *
+     * O motor emparelha os vencedores de uma rodada como emparelha a semeadura
+     * — o primeiro contra o último —, então o confronto k da etapa seguinte
+     * recebe os vencedores dos jogos k e n−1−k. É essa regra que deixa a chave
+     * desenhável antes de a rodada existir.
+     */
+    public Chaveamento chaveamento ( Fase fase, ConfiguracaoDaFase configuracao,
+            List<Classificado> entrada, int participantesPrevistos )
+    {
+        int pararEm = Math.max( 1, configuracao.inteiroOu( PARAR_EM_N_TIMES, 1 ) );
+        Map<Integer, List<Partida>> porRodada = porRodada( fase );
+        List<List<Partida>> primeira = porRodada.isEmpty()
+                ? List.of()
+                : confrontosDe( porRodada.values().iterator().next() );
+        // Sem confrontos nem entrada — a fase anterior ainda não terminou —,
+        // a chave é desenhada vazia, do tamanho que ela vai ter.
+        int participantes = !primeira.isEmpty() ? primeira.size() * 2
+                : !entrada.isEmpty() ? entrada.size() : participantesPrevistos;
+
+        if ( participantes < 2 || participantes <= pararEm || participantes % pararEm != 0
+                || !ehPotenciaDeDois( participantes / pararEm ) )
+        {
+            return new Chaveamento( participantes, pararEm, List.of() );
+        }
+
+        int totalDeEtapas = Integer.numberOfTrailingZeros( participantes / pararEm );
+        List<List<ConfrontoDaChave>> etapas = new ArrayList<>();
+        int jogos = participantes / 2;
+
+        for ( int etapa = 1; etapa <= totalDeEtapas; etapa++, jogos /= 2 )
+        {
+            List<List<Partida>> geradas = confrontosDe( porRodada.getOrDefault( etapa, List.of() ) );
+            List<ConfrontoDaChave> daEtapa = new ArrayList<>();
+
+            for ( int k = 0; k < jogos; k++ )
+            {
+                List<Partida> partidas = k < geradas.size() ? geradas.get( k ) : List.of();
+                Partida ida = partidas.isEmpty() ? null : partidas.get( 0 );
+                boolean decidido = !partidas.isEmpty() && partidas.stream().allMatch( Partida::isRealizada );
+
+                daEtapa.add( new ConfrontoDaChave(
+                        k + 1,
+                        etapa < totalDeEtapas ? Math.min( k, jogos - 1 - k ) + 1 : null,
+                        ida == null ? null : ida.getIdEquipeMandante(),
+                        ida == null ? null : ida.getIdEquipeVisitante(),
+                        etapa == 1 ? null : "Vencedor do jogo " + ( k + 1 ),
+                        etapa == 1 ? null : "Vencedor do jogo " + ( jogos * 2 - k ),
+                        partidas,
+                        decidido ? vencedoresDe( partidas ).get( 0 ) : null ) );
+            }
+            etapas.add( daEtapa );
+        }
+
+        // Ordem de desenho, da última etapa para a primeira: os dois que
+        // alimentam um confronto ficam lado a lado na coluna anterior.
+        List<List<Integer>> ordem = new ArrayList<>();
+        for ( int i = 0; i < totalDeEtapas; i++ )
+        {
+            ordem.add( null );
+        }
+        List<Integer> ultima = new ArrayList<>();
+        for ( int k = 0; k < etapas.get( totalDeEtapas - 1 ).size(); k++ )
+        {
+            ultima.add( k );
+        }
+        ordem.set( totalDeEtapas - 1, ultima );
+        for ( int etapa = totalDeEtapas - 1; etapa >= 1; etapa-- )
+        {
+            int anteriores = etapas.get( etapa - 1 ).size();
+            List<Integer> naAnterior = new ArrayList<>();
+            for ( int k : ordem.get( etapa ) )
+            {
+                naAnterior.add( k );
+                naAnterior.add( anteriores - 1 - k );
+            }
+            ordem.set( etapa - 1, naAnterior );
+        }
+
+        List<EtapaDaChave> desenhadas = new ArrayList<>();
+        for ( int etapa = 0; etapa < totalDeEtapas; etapa++ )
+        {
+            List<ConfrontoDaChave> daEtapa = etapas.get( etapa );
+            int equipes = daEtapa.size() * 2;
+            desenhadas.add( new EtapaDaChave( etapa + 1, nomeDaEtapa( equipes ), equipes,
+                    ordem.get( etapa ).stream().map( daEtapa::get ).toList() ) );
+        }
+
+        return new Chaveamento( participantes, pararEm, desenhadas );
+    }
+
+    private static String nomeDaEtapa ( int equipes )
+    {
+        return switch ( equipes )
+        {
+            case 2 -> "Final";
+            case 4 -> "Semifinal";
+            case 8 -> "Quartas de final";
+            case 16 -> "Oitavas de final";
+            default -> ( equipes / 2 ) + " avos de final";
+        };
+    }
+
+    /** As partidas da rodada juntadas por confronto: com ida e volta, são duas. */
+    private static List<List<Partida>> confrontosDe ( List<Partida> partidas )
+    {
+        Map<String, List<Partida>> porPar = new LinkedHashMap<>();
+        for ( Partida partida : partidas )
+        {
+            Long a = partida.getIdEquipeMandante();
+            Long b = partida.getIdEquipeVisitante();
+            String chave = a == null || b == null ? "p" + partida.getId()
+                    : ( a < b ? a + "x" + b : b + "x" + a );
+            porPar.computeIfAbsent( chave, c -> new ArrayList<>() ).add( partida );
+        }
+        return new ArrayList<>( porPar.values() );
     }
 
     private Map<Integer, List<Partida>> porRodada ( Fase fase )
@@ -261,8 +392,8 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
 
         for ( Partida partida : partidas )
         {
-            Long a = partida.getIdTimeMandante();
-            Long b = partida.getIdTimeVisitante();
+            Long a = partida.getIdEquipeMandante();
+            Long b = partida.getIdEquipeVisitante();
 
             if ( a == null || b == null )
             {
@@ -275,8 +406,8 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
             int[] gols = agregado.computeIfAbsent( chave, c -> new int[2] );
             boolean primeiroEhA = mandanteDaIda.get( chave ).equals( a );
 
-            gols[primeiroEhA ? 0 : 1] += partida.getResultadoMandante();
-            gols[primeiroEhA ? 1 : 0] += partida.getResultadoVisitante();
+            gols[primeiroEhA ? 0 : 1] += partida.getPlacarMandante();
+            gols[primeiroEhA ? 1 : 0] += partida.getPlacarVisitante();
         }
 
         List<Long> vencedores = new ArrayList<>();
@@ -349,9 +480,9 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
 
         for ( List<Long> faixa : faixas )
         {
-            for ( Long idTime : faixa )
+            for ( Long idEquipe : faixa )
             {
-                ordem.add( new Classificado( posicao, idTime ) );
+                ordem.add( new Classificado( posicao, idEquipe ) );
             }
             posicao += faixa.size();
         }
@@ -361,12 +492,12 @@ public class EstrategiaDeMataMata implements EstrategiaDeFase
 
     private List<Long> participantesDe ( List<Partida> partidas )
     {
-        Set<Long> times = new LinkedHashSet<>();
+        Set<Long> equipes = new LinkedHashSet<>();
         for ( Partida partida : partidas )
         {
-            if ( partida.getIdTimeMandante() != null ) times.add( partida.getIdTimeMandante() );
-            if ( partida.getIdTimeVisitante() != null ) times.add( partida.getIdTimeVisitante() );
+            if ( partida.getIdEquipeMandante() != null ) equipes.add( partida.getIdEquipeMandante() );
+            if ( partida.getIdEquipeVisitante() != null ) equipes.add( partida.getIdEquipeVisitante() );
         }
-        return new ArrayList<>( times );
+        return new ArrayList<>( equipes );
     }
 }

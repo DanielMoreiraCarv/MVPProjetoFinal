@@ -1,5 +1,7 @@
 package org.example.Mapper;
 
+import org.example.Models.EventoDaSumula;
+import org.example.Models.Response.EventoDaSumulaResponse;
 import org.example.Models.Response.SumulaResponse;
 import org.example.Models.Sumula;
 
@@ -23,13 +25,27 @@ public class SumulaMapper
                 ? Collections.emptyList()
                 : sumula.getOcorrencias();
 
-        List<String> observacoes = sumula.getObservacoesRelatadas() == null
-                ? Collections.emptyList()
-                : List.of( sumula.getObservacoesRelatadas() );
-
         return new SumulaResponse( sumula.getId(), PartidaMapper.toResponse( sumula.getPartida() ),
-                ArbitroMapper.toResponse( sumula.getArbitro() ), sumula.getGolsMandante(),
-                sumula.getGolsVisitante(), ocorrencias, observacoes, sumula.getDataFechamento(),
-                sumula.isAssinada() );
+                ArbitroMapper.toResponse( sumula.getArbitro() ), sumula.getPlacarMandante(),
+                sumula.getPlacarVisitante(), ocorrencias, sumula.getObservacoesRelatadas(),
+                sumula.getDataFechamento(), sumula.isAssinada(), sumula.getModo().name(),
+                sumula.getEventos().stream().map( SumulaMapper::toResponse ).toList() );
+    }
+
+    public static EventoDaSumulaResponse toResponse ( EventoDaSumula evento )
+    {
+        return new EventoDaSumulaResponse( evento.getId(), evento.getAtleta().getId(),
+                evento.getAtleta().getNome(), evento.getAtleta().getNumCamisa(),
+                evento.getEquipe().getId(), evento.getTipo().name(), evento.isAutomatico(),
+                evento.getRegistradoEm() );
+    }
+
+    public static List<SumulaResponse> toResponse ( List<Sumula> sumulas )
+    {
+        if ( sumulas == null )
+        {
+            return List.of();
+        }
+        return sumulas.stream().map( SumulaMapper::toResponse ).toList();
     }
 }
