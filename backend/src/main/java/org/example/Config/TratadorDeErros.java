@@ -1,5 +1,6 @@
 package org.example.Config;
 
+import org.example.Exception.AutenticacaoException;
 import org.example.Exception.ExceptionBase;
 import org.example.Exception.NaoEncontradoException;
 import org.example.Models.Response.ErroResponse;
@@ -60,6 +61,14 @@ public class TratadorDeErros
     {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErroResponse.de("NAO_ENCONTRADO", excecao.getMessage()));
+    }
+
+    /** Também mais específica que ExceptionBase: traz o próprio status (401, 403, 429). */
+    @ExceptionHandler(AutenticacaoException.class)
+    public ResponseEntity<ErroResponse> autenticacao(AutenticacaoException excecao)
+    {
+        return ResponseEntity.status(excecao.getStatus())
+                .body(ErroResponse.de(excecao.getCodigo(), excecao.getMessage()));
     }
 
     /**
