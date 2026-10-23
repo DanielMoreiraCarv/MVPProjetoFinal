@@ -8,7 +8,11 @@
 -- No fim, registra um baseline na versão 6 no histórico do Flyway. Sem ele, o
 -- `mvn flyway:migrate` do pipeline encontraria um esquema não vazio e sem
 -- histórico, e recusaria rodar; com ele, o Flyway considera V1..V6 aplicadas
--- e passa a aplicar apenas da V7 em diante.
+-- e passa a aplicar apenas da V7 em diante — hoje até a V15 (usuários, contas,
+-- competição pública e RLS em todas as tabelas).
+--
+-- Opcional: num banco vazio, o pipeline sozinho chega ao mesmo esquema. Os dois
+-- caminhos foram comparados por pg_dump --schema-only e são idênticos na V15.
 --
 -- Roda em uma transação: se qualquer comando falhar, nada fica criado.
 

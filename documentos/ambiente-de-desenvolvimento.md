@@ -113,12 +113,11 @@ container:
 ```bash
 podman play kube deploy/postgres-local.yaml
 ./deploy/carregar-dados-de-teste.sh
-cd backend && DB_URL=jdbc:postgresql://localhost:5433/tcc DB_USER=tcc DB_PASSWORD=tcc mvn spring-boot:run
+cd backend && mvn spring-boot:run     # os defaults já apontam para o pod
 cd frontend && yarn dev               # em outro terminal
 ```
 
-Sem essas variáveis a API conecta ao Supabase, que é o default do
-`application.properties` (ver `persistencia-e-deploy.md` §2).
+Para apontar para o Supabase em vez do pod, ver `persistencia-e-deploy.md` §2.
 
 Os dois manifestos publicam a porta 5433, então rode **um de cada vez**.
 
