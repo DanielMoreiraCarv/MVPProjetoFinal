@@ -11,7 +11,7 @@ import { NomeDoApp } from "@/src/components/Emblema";
 import { ConteudoDoMenu } from "@/src/components/layout/MenuLateral";
 import { PaletaDeCompeticoes } from "@/src/components/layout/PaletaDeCompeticoes";
 import { ProvedorDeEscopo } from "@/src/lib/escopo";
-import { Organizador } from "@/src/lib/sessao/sessao";
+import { UsuarioDaSessao } from "@/src/lib/sessao/sessao";
 
 const CHAVE_RECOLHIDO = "tcc.menu.recolhido";
 
@@ -19,7 +19,7 @@ export const Casca = ({
     organizador,
     children,
 }: {
-    organizador: Organizador;
+    organizador: UsuarioDaSessao;
     children: React.ReactNode;
 }) => {
     const [recolhido, setRecolhido] = useState(false);

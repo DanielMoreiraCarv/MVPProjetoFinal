@@ -29,15 +29,26 @@ import java.io.IOException;
  * no JWT do cabeçalho. Por isso CSRF fica desligado — o ataque depende do
  * navegador anexar a credencial sozinho, e cabeçalho ele não anexa.
  *
- * As rotas que já existiam continuam abertas por padrão, porque o front ainda
- * não tem tela de login e fechá-las agora o deixaria sem funcionar. Com
- * AUTH_EXIGIR_LOGIN=true a leitura (GET) continua pública e toda escrita passa
- * a exigir login. As rotas de usuário exigem ADMINISTRADOR desde já.
+ * Sem login, só o acompanhamento (`/publico/**`, que o servidor limita às
+ * competições abertas) e as rotas de entrar. Todo o resto é da gestão, e
+ * estar logado não basta: o cadastro aberto dá o papel PUBLICO, e sem exigir
+ * papel qualquer conta criada na hora editaria competições.
+ *
+ * - leitura da gestão: quem trabalha na competição, inclusive mesa e árbitro;
+ * - súmula: os mesmos, porque é a mesa quem a preenche;
+ * - o resto da escrita: administração e organização;
+ * - usuários e papéis: só administração.
+ *
+ * AUTH_EXIGIR_LOGIN=false volta a abrir tudo — serve para diagnóstico local,
+ * nunca para produção.
  */
 @Configuration
 public class ConfiguracaoDeSeguranca
 {
-    @Value("${auth.exigir-login:false}")
+    private static final String[] PAPEIS_DA_GESTAO = {
+            Papel.ADMINISTRADOR, Papel.ORGANIZADOR, Papel.MESARIO, Papel.ARBITRO };
+
+    @Value("${auth.exigir-login:true}")
     private boolean exigirLogin;
 
     @Bean
@@ -62,6 +73,7 @@ public class ConfiguracaoDeSeguranca
                 .authorizeHttpRequests(rotas -> {
                     rotas.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     rotas.requestMatchers("/error").permitAll();
+                    rotas.requestMatchers(HttpMethod.GET, "/api/v1/publico/**").permitAll();
                     rotas.requestMatchers(HttpMethod.POST,
                             "/api/v1/auth/login",
                             "/api/v1/auth/cadastro",
@@ -73,8 +85,9 @@ public class ConfiguracaoDeSeguranca
 
                     if (exigirLogin)
                     {
-                        rotas.requestMatchers(HttpMethod.GET, "/api/**").permitAll();
-                        rotas.anyRequest().authenticated();
+                        rotas.requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole(PAPEIS_DA_GESTAO);
+                        rotas.requestMatchers("/api/v1/sumula/**").hasAnyRole(PAPEIS_DA_GESTAO);
+                        rotas.anyRequest().hasAnyRole(Papel.ADMINISTRADOR, Papel.ORGANIZADOR);
                     }
                     else
                     {

@@ -41,9 +41,9 @@ const Barreira = ({ titulo, descricao }: { titulo: string; descricao: string }) 
  * A porta das telas públicas. A competição carrega uma vez para o layout
  * inteiro, e só passa daqui a que a organização abriu ao público.
  *
- * A API ainda não exige login, então esta barreira é da interface: protege de
- * quem navega, não de quem chama a API direto. Fechar de verdade é trabalho do
- * login no servidor.
+ * Quem barra é o servidor: a rota pública responde 404 para competição
+ * fechada e para inexistente, sem dizer qual das duas — por isso a tela
+ * também não distingue.
  */
 export const Acompanhamento = ({
     idCompeticao,
@@ -80,19 +80,12 @@ export const Acompanhamento = ({
     } else if (naoEncontrada) {
         corpo = (
             <Barreira
-                titulo="Competição não encontrada"
-                descricao="O link pode estar incompleto, ou a competição foi removida."
+                titulo="Competição indisponível"
+                descricao="Ela não existe ou não está aberta ao público. Se recebeu o link da organização, peça para abrirem a competição."
             />
         );
     } else if (erro) {
         corpo = <Erro causa={erro} aoTentarDeNovo={carregar} />;
-    } else if (!competicao?.publica) {
-        corpo = (
-            <Barreira
-                titulo="Esta competição não está aberta ao público"
-                descricao="A organização ainda não liberou o acompanhamento por link. Peça a ela para abrir a competição ao público."
-            />
-        );
     }
 
     if (corpo || !competicao) {

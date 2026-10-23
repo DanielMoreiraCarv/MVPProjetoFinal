@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
 import { Casca } from "@/src/components/layout/Casca";
-import { organizadorAtual } from "@/src/lib/sessao/servidor";
+import { podeGerir } from "@/src/lib/sessao/sessao";
+import { usuarioAtual } from "@/src/lib/sessao/servidor";
 
 /**
  * Tudo o que é de quem organiza mora aqui dentro, atrás da entrada. O proxy
@@ -9,8 +10,8 @@ import { organizadorAtual } from "@/src/lib/sessao/servidor";
  * casca nunca é desenhada sem alguém na sessão.
  */
 const LayoutDaGestao = async ({ children }: { children: React.ReactNode }) => {
-    const organizador = await organizadorAtual();
-    if (!organizador) redirect("/entrar");
+    const organizador = await usuarioAtual();
+    if (!organizador || !podeGerir(organizador)) redirect("/entrar");
 
     return <Casca organizador={organizador}>{children}</Casca>;
 };

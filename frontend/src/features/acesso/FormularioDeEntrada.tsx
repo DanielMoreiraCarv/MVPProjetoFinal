@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EstadoDaEntrada, entrar } from "@/src/lib/sessao/acoes";
-import { ORGANIZADOR_DE_DEMONSTRACAO } from "@/src/lib/sessao/sessao";
+
+/**
+ * Os usuários do conjunto de dados de teste (dados_de_teste.sql). A dica só
+ * existe em desenvolvimento: no build de produção o bloco inteiro sai.
+ */
+const ACESSO_LOCAL = { email: "organizador@meutorneio.app", senha: "torneio123" };
+const EM_DESENVOLVIMENTO = process.env.NODE_ENV === "development";
 
 export const FormularioDeEntrada = ({ de }: { de?: string }) => {
     const [estado, enviar, enviando] = useActionState<EstadoDaEntrada, FormData>(entrar, {});
@@ -15,8 +21,8 @@ export const FormularioDeEntrada = ({ de }: { de?: string }) => {
     const senha = useRef<HTMLInputElement>(null);
 
     const preencherDemonstracao = () => {
-        if (email.current) email.current.value = ORGANIZADOR_DE_DEMONSTRACAO.email;
-        if (senha.current) senha.current.value = ORGANIZADOR_DE_DEMONSTRACAO.senha;
+        if (email.current) email.current.value = ACESSO_LOCAL.email;
+        if (senha.current) senha.current.value = ACESSO_LOCAL.senha;
         senha.current?.focus();
     };
 
@@ -66,17 +72,19 @@ export const FormularioDeEntrada = ({ de }: { de?: string }) => {
                 {enviando ? "Entrando…" : "Entrar"}
             </Button>
 
-            <div className="space-y-2 rounded-2xl border border-dashed border-border px-4 py-3 text-sm">
-                <p className="font-medium">Acesso de demonstração</p>
-                <p className="text-xs text-muted-foreground">
-                    O cadastro de usuários ainda está em construção. Por enquanto há um acesso único:{" "}
-                    <span className="font-mono text-foreground">{ORGANIZADOR_DE_DEMONSTRACAO.email}</span>{" "}
-                    / <span className="font-mono text-foreground">{ORGANIZADOR_DE_DEMONSTRACAO.senha}</span>
-                </p>
-                <Button type="button" variant="outline" size="sm" onClick={preencherDemonstracao}>
-                    Preencher para mim
-                </Button>
-            </div>
+            {EM_DESENVOLVIMENTO && (
+                <div className="space-y-2 rounded-2xl border border-dashed border-border px-4 py-3 text-sm">
+                    <p className="font-medium">Ambiente local</p>
+                    <p className="text-xs text-muted-foreground">
+                        Os dados de teste trazem organização, administração e um torcedor sem acesso à
+                        gestão, todos com a senha{" "}
+                        <span className="font-mono text-foreground">{ACESSO_LOCAL.senha}</span>.
+                    </p>
+                    <Button type="button" variant="outline" size="sm" onClick={preencherDemonstracao}>
+                        Entrar como organização
+                    </Button>
+                </div>
+            )}
         </form>
     );
 };

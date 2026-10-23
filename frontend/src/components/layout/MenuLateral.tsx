@@ -12,7 +12,7 @@ import { Monograma } from "@/src/components/Monograma";
 import { ICONES } from "@/src/lib/icones";
 import { useEscopo } from "@/src/lib/escopo";
 import { sair } from "@/src/lib/sessao/acoes";
-import { Organizador, PAINEL } from "@/src/lib/sessao/sessao";
+import { PAINEL, UsuarioDaSessao } from "@/src/lib/sessao/sessao";
 import { SeletorDeEscopo } from "@/src/components/layout/SeletorDeEscopo";
 import {
     ItemDeMenu,
@@ -89,7 +89,7 @@ const Secao = ({
 );
 
 /** Quem está na sessão, e a saída. Recolhido, sobra o monograma e o botão. */
-const Sessao = ({ organizador, recolhido }: { organizador: Organizador; recolhido: boolean }) => (
+const Sessao = ({ organizador, recolhido }: { organizador: UsuarioDaSessao; recolhido: boolean }) => (
     <form
         action={sair}
         className={cn(
@@ -122,7 +122,7 @@ export const ConteudoDoMenu = ({
     aoNavegar,
     aoRecolher,
 }: {
-    organizador: Organizador;
+    organizador: UsuarioDaSessao;
     recolhido?: boolean;
     aoNavegar?: () => void;
     aoRecolher?: () => void;

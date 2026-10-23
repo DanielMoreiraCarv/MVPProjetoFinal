@@ -45,7 +45,7 @@ public class AutenticacaoService
                                PasswordEncoder codificadorDeSenha,
                                @Value("${auth.login.tentativas-ate-bloquear:5}") int tentativasAteBloquear,
                                @Value("${auth.login.bloqueio-minutos:15}") long minutosDeBloqueio,
-                               @Value("${auth.cadastro-aberto:true}") boolean cadastroAberto)
+                               @Value("${auth.cadastro-aberto:false}") boolean cadastroAberto)
     {
         this.usuarioRepository = usuarioRepository;
         this.usuarioService = usuarioService;

@@ -17,8 +17,25 @@ import { z } from "zod";
 
 const base = process.env.API ?? "http://localhost:8080/api/v1";
 
+// A gestão exige login. Por padrão, a organização do conjunto de teste.
+const entrada = await fetch(`${base}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        email: process.env.CONTRATO_EMAIL ?? "organizador@meutorneio.app",
+        senha: process.env.CONTRATO_SENHA ?? "torneio123",
+    }),
+});
+if (!entrada.ok) {
+    console.error(`Não foi possível entrar na API (HTTP ${entrada.status}). Carregue os dados de teste.`);
+    process.exit(1);
+}
+const { token } = await entrada.json();
+
 const pegar = async (caminho) => {
-    const resposta = await fetch(base + caminho);
+    const resposta = await fetch(base + caminho, {
+        headers: caminho.startsWith("/publico") ? {} : { Authorization: `Bearer ${token}` },
+    });
     const texto = await resposta.text();
     if (!resposta.ok) {
         throw new Error(`HTTP ${resposta.status} em ${caminho}: ${texto.slice(0, 200)}`);

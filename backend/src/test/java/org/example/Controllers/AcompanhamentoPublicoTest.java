@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -229,7 +230,9 @@ class AcompanhamentoPublicoTest
         mockMvc.perform(get("/api/v1/publico/sumula/partida/{id}", partidaAberta.getId()))
                 .andExpect(status().isNotFound());
 
+        // Abrir a súmula é coisa da mesa; quem acompanha só lê.
         mockMvc.perform(post("/api/v1/sumula")
+                        .with(user("mesa").roles("MESARIO"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"idPartida":%d}""".formatted(partidaAberta.getId())))

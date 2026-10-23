@@ -7,8 +7,8 @@ import { MarcaDoApp } from "@/src/features/acompanhamento/CascaPublica";
 import { CompeticoesAbertas } from "@/src/features/apresentacao/CompeticoesAbertas";
 import { PreviaDoProduto } from "@/src/features/apresentacao/PreviaDoProduto";
 import { Conceito, ICONES } from "@/src/lib/icones";
-import { PAINEL } from "@/src/lib/sessao/sessao";
-import { organizadorAtual } from "@/src/lib/sessao/servidor";
+import { PAINEL, podeGerir } from "@/src/lib/sessao/sessao";
+import { usuarioAtual } from "@/src/lib/sessao/servidor";
 
 const RECURSOS: { conceito: Conceito; titulo: string; descricao: string }[] = [
     {
@@ -54,7 +54,7 @@ const PASSOS = [
  * leva a dois lugares: a entrada da organização e as competições abertas.
  */
 const ApresentacaoPage = async () => {
-    const organizador = await organizadorAtual();
+    const organizador = podeGerir(await usuarioAtual());
 
     const chamada = organizador ? (
         <Button size="lg" nativeButton={false} render={<Link href={PAINEL} />}>

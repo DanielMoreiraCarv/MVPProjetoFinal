@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -30,6 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Login, sessão e gestão de usuários pelo HTTP, como o front vai usar.
  */
 @SpringBootTest
+// O cadastro nasce fechado; aqui ele é aberto para testar o próprio cadastro.
+@TestPropertySource(properties = "auth.cadastro-aberto=true")
 @AutoConfigureMockMvc
 @Transactional
 class AutenticacaoTest
