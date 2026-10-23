@@ -87,15 +87,22 @@ class RotasProtegidasTest
     }
 
     @Test
-    void cadastroNasceFechado() throws Exception
+    void cadastroAbreContaDeOrganizacaoQueEntraNaGestao() throws Exception
     {
-        mockMvc.perform(post("/api/v1/auth/cadastro")
+        String corpo = mockMvc.perform(post("/api/v1/auth/cadastro")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"nome":"Torcedor","email":"torcedor.teste@exemplo.com","senha":"%s"}"""
+                                {"nome":"Nova organização","email":"nova.organizacao@exemplo.com","senha":"%s"}"""
                                 .formatted(SENHA)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.erro.codigo").value("CADASTRO_FECHADO"));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.usuario.papeis[0].codigo").value(Papel.ORGANIZADOR))
+                .andReturn().getResponse().getContentAsString();
+        String token = objectMapper.readTree(corpo).get("token").asText();
+
+        mockMvc.perform(get("/api/v1/competicao").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/usuario").header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
     }
 
     @Test

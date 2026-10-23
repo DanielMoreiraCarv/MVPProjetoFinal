@@ -74,7 +74,9 @@ export const CabecalhoDaPagina = ({
                             )}
                         </div>
                     </div>
-                    {acoes && <div className="flex shrink-0 items-center gap-2">{acoes}</div>}
+                    {/* Quebra linha em vez de empurrar a página para o lado: no
+                        celular, cinco ações não cabem ao lado do título. */}
+                    {acoes && <div className="flex max-w-full flex-wrap items-center gap-2">{acoes}</div>}
                 </div>
             </div>
         </header>

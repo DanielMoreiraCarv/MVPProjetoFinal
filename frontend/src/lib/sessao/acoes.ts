@@ -11,7 +11,7 @@ import {
     mensagemDeErro,
     usuarioDaResposta,
 } from "./api";
-import { COOKIE_DE_RENOVACAO, destinoSeguro, podeGerir } from "./sessao";
+import { COOKIE_DE_RENOVACAO, PAINEL, destinoSeguro, podeGerir } from "./sessao";
 
 export type EstadoDaEntrada = { erro?: string; email?: string };
 
@@ -58,6 +58,56 @@ export const entrar = async (
     for (const cookie of cookiesDaSessao(sessao)) guardados.set(cookie);
 
     redirect(destinoSeguro(formulario.get("de")));
+};
+
+export type EstadoDoCadastro = {
+    erro?: string;
+    /** A mensagem da API para cada campo — senha fraca, e-mail já usado. */
+    campos?: Partial<Record<"nome" | "email" | "senha", string>>;
+    nome?: string;
+    email?: string;
+};
+
+/**
+ * Cria a conta e já entra: quem se cadastra organiza as próprias
+ * competições. Sem verificação de e-mail, por escolha de escopo.
+ */
+export const criarConta = async (
+    _anterior: EstadoDoCadastro,
+    formulario: FormData,
+): Promise<EstadoDoCadastro> => {
+    const nome = String(formulario.get("nome") ?? "").trim();
+    const email = String(formulario.get("email") ?? "").trim().toLowerCase();
+    const senha = String(formulario.get("senha") ?? "");
+
+    let resposta: Response;
+    try {
+        resposta = await chamarAutenticacao("cadastro", { nome, email, senha });
+    } catch {
+        return { erro: "Não foi possível falar com o servidor. Tente de novo.", nome, email };
+    }
+
+    if (!resposta.ok) {
+        const corpo = await resposta.json().catch(() => null);
+        const campos: EstadoDoCadastro["campos"] = {};
+        for (const detalhe of corpo?.erro?.detalhes ?? []) {
+            if (detalhe?.campo === "nome" || detalhe?.campo === "email" || detalhe?.campo === "senha") {
+                campos[detalhe.campo as "nome" | "email" | "senha"] ??= detalhe.mensagem;
+            }
+        }
+        return {
+            erro: Object.keys(campos).length > 0 ? undefined : (corpo?.erro?.mensagem ?? "Não foi possível criar a conta."),
+            campos,
+            nome,
+            email,
+        };
+    }
+
+    const sessao = (await resposta.json()) as RespostaDeAutenticacao;
+    const guardados = await cookies();
+    for (const cookie of cookiesDaSessao(sessao)) guardados.set(cookie);
+
+    redirect(PAINEL);
 };
 
 /** Revoga a renovação no servidor antes de apagar os cookies: sair encerra a sessão, não só a esconde. */

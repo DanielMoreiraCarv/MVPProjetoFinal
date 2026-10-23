@@ -9,15 +9,19 @@ import lombok.Setter;
 import java.util.List;
 
 @Entity
+@EntityListeners(DonoAutomatico.class)
 @Getter
 @Setter
 @Table(name = "equipe")
-public class Equipe
+public class Equipe implements TemDono
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "dono_id")
+    private Long donoId;
 
     @Column(name = "nome")
     private String nome;

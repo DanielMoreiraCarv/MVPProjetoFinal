@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** Cadastro aberto: quem se cadastra sozinho entra com o papel PUBLICO. */
+/** Cadastro aberto: quem se cadastra organiza as próprias competições (ORGANIZADOR). */
 public record CadastroRequest(
         @NotBlank(message = "É preciso informar o nome")
         @Size(max = 180, message = "O nome pode ter até 180 caracteres")

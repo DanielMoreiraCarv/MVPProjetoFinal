@@ -74,7 +74,8 @@ public class SancaoAtletaService
             throw new IllegalArgumentException( "Sanção não encontrada" );
         }
 
-        if ( request != null && request.exceao() )
+        // Sem o campo, vale a quantidade padrão: antes, a ausência estourava NullPointerException (500).
+        if ( request != null && Boolean.TRUE.equals( request.exceao() ) )
         {
             return request.qtdPartidasExcerssao();
         }

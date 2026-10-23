@@ -33,7 +33,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@WithMockUser(roles = "ORGANIZADOR")
+// Regra de domínio, não de acesso: roda como a plataforma, que vê tudo.
+// O isolamento entre contas é provado em IsolamentoEntreContasTest.
+@WithMockUser(roles = "ADMINISTRADOR")
 @Transactional
 class FederacaoTest
 {

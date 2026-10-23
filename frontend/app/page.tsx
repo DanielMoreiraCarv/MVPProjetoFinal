@@ -1,4 +1,4 @@
-import { ArrowRight, LayoutDashboard, LogIn } from "lucide-react";
+import { ArrowRight, LayoutDashboard, LogIn, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -62,9 +62,9 @@ const ApresentacaoPage = async () => {
             Abrir o painel
         </Button>
     ) : (
-        <Button size="lg" nativeButton={false} render={<Link href="/entrar" />}>
-            <LogIn />
-            Entrar
+        <Button size="lg" nativeButton={false} render={<Link href="/criar-conta" />}>
+            <UserPlus />
+            Criar conta
         </Button>
     );
 
@@ -98,9 +98,20 @@ const ApresentacaoPage = async () => {
                                 Painel
                             </Button>
                         ) : (
-                            <Button size="sm" nativeButton={false} render={<Link href="/entrar" />}>
-                                Entrar
-                            </Button>
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    nativeButton={false}
+                                    render={<Link href="/entrar" />}
+                                >
+                                    <LogIn />
+                                    Entrar
+                                </Button>
+                                <Button size="sm" nativeButton={false} render={<Link href="/criar-conta" />}>
+                                    Criar conta
+                                </Button>
+                            </>
                         )}
                     </nav>
                 </div>

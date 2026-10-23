@@ -29,6 +29,12 @@ const EntrarPage = async ({ searchParams }: { searchParams: Promise<{ de?: strin
                     <div className="rounded-3xl border border-border bg-card px-5 py-6 sm:px-6">
                         <FormularioDeEntrada de={typeof de === "string" ? de : undefined} />
                     </div>
+                    <p className="text-center text-sm text-muted-foreground">
+                        Ainda não tem conta?{" "}
+                        <Link href="/criar-conta" className="font-medium text-primary hover:underline">
+                            Criar conta
+                        </Link>
+                    </p>
                     <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/" />}>
                         <ArrowLeft />
                         Voltar para o início
