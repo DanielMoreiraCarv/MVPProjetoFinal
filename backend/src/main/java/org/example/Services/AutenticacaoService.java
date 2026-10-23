@@ -1,5 +1,8 @@
 package org.example.Services;
 
+import java.util.List;
+import org.example.Models.Request.PapelConcedidoRequest;
+import org.example.Models.Papel;
 import org.example.Exception.AutenticacaoException;
 import org.example.Models.Usuario;
 import org.example.Models.Request.AlteracaoDeSenhaRequest;
@@ -116,7 +119,11 @@ public class AutenticacaoService
                         + duracaoDoBloqueio.toMinutes() + " minutos.");
     }
 
-    /** Cadastro aberto entra como PUBLICO; outros papéis quem dá é o administrador. */
+    /**
+     * Quem se cadastra organiza as próprias competições: entra como
+     * ORGANIZADOR, vê o que criar e o que for compartilhado com ele. A
+     * administração da plataforma não se ganha pelo cadastro.
+     */
     @Transactional
     public AutenticacaoResponse cadastrar(CadastroRequest request)
     {
@@ -126,7 +133,8 @@ public class AutenticacaoService
                     "O cadastro está fechado. Peça a um administrador que crie seu usuário.");
         }
 
-        Usuario usuario = usuarioService.novo(request.nome(), request.email(), request.senha(), null);
+        Usuario usuario = usuarioService.novo(request.nome(), request.email(), request.senha(),
+                List.of(new PapelConcedidoRequest(Papel.ORGANIZADOR, null)));
         return sessaoService.abrir(usuario);
     }
 

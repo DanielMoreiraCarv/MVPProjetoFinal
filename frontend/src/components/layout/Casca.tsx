@@ -6,15 +6,22 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { NomeDoApp } from "@/src/components/Emblema";
 import { ConteudoDoMenu } from "@/src/components/layout/MenuLateral";
 import { PaletaDeCompeticoes } from "@/src/components/layout/PaletaDeCompeticoes";
 import { ProvedorDeEscopo } from "@/src/lib/escopo";
+import { UsuarioDaSessao } from "@/src/lib/sessao/sessao";
 
 const CHAVE_RECOLHIDO = "tcc.menu.recolhido";
 
-export const Casca = ({ children }: { children: React.ReactNode }) => {
+export const Casca = ({
+    organizador,
+    children,
+}: {
+    organizador: UsuarioDaSessao;
+    children: React.ReactNode;
+}) => {
     const [recolhido, setRecolhido] = useState(false);
     const [gavetaAberta, setGavetaAberta] = useState(false);
     const caminho = usePathname();
@@ -38,7 +45,6 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <ToastProvider>
         <ProvedorDeEscopo>
             <div className="flex min-h-svh bg-background print:block print:min-h-0">
                 {/* Mesa: menu fixo, recolhível para uma trilha de ícones. */}
@@ -48,7 +54,11 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
                         recolhido ? "w-[4.5rem]" : "w-64",
                     )}
                 >
-                    <ConteudoDoMenu recolhido={recolhido} aoRecolher={alternarRecolhido} />
+                    <ConteudoDoMenu
+                        organizador={organizador}
+                        recolhido={recolhido}
+                        aoRecolher={alternarRecolhido}
+                    />
                 </aside>
 
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -65,19 +75,20 @@ export const Casca = ({ children }: { children: React.ReactNode }) => {
                                 <Drawer.Backdrop className="fixed inset-0 z-40 bg-scrim data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
                                 <Drawer.Popup className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] border-r border-sidebar-border outline-none data-open:animate-in data-open:slide-in-from-left data-closed:animate-out data-closed:slide-out-to-left">
                                     <Drawer.Title className="sr-only">Menu</Drawer.Title>
-                                    <ConteudoDoMenu aoNavegar={() => setGavetaAberta(false)} />
+                                    <ConteudoDoMenu
+                                        organizador={organizador}
+                                        aoNavegar={() => setGavetaAberta(false)}
+                                    />
                                 </Drawer.Popup>
                             </Drawer.Portal>
                         </Drawer.Root>
-                        <span className="text-sm font-semibold tracking-tight">Meu Torneio</span>
+                        <NomeDoApp />
                     </div>
 
                     <main className="flex min-w-0 flex-1 flex-col">{children}</main>
                 </div>
             </div>
             <PaletaDeCompeticoes />
-            <ToastViewport className="print:hidden" />
         </ProvedorDeEscopo>
-        </ToastProvider>
     );
 };

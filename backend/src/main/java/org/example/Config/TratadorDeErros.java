@@ -1,5 +1,6 @@
 package org.example.Config;
 
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.example.Exception.AutenticacaoException;
 import org.example.Exception.ExceptionBase;
 import org.example.Exception.NaoEncontradoException;
@@ -61,6 +62,14 @@ public class TratadorDeErros
     {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErroResponse.de("NAO_ENCONTRADO", excecao.getMessage()));
+    }
+
+    /** Rota que não existe — inclusive com barra no fim — é 404, não falha do servidor. */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErroResponse> rotaInexistente(NoResourceFoundException excecao)
+    {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErroResponse.de("NAO_ENCONTRADO", "Rota não encontrada."));
     }
 
     /** Também mais específica que ExceptionBase: traz o próprio status (401, 403, 429). */

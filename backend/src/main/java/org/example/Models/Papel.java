@@ -22,6 +22,9 @@ import lombok.Setter;
 public class Papel
 {
     public static final String ADMINISTRADOR = "ADMINISTRADOR";
+    public static final String ORGANIZADOR = "ORGANIZADOR";
+    public static final String MESARIO = "MESARIO";
+    public static final String ARBITRO = "ARBITRO";
     public static final String PUBLICO = "PUBLICO";
 
     @Id

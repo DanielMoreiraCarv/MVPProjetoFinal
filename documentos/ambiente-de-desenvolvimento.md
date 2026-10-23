@@ -113,9 +113,11 @@ container:
 ```bash
 podman play kube deploy/postgres-local.yaml
 ./deploy/carregar-dados-de-teste.sh
-cd backend && mvn spring-boot:run     # em um terminal
-cd frontend && yarn dev               # em outro
+cd backend && mvn spring-boot:run     # os defaults já apontam para o pod
+cd frontend && yarn dev               # em outro terminal
 ```
+
+Para apontar para o Supabase em vez do pod, ver `persistencia-e-deploy.md` §2.
 
 Os dois manifestos publicam a porta 5433, então rode **um de cada vez**.
 

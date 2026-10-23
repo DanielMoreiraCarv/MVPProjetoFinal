@@ -33,18 +33,21 @@ public class UsuarioService
     private final AdministracaoRepository administracaoRepository;
     private final SessaoService sessaoService;
     private final PasswordEncoder codificadorDeSenha;
+    private final PessoasDaCompeticaoService pessoasDaCompeticao;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           PapelRepository papelRepository,
                           AdministracaoRepository administracaoRepository,
                           SessaoService sessaoService,
-                          PasswordEncoder codificadorDeSenha)
+                          PasswordEncoder codificadorDeSenha,
+                          PessoasDaCompeticaoService pessoasDaCompeticao)
     {
         this.usuarioRepository = usuarioRepository;
         this.papelRepository = papelRepository;
         this.administracaoRepository = administracaoRepository;
         this.sessaoService = sessaoService;
         this.codificadorDeSenha = codificadorDeSenha;
+        this.pessoasDaCompeticao = pessoasDaCompeticao;
     }
 
     public Usuario exigirPorId(Long id)
@@ -86,7 +89,11 @@ public class UsuarioService
             concederTodos(usuario, papeis);
         }
 
-        return usuarioRepository.save(usuario);
+        Usuario salvo = usuarioRepository.save(usuario);
+        // Convites feitos antes de a pessoa ter conta — pelo cadastro ou criada
+        // pela administração, ela já entra nas competições que a esperavam.
+        pessoasDaCompeticao.aceitarConvites(salvo);
+        return salvo;
     }
 
     @Transactional

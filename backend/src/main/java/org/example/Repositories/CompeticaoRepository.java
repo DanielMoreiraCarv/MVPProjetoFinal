@@ -15,4 +15,9 @@ public interface CompeticaoRepository extends JpaRepository<Competicao, Long> {
     List<Competicao> findByMataMata(boolean mataMata);
 
     List<Competicao> findByAdministracaoId(Long idAdministracao);
+
+    List<Competicao> findByPublicaTrue();
+
+    /** Se a equipe disputa ao menos uma competição aberta ao público. */
+    boolean existsByPublicaTrueAndLstEquipes_Id(Long idEquipe);
 }

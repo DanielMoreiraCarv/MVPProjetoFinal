@@ -17,8 +17,25 @@ import { z } from "zod";
 
 const base = process.env.API ?? "http://localhost:8080/api/v1";
 
+// A gestão exige login. Por padrão, a organização do conjunto de teste.
+const entrada = await fetch(`${base}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        email: process.env.CONTRATO_EMAIL ?? "organizador@meutorneio.app",
+        senha: process.env.CONTRATO_SENHA ?? "torneio123",
+    }),
+});
+if (!entrada.ok) {
+    console.error(`Não foi possível entrar na API (HTTP ${entrada.status}). Carregue os dados de teste.`);
+    process.exit(1);
+}
+const { token } = await entrada.json();
+
 const pegar = async (caminho) => {
-    const resposta = await fetch(base + caminho);
+    const resposta = await fetch(base + caminho, {
+        headers: caminho.startsWith("/publico") ? {} : { Authorization: `Bearer ${token}` },
+    });
     const texto = await resposta.text();
     if (!resposta.ok) {
         throw new Error(`HTTP ${resposta.status} em ${caminho}: ${texto.slice(0, 200)}`);
@@ -55,6 +72,7 @@ const competicao = z.object({
     isMataMata: z.boolean().nullable(),
     equipes: z.array(z.object({ id: z.number(), nome: z.string() }).passthrough()).nullable(),
     estado: z.enum(["RASCUNHO", "EM_ANDAMENTO", "ENCERRADA", "CANCELADA"]),
+    publica: z.boolean(),
 });
 
 const partida = z.object({
@@ -139,6 +157,24 @@ const casos = [
         z.array(atributoDeFase),
         "/fase/atributo?tipoFase=PONTOS_CORRIDOS",
     ],
+    [
+        "GET /competicao/1/pessoas",
+        z.object({
+            participantes: z.array(
+                z.object({ id: z.number(), nome: z.string(), email: z.string(), voce: z.boolean() }),
+            ),
+            convites: z.array(z.object({ id: z.number(), email: z.string(), criadoEm: z.string() })),
+        }),
+        "/competicao/1/pessoas",
+    ],
+    // O acompanhamento por link lê pelas rotas públicas, com os mesmos
+    // schemas. A competição 1 é aberta ao público no conjunto de teste.
+    ["GET /publico/competicao", z.array(competicao.passthrough()), "/publico/competicao"],
+    ["GET /publico/competicao/1", competicao.passthrough(), "/publico/competicao/1"],
+    ["GET /publico/partida/competicao/1", z.array(partida.passthrough()), "/publico/partida/competicao/1"],
+    ["GET /publico/partida/1", partida.passthrough(), "/publico/partida/1"],
+    ["GET /publico/equipe/1/atleta", z.array(atleta.passthrough()), "/publico/equipe/1/atleta"],
+    ["GET /publico/fase?idCompeticao=1", z.array(fase.passthrough()), "/publico/fase?idCompeticao=1"],
 ];
 
 let falhas = 0;
@@ -187,5 +223,16 @@ console.log(
     `elenco da equipe 1: ${aninhados.size} aninhados, ${filtrados.size} filtrados — ${iguais ? "iguais" : "DIVERGEM"}`,
 );
 if (!iguais) falhas++;
+
+// Pela rota pública, atleta sai sem CPF e sem idade, e competição fechada
+// não sai — a 2 é privada no conjunto de teste.
+const elencoPublico = await pegar("/publico/equipe/1/atleta");
+const comDadoPessoal = elencoPublico.filter((a) => a.cpf != null || a.idade != null).length;
+console.log(`elenco público da equipe 1: ${comDadoPessoal} atleta(s) com CPF ou idade`);
+if (comDadoPessoal > 0) falhas++;
+
+const fechada = await fetch(`${base}/publico/competicao/2`);
+console.log(`competição 2 (privada) pela rota pública: HTTP ${fechada.status}`);
+if (fechada.status !== 404) falhas++;
 
 process.exit(falhas ? 1 : 0);

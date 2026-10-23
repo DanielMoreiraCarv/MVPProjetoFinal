@@ -1,6 +1,7 @@
 package org.example.Models;
 
 import jakarta.persistence.CascadeType;
+import org.example.Seguranca.UsuarioCorrente;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -10,12 +11,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 @Entity
@@ -64,6 +68,18 @@ public class Competicao {
 
     @Column(name = "categoria", length = 20)
     private String categoria;
+
+    @Column(name = "publica", nullable = false)
+    private boolean publica;
+
+    /**
+     * Quem pode tudo nesta competição. Ids, e não usuários: a competição não
+     * precisa carregar quem são as pessoas para saber se alguém está entre elas.
+     */
+    @ElementCollection
+    @CollectionTable(name = "competicao_participante", joinColumns = @JoinColumn(name = "competicao_id"))
+    @Column(name = "usuario_id")
+    private Set<Long> participantes = new HashSet<>();
 
     public Competicao() {
     }
@@ -150,6 +166,24 @@ public class Competicao {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public Set<Long> getParticipantes() {
+        return participantes;
+    }
+
+    /** Quem cria participa — sem isso, a competição recém-criada sumiria da lista de quem a criou. */
+    @PrePersist
+    void incluirQuemCriou() {
+        UsuarioCorrente.id().ifPresent(participantes::add);
+    }
+
+    public boolean isPublica() {
+        return publica;
+    }
+
+    public void setPublica(boolean publica) {
+        this.publica = publica;
     }
 
     /**

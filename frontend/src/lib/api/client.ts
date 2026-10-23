@@ -1,4 +1,39 @@
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+/**
+ * O navegador chama a API pelo próprio site. A rota /api/v1 do Next anexa o
+ * token guardado no cookie httpOnly e repassa ao servidor da API.
+ */
+const baseUrl = "/api/v1";
+
+/**
+ * Sessão vencida de vez no meio de uma tela da gestão: volta para a entrada e,
+ * depois de entrar, para onde estava. O acompanhamento público não tem sessão
+ * a perder, então o 401 dele segue como erro comum.
+ */
+const CHAVE_DA_ULTIMA_VOLTA = "tcc.ultima-volta-a-entrada";
+
+const voltarParaAEntrada = () => {
+    if (typeof window === "undefined") return;
+    // Uma vez a cada 15 s: se a API recusar até um token recém-renovado, a
+    // tela mostra o erro em vez de ficar indo e voltando da entrada.
+    try {
+        const ultima = Number(sessionStorage.getItem(CHAVE_DA_ULTIMA_VOLTA));
+        if (Date.now() - ultima < 15_000) return;
+        sessionStorage.setItem(CHAVE_DA_ULTIMA_VOLTA, String(Date.now()));
+    } catch {
+        // Sem sessionStorage (aba privada restrita): volta mesmo assim.
+    }
+    const aqui = window.location.pathname + window.location.search;
+    window.location.assign(`/entrar?de=${encodeURIComponent(aqui)}`);
+};
+
+/**
+ * Quem lê. O acompanhamento por link usa as rotas `/publico`, que o servidor
+ * só responde para competição aberta ao público e sem dado pessoal de atleta.
+ */
+export type Acesso = "gestao" | "publico";
+
+export const rotaPara = (acesso: Acesso, caminho: string) =>
+    acesso === "publico" ? `/publico${caminho}` : caminho;
 
 /** Uma falha atribuída a um campo do formulário que foi enviado. */
 export type DetalheDeErro = { campo: string; mensagem: string };
@@ -70,6 +105,7 @@ export const apiFetch = async <T>(caminho: string, init?: RequestInit): Promise<
     });
 
     if (!resposta.ok) {
+        if (resposta.status === 401 && !caminho.startsWith("/publico")) voltarParaAEntrada();
         throw await erroDaResposta(resposta);
     }
 

@@ -26,11 +26,11 @@ com o tráfego já batendo.
 
 Nenhuma credencial no repositório. A aplicação lê três variáveis:
 
-| Variável | Default (desenvolvimento) | Produção |
+| Variável | Default | Produção |
 |---|---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5433/tcc` | connection string do Supabase |
-| `DB_USER` | `tcc` | usuário do Supabase |
-| `DB_PASSWORD` | `tcc` | senha do Supabase |
+| `DB_URL` | `jdbc:postgresql://localhost:5433/tcc` (pod local) | transaction pooler: `jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0` |
+| `DB_USER` | `tcc` | `postgres.hiieswbpwrlggryqhtjv` |
+| `DB_PASSWORD` | `tcc` | senha do Supabase — só no ambiente |
 | `DB_POOL_SIZE` | `5` | `5` |
 | `JPA_SHOW_SQL` | `false` | `false` |
 | `FLYWAY_MIGRAR_NO_BOOT` | `false` | `false` — quem migra é o pipeline |
@@ -38,14 +38,22 @@ Nenhuma credencial no repositório. A aplicação lê três variáveis:
 | `JWT_VALIDADE_MINUTOS` | `15` | validade do token de acesso |
 | `JWT_RENOVACAO_DIAS` | `7` | validade do token de renovação |
 | `AUTH_TENTATIVAS_ATE_BLOQUEAR` / `AUTH_BLOQUEIO_MINUTOS` | `5` / `15` | bloqueio de login por senha errada |
-| `AUTH_CADASTRO_ABERTO` | `true` | `false` fecha o `/auth/cadastro` |
-| `AUTH_EXIGIR_LOGIN` | `false` | `true` quando o front tiver login: GET segue público, escrita exige token |
+| `AUTH_CADASTRO_ABERTO` | `true` | `true` — quem se cadastra vira `ORGANIZADOR` das próprias competições |
+| `AUTH_EXIGIR_LOGIN` | `true` | `true` — sem login só `/api/v1/publico/**` e as rotas de entrar; `false` abre a API inteira, só para diagnóstico |
 | `ADMIN_EMAIL` / `ADMIN_SENHA` / `ADMIN_NOME` | vazio | cria o primeiro ADMINISTRADOR no boot, se o e-mail não existir |
 
 O pipeline de deploy usa uma conexão à parte, em `DB_MIGRACAO_URL`. Ver §5.
 
-Os defaults existem só para que `mvn spring-boot:run` funcione contra o pod
-local. Em produção as três são obrigatórias e vêm do ambiente do PaaS.
+Os defaults apontam para o pod local: rodar a API ou os testes sem configurar
+nada nunca toca o banco de produção. `prepareThreshold=0` é obrigatório no
+transaction pooler, que não mantém prepared statements entre comandos.
+
+Para apontar a máquina local para o Supabase sem exportar a senha no shell, use
+`backend/src/main/resources/application-local.properties` (linhas `DB_URL=...`,
+`DB_USER=...`, `DB_PASSWORD=...`), ignorado pelo Git e pela imagem Docker.
+Variável de ambiente prevalece sobre o arquivo. Os testes têm o próprio
+`application.properties` e continuam no pod local — mas uma `DB_URL` exportada
+no shell vale para eles também: não rode `mvn test` com o Supabase exportado.
 
 A porta 5433 no host evita colisão com um Postgres já instalado na máquina.
 
@@ -147,6 +155,20 @@ Postgres, que vive na sessão, e no modo de transação a conexão volta para o
 bolo a cada comando — o cadeado se perde. O *session pooler* mantém a sessão e
 ainda é IPv4, então serve às migrações sem depender de IPv6.
 
+### Primeira carga do banco
+
+Dois caminhos levam ao mesmo esquema — comparados por `pg_dump --schema-only`:
+
+- **banco vazio**: o pipeline aplica V1 até a última migração;
+- **`deploy/supabase/esquema_completo.sql`** no SQL Editor: cria V1–V6 e marca o
+  baseline na 6; o pipeline aplica da V7 em diante.
+
+Toda tabela tem row level security (V15, e o callback `afterMigrate.sql` para o
+histórico do Flyway). No Supabase, tabela sem RLS fica aberta pela API REST
+automática dele, por fora da nossa API — inclusive `usuario`, com os hashes de
+senha. O backend conecta como dono das tabelas e não passa pelo RLS.
+`RlsEmTodasAsTabelasTest` falha se uma migração criar tabela sem ele.
+
 ### Segredos do repositório
 
 `DB_MIGRACAO_URL` (session pooler), `DB_USER`, `DB_PASSWORD`, `VERCEL_TOKEN`,
@@ -178,3 +200,42 @@ originais estão preservados no histórico. O repositório antigo foi arquivado.
 
 Comandos passam a precisar do diretório: `mvn -f backend/pom.xml ...` ou
 `cd backend`, e `cd frontend` para `yarn`.
+
+## Front-end e sessão
+
+O navegador não fala com a API: chama `/api/v1` do próprio site, e o servidor
+do Next repassa à API com o token. A sessão fica em três cookies `httpOnly`
+(`tcc.acesso`, `tcc.renovacao`, `tcc.usuario`) — nenhum token passa pelo
+JavaScript da página nem vai para o `localStorage`. O `proxy.ts` renova o
+acesso vencido antes da página ou da chamada rodar, uma renovação só por token
+mesmo com várias chamadas simultâneas.
+
+| Variável (front) | Padrão | Produção |
+|---|---|---|
+| `API_URL` | `NEXT_PUBLIC_API_URL`, ou `http://localhost:8080/api/v1` | endereço da API **visto pelo servidor do Next** |
+
+Quem entra na gestão: `ADMINISTRADOR`, `ORGANIZADOR`, `MESARIO` e `ARBITRO`
+(os dois últimos só leem e preenchem a súmula). `PUBLICO` só acompanha.
+
+## Contas e compartilhamento
+
+Cada conta vê só o que é dela ou foi compartilhado com ela. A competição é a
+unidade de compartilhamento: quem participa pode tudo nela, sem níveis entre
+participantes, e pode convidar outras pessoas pelo e-mail. Convite para quem
+ainda não tem conta fica guardado e vira participação no cadastro com aquele
+e-mail — não há envio de e-mail.
+
+Administração, equipe, atleta, árbitro e federação têm dono (quem criou) e são
+vistos também por quem participa de uma competição em que aparecem. O
+`ADMINISTRADOR` da plataforma vê tudo.
+
+A conferência é central, em `Seguranca/`: `PortaDosRecursos` (ids do caminho e
+da query), `IdsNoCorpo` (ids do corpo), `FiltroDeListas` (listas devolvidas),
+todos pela tabela de `MapaDaPorta`. Um id sem regra derruba o pedido — falha
+fechada —, e `IsolamentoEntreContasTest` varre todas as rotas registradas como
+uma segunda conta.
+
+No ambiente local, `dados_de_teste.sql` cria `organizador@` (dono de tudo),
+`admin@`, `torcedor@` e `parceiro@meutorneio.app` (sem nada, para testar o
+compartilhamento), todos com a senha `torneio123`.
+

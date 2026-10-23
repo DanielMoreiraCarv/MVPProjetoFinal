@@ -144,6 +144,7 @@
 
     --font-sans: var(--fonte-sans);
     --font-mono: var(--fonte-mono);
+    --font-marca: var(--fonte-marca);
     --font-heading: var(--fonte-sans);
 
     --radius-sm: calc(var(--radius) * 0.45);

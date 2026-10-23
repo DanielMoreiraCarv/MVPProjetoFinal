@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { apiFetch } from "./client";
+import { Acesso, apiFetch, rotaPara } from "./client";
 
 const faseResponseSchema = z.object({
     id: z.number(),
@@ -108,13 +108,16 @@ export const removerFase = async (id: number): Promise<void> => {
  * todas as competições, e peneirar no cliente só funciona enquanto o número
  * de competições é pequeno.
  */
-export const listarFasesDaCompeticao = async (idCompeticao: number): Promise<Fase[]> =>
+export const listarFasesDaCompeticao = async (
+    idCompeticao: number,
+    acesso: Acesso = "gestao",
+): Promise<Fase[]> =>
     z
         // Lista vazia volta como corpo vazio: o mapeador do servidor devolve
         // nulo quando não há fase nenhuma, e sem o `?? []` o schema estoura na
         // competição que ainda não tem fase — justamente a primeira que se abre.
         .array(faseResponseSchema)
-        .parse((await apiFetch<unknown>(`/fase?idCompeticao=${idCompeticao}`)) ?? [])
+        .parse((await apiFetch<unknown>(rotaPara(acesso, `/fase?idCompeticao=${idCompeticao}`))) ?? [])
         .map(paraFase);
 
 /* ------------------------------------------------ atributos de fase ------ */
@@ -308,10 +311,13 @@ export type LinhaDaTabela = Omit<z.infer<typeof linhaDaTabelaSchema>, "nomeEquip
  * calculados no servidor (RNF23) e quem entra na fase já listado e zerado
  * antes do primeiro jogo. A eliminatória não tem tabela: a rota recusa.
  */
-export const listarTabelaDaFase = async (idFase: number): Promise<LinhaDaTabela[]> =>
+export const listarTabelaDaFase = async (
+    idFase: number,
+    acesso: Acesso = "gestao",
+): Promise<LinhaDaTabela[]> =>
     z
         .array(linhaDaTabelaSchema)
-        .parse((await apiFetch<unknown>(`/fase/${idFase}/tabela`)) ?? [])
+        .parse((await apiFetch<unknown>(rotaPara(acesso, `/fase/${idFase}/tabela`))) ?? [])
         .map(({ nomeEquipe, grupo, ...linha }) => ({
             ...linha,
             grupo: grupo ?? undefined,
@@ -363,5 +369,5 @@ export type LadoDaChave = ConfrontoDaChave["mandante"];
  * par vizinho alimenta o mesmo confronto da etapa seguinte. As etapas que
  * ainda não existem vêm com a origem de cada lado ("Vencedor do jogo 3").
  */
-export const buscarChaveamento = async (idFase: number): Promise<Chaveamento> =>
-    chaveamentoSchema.parse(await apiFetch<unknown>(`/fase/${idFase}/chaveamento`));
+export const buscarChaveamento = async (idFase: number, acesso: Acesso = "gestao"): Promise<Chaveamento> =>
+    chaveamentoSchema.parse(await apiFetch<unknown>(rotaPara(acesso, `/fase/${idFase}/chaveamento`)));

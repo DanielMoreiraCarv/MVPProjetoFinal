@@ -137,6 +137,19 @@ public class CompeticaoService {
         return competicaoRepository.save(competicao);
     }
 
+    /**
+     * Abre ou fecha a competição ao público. Vale em qualquer estado: o
+     * resultado de uma competição encerrada é justamente o que mais se
+     * compartilha.
+     */
+    public Competicao mudarVisibilidade(Long id, boolean publica) {
+        Competicao competicao = competicaoRepository.findById(id)
+                .orElseThrow(() -> NaoEncontradoException.de("Competição", id));
+
+        competicao.setPublica(publica);
+        return competicaoRepository.save(competicao);
+    }
+
     /** Recusa alteração em competição que não aceita mais mudança. */
     public void exigirEditavel(Competicao competicao) {
         if (competicao.getEstado().estaEncerrada()) {

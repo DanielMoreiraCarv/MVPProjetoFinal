@@ -79,9 +79,9 @@ spec:
       env:
         - name: PORT
           value: "3000"
-          # Lido pelo navegador, que roda no host: precisa da porta publicada,
-          # não do endereço interno do pod.
-        - name: NEXT_PUBLIC_API_URL
+          # Lido pelo servidor do Next, que repassa as chamadas do navegador.
+          # No pod, a API está no mesmo localhost.
+        - name: API_URL
           value: http://localhost:8080/api/v1
       resources:
         requests:

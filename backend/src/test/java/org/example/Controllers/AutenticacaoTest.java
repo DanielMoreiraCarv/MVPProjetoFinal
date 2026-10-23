@@ -68,7 +68,7 @@ class AutenticacaoTest
     }
 
     @Test
-    void cadastroEntraComoPublicoENaoDevolveASenha() throws Exception
+    void cadastroEntraComoOrganizadorENaoDevolveASenha() throws Exception
     {
         cadastrar("Ana@Exemplo.com")
                 .andExpect(status().isCreated())
@@ -76,7 +76,7 @@ class AutenticacaoTest
                 .andExpect(jsonPath("$.tipo").value("Bearer"))
                 .andExpect(jsonPath("$.tokenRenovacao").isString())
                 .andExpect(jsonPath("$.usuario.email").value("ana@exemplo.com"))
-                .andExpect(jsonPath("$.usuario.papeis[0].codigo").value("PUBLICO"))
+                .andExpect(jsonPath("$.usuario.papeis[0].codigo").value("ORGANIZADOR"))
                 .andExpect(jsonPath("$.usuario.senhaHash").doesNotExist());
     }
 

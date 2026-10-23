@@ -1,290 +1,217 @@
-"use client";
-
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, LayoutDashboard, LogIn, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { CabecalhoDaPagina, CorpoDaPagina } from "@/src/components/layout/CabecalhoDaPagina";
-import { Secao } from "@/src/components/layout/Secao";
-import { CarregandoCartoes, CarregandoLista, Erro, Vazio } from "@/src/components/estado/Estados";
-import { listarPartidasDaCompeticao } from "@/src/lib/api/partidas";
-import { formatarDiaEHora, porDataHora } from "@/src/lib/formato";
-import { ICONES } from "@/src/lib/icones";
-import { useEscopo } from "@/src/lib/escopo";
-import { Partida } from "@/src/lib/types/partida";
-import { ROTULO_DO_ESTADO } from "@/src/lib/types/competicao";
+import { AlternarTema } from "@/src/components/AlternarTema";
+import { MarcaDoApp } from "@/src/features/acompanhamento/CascaPublica";
+import { CompeticoesAbertas } from "@/src/features/apresentacao/CompeticoesAbertas";
+import { PreviaDoProduto } from "@/src/features/apresentacao/PreviaDoProduto";
+import { Conceito, ICONES } from "@/src/lib/icones";
+import { PAINEL, podeGerir } from "@/src/lib/sessao/sessao";
+import { usuarioAtual } from "@/src/lib/sessao/servidor";
 
-const Numero = ({
-    conceito,
-    valor,
-    rotulo,
-    href,
-}: {
-    conceito: keyof typeof ICONES;
-    valor: number | string;
-    rotulo: string;
-    href?: string;
-}) => {
-    const Icone = ICONES[conceito];
+const RECURSOS: { conceito: Conceito; titulo: string; descricao: string }[] = [
+    {
+        conceito: "competicao",
+        titulo: "Competições e administrações",
+        descricao: "Escolas, empresas e ligas organizam várias competições, cada uma com suas equipes inscritas.",
+    },
+    {
+        conceito: "estrutura",
+        titulo: "Estrutura em fases",
+        descricao: "Pontos corridos, fase de grupos e mata-mata encadeados, conferidos antes de qualquer jogo existir.",
+    },
+    {
+        conceito: "partida",
+        titulo: "Partidas geradas de uma vez",
+        descricao: "Um botão gera todos os confrontos; a fase seguinte nasce sozinha quando a anterior termina.",
+    },
+    {
+        conceito: "sumula",
+        titulo: "Súmula à beira do campo",
+        descricao: "Gols, cartões e faltas lançados em um toque, com o segundo amarelo virando vermelho sozinho.",
+    },
+    {
+        conceito: "classificacao",
+        titulo: "Classificação e chave",
+        descricao: "Tabela por grupo e chave da eliminatória calculadas a partir das partidas encerradas.",
+    },
+    {
+        conceito: "calendario",
+        titulo: "Link público ao vivo",
+        descricao: "A torcida acompanha placar, lances e tabela pelo celular, sem login e sem poder alterar nada.",
+    },
+];
 
-    const corpo = (
-        <Card className="h-full transition-colors hover:border-ring">
-            <CardHeader>
-                <span className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    <Icone className="size-4" />
-                </span>
-                <CardTitle className="numero-tabular font-mono text-2xl">{valor}</CardTitle>
-                <CardDescription>{rotulo}</CardDescription>
-            </CardHeader>
-        </Card>
-    );
-
-    return href ? (
-        <Link href={href} className="block h-full">
-            {corpo}
-        </Link>
-    ) : (
-        corpo
-    );
-};
+const PASSOS = [
+    { titulo: "Monte", descricao: "Cadastre as equipes, desenhe as fases e gere as partidas." },
+    { titulo: "Jogue", descricao: "Abra a súmula no celular e lance cada gol e cartão na hora." },
+    { titulo: "Compartilhe", descricao: "Abra a competição ao público e mande o link no grupo." },
+];
 
 /**
- * O que está acontecendo agora, a partir do escopo.
- *
- * A raiz era um redirecionamento para a lista de competições, então o item
- * "Início" do menu nunca ficava ativo e levava para outro lugar.
+ * A porta de entrada para quem ainda não entrou. Mostra o que o app faz e
+ * leva a dois lugares: a entrada da organização e as competições abertas.
  */
-const InicioPage = () => {
-    const {
-        competicoes,
-        administracoes,
-        administracaoAtual,
-        atual,
-        carregando,
-        erro,
-        recarregar,
-        abrirPaleta,
-        ultimoId,
-    } = useEscopo();
+const ApresentacaoPage = async () => {
+    const organizador = podeGerir(await usuarioAtual());
 
-    const [partidas, setPartidas] = useState<Partida[]>([]);
-    const [carregandoPartidas, setCarregandoPartidas] = useState(false);
-
-    const daAdministracao = useMemo(
-        () =>
-            administracaoAtual
-                ? competicoes.filter((c) => c.idAdministracao === administracaoAtual.id)
-                : competicoes,
-        [competicoes, administracaoAtual],
+    const chamada = organizador ? (
+        <Button size="lg" nativeButton={false} render={<Link href={PAINEL} />}>
+            <LayoutDashboard />
+            Abrir o painel
+        </Button>
+    ) : (
+        <Button size="lg" nativeButton={false} render={<Link href="/criar-conta" />}>
+            <UserPlus />
+            Criar conta
+        </Button>
     );
-
-    // A competição em foco é a aberta; sem ela, a última visitada; sem essa, a
-    // primeira da administração — para a tela não nascer vazia.
-    const emFoco = useMemo(
-        () =>
-            atual ??
-            competicoes.find((c) => c.id === ultimoId) ??
-            daAdministracao[0] ??
-            null,
-        [atual, competicoes, ultimoId, daAdministracao],
-    );
-
-    useEffect(() => {
-        if (!emFoco) {
-            setPartidas([]);
-            return;
-        }
-        let vigente = true;
-        setCarregandoPartidas(true);
-        listarPartidasDaCompeticao(emFoco.id)
-            .then((suas) => vigente && setPartidas(suas))
-            .finally(() => vigente && setCarregandoPartidas(false));
-        return () => {
-            vigente = false;
-        };
-    }, [emFoco]);
-
-    const proximas = useMemo(
-        () => partidas.filter((p) => !p.realizada).sort(porDataHora).slice(0, 5),
-        [partidas],
-    );
-
-    const encerradas = partidas.filter((p) => p.realizada).length;
-    const IconePartida = ICONES.partida;
 
     return (
-        <>
-            <CabecalhoDaPagina
-                conceito="inicio"
-                titulo="Início"
-                descricao={
-                    emFoco
-                        ? `${emFoco.nome} · ${emFoco.nomeDaAdministracao}`
-                        : "Escolha uma competição para começar."
-                }
-                acoes={
-                    <Button variant="outline" size="sm" onClick={abrirPaleta}>
-                        <Search />
-                        Buscar competição
-                    </Button>
-                }
-            />
-            <CorpoDaPagina className="space-y-6">
-                {erro ? (
-                    <Erro causa={erro} aoTentarDeNovo={recarregar} />
-                ) : carregando ? (
-                    <CarregandoCartoes cartoes={4} />
-                ) : competicoes.length === 0 ? (
-                    <Vazio
-                        conceito="competicao"
-                        titulo="Nada cadastrado ainda"
-                        descricao="Comece criando uma administração e a primeira competição dela."
-                        acao={
-                            <Button size="sm" render={<Link href="/competicao" />}>
-                                Ir para competições
+        <div className="min-h-svh bg-background">
+            <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur">
+                <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-5 py-3 sm:px-6">
+                    <MarcaDoApp />
+                    <nav className="ml-auto flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            nativeButton={false}
+                            className="hidden sm:inline-flex"
+                            render={<a href="#recursos" />}
+                        >
+                            Recursos
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            nativeButton={false}
+                            className="hidden sm:inline-flex"
+                            render={<a href="#acompanhar" />}
+                        >
+                            Acompanhar
+                        </Button>
+                        <AlternarTema compacto />
+                        {organizador ? (
+                            <Button size="sm" nativeButton={false} render={<Link href={PAINEL} />}>
+                                Painel
+                            </Button>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    nativeButton={false}
+                                    render={<Link href="/entrar" />}
+                                >
+                                    <LogIn />
+                                    Entrar
+                                </Button>
+                                <Button size="sm" nativeButton={false} render={<Link href="/criar-conta" />}>
+                                    Criar conta
+                                </Button>
+                            </>
+                        )}
+                    </nav>
+                </div>
+            </header>
+
+            <main>
+                <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 py-14 sm:px-6 lg:grid-cols-2 lg:py-20">
+                    <div className="space-y-6">
+                        <p className="text-sm font-medium text-primary">
+                            Gestão de competições esportivas amadoras
+                        </p>
+                        <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+                            Organize o torneio. A torcida acompanha ao vivo.
+                        </h1>
+                        <p className="max-w-xl text-lg text-muted-foreground text-pretty">
+                            Monte as fases, gere os jogos, registre a súmula à beira do campo e
+                            compartilhe um link para todo mundo ver placar e classificação na hora.
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                            {chamada}
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                nativeButton={false}
+                                render={<a href="#acompanhar" />}
+                            >
+                                Ver competições abertas
                                 <ArrowRight />
                             </Button>
-                        }
-                    />
-                ) : (
-                    <>
-                        <Secao titulo="Panorama">
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                <Numero
-                                    conceito="administracao"
-                                    valor={administracoes.length}
-                                    rotulo={
-                                        administracoes.length === 1
-                                            ? "administração"
-                                            : "administrações"
-                                    }
-                                    href="/competicao"
-                                />
-                                <Numero
-                                    conceito="competicao"
-                                    valor={competicoes.length}
-                                    rotulo={
-                                        competicoes.length === 1 ? "competição" : "competições"
-                                    }
-                                    href="/competicao"
-                                />
-                                <Numero
-                                    conceito="equipe"
-                                    valor={emFoco?.equipes.length ?? 0}
-                                    rotulo="equipes inscritas na competição em foco"
-                                    href={emFoco ? `/competicao/${emFoco.id}` : undefined}
-                                />
-                                <Numero
-                                    conceito="partida"
-                                    valor={carregandoPartidas ? "…" : encerradas}
-                                    rotulo="partidas encerradas na competição em foco"
-                                    href={emFoco ? `/competicao/${emFoco.id}` : undefined}
-                                />
-                            </div>
-                        </Secao>
-
-                        <div className="grid gap-6 lg:grid-cols-3">
-                            <Secao
-                                className="lg:col-span-2"
-                                titulo="Próximos jogos"
-                                acao={
-                                    emFoco && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            render={<Link href={`/competicao/${emFoco.id}`} />}
-                                        >
-                                            Ver a competição
-                                            <ArrowRight />
-                                        </Button>
-                                    )
-                                }
-                            >
-                                {!emFoco ? (
-                                    <Vazio
-                                        conceito="competicao"
-                                        titulo="Nenhuma competição em foco"
-                                        descricao="Busque pelo nome com ⌘K ou escolha na lista."
-                                    />
-                                ) : carregandoPartidas ? (
-                                    <CarregandoLista linhas={4} />
-                                ) : proximas.length === 0 ? (
-                                    <Vazio
-                                        conceito="partida"
-                                        titulo="Nenhum jogo agendado"
-                                        descricao="As partidas aparecem quando uma fase gera os confrontos."
-                                    />
-                                ) : (
-                                    <div className="space-y-2">
-                                        {proximas.map((partida) => (
-                                            <Link
-                                                key={partida.id}
-                                                href={`/competicao/${emFoco.id}/partida/${partida.id}`}
-                                                className="block"
-                                            >
-                                                <Card className="transition-colors hover:border-ring">
-                                                    <CardHeader>
-                                                        <CardTitle className="flex items-start gap-2 text-sm">
-                                                            <IconePartida className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                                                            <span className="min-w-0">
-                                                                {partida.equipeMandante} ×{" "}
-                                                                {partida.equipeVisitante}
-                                                            </span>
-                                                        </CardTitle>
-                                                        <CardDescription>
-                                                            {formatarDiaEHora(partida.dataHora)}
-                                                            {partida.local
-                                                                ? ` · ${partida.local}`
-                                                                : ""}
-                                                        </CardDescription>
-                                                    </CardHeader>
-                                                </Card>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </Secao>
-
-                            <Secao titulo="Competições">
-                                <div className="space-y-2">
-                                    {daAdministracao.slice(0, 6).map((competicao) => (
-                                        <Link
-                                            key={competicao.id}
-                                            href={`/competicao/${competicao.id}`}
-                                            className="block"
-                                        >
-                                            <Card
-                                                className={cn(
-                                                    "transition-colors hover:border-ring",
-                                                    competicao.id === emFoco?.id &&
-                                                        "border-primary/40",
-                                                )}
-                                            >
-                                                <CardHeader>
-                                                    <CardTitle className="text-sm">
-                                                        {competicao.nome}
-                                                    </CardTitle>
-                                                    <CardDescription>
-                                                        {competicao.nomeDaAdministracao}
-                                                        {competicao.estado
-                                                            ? ` · ${ROTULO_DO_ESTADO[competicao.estado]}`
-                                                            : ""}
-                                                    </CardDescription>
-                                                </CardHeader>
-                                            </Card>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </Secao>
                         </div>
-                    </>
-                )}
-            </CorpoDaPagina>
-        </>
+                    </div>
+                    <PreviaDoProduto />
+                </section>
+
+                <section id="recursos" className="scroll-mt-20 border-t border-border bg-muted/30">
+                    <div className="mx-auto w-full max-w-6xl space-y-8 px-5 py-14 sm:px-6">
+                        <div className="max-w-2xl space-y-2">
+                            <h2 className="text-2xl font-semibold tracking-tight">
+                                Do sorteio ao apito final
+                            </h2>
+                            <p className="text-muted-foreground">
+                                Tudo o que a organização de um campeonato de escola, empresa ou bairro
+                                faz hoje em planilha e papel.
+                            </p>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {RECURSOS.map(({ conceito, titulo, descricao }) => {
+                                const Icone = ICONES[conceito];
+                                return (
+                                    <div
+                                        key={titulo}
+                                        className="space-y-3 rounded-3xl border border-border bg-card px-5 py-5"
+                                    >
+                                        <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                            <Icone className="size-5" />
+                                        </span>
+                                        <h3 className="font-medium">{titulo}</h3>
+                                        <p className="text-sm text-muted-foreground">{descricao}</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-6">
+                    <ol className="grid gap-6 sm:grid-cols-3">
+                        {PASSOS.map((passo, i) => (
+                            <li key={passo.titulo} className="space-y-2">
+                                <span className="numero-tabular flex size-9 items-center justify-center rounded-full bg-primary font-mono text-sm font-semibold text-primary-foreground">
+                                    {i + 1}
+                                </span>
+                                <h3 className="font-medium">{passo.titulo}</h3>
+                                <p className="text-sm text-muted-foreground">{passo.descricao}</p>
+                            </li>
+                        ))}
+                    </ol>
+                </section>
+
+                <section id="acompanhar" className="scroll-mt-20 border-t border-border">
+                    <div className="mx-auto w-full max-w-6xl space-y-6 px-5 py-14 sm:px-6">
+                        <div className="max-w-2xl space-y-2">
+                            <h2 className="text-2xl font-semibold tracking-tight">
+                                Competições abertas ao público
+                            </h2>
+                            <p className="text-muted-foreground">
+                                Sem login: escolha uma e acompanhe os jogos, os lances e a
+                                classificação.
+                            </p>
+                        </div>
+                        <CompeticoesAbertas />
+                    </div>
+                </section>
+            </main>
+
+            <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
+                Meu Torneio · Trabalho de Conclusão de Curso · Unifor
+            </footer>
+        </div>
     );
 };
 
-export default InicioPage;
+export default ApresentacaoPage;

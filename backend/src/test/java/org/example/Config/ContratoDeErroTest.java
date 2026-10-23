@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,6 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+// Regra de domínio, não de acesso: roda como a plataforma, que vê tudo.
+// O isolamento entre contas é provado em IsolamentoEntreContasTest.
+@WithMockUser(roles = "ADMINISTRADOR")
 class ContratoDeErroTest
 {
     @Autowired
@@ -123,5 +127,13 @@ class ContratoDeErroTest
                 .andExpect(jsonPath("$.erro.codigo").exists())
                 .andExpect(jsonPath("$.erro.mensagem").exists())
                 .andExpect(jsonPath("$.erro.detalhes").isArray());
+    }
+
+    @Test
+    void rotaInexistenteEh404ComOEnvelope() throws Exception
+    {
+        mockMvc.perform(get("/api/v1/sumula/"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.erro.codigo").value("NAO_ENCONTRADO"));
     }
 }

@@ -2,17 +2,10 @@
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { COLUNAS_DA_SUMULA, contar, expulso } from "@/src/features/sumula/eventos";
+import { COLUNAS_DA_SUMULA, COR_DO_EVENTO, contar, expulso } from "@/src/features/sumula/eventos";
 import { Atleta } from "@/src/lib/types/atleta";
+import { useVisaoPublica } from "@/src/lib/visao-publica";
 import { EventoDaSumula, TipoDeEvento } from "@/src/lib/types/sumula";
-
-const COR_DA_COLUNA: Partial<Record<TipoDeEvento, string>> = {
-    GOL: "bg-primary text-primary-foreground",
-    GOL_CONTRA: "bg-secondary text-secondary-foreground",
-    CARTAO_AMARELO: "bg-warning text-warning-foreground",
-    CARTAO_VERMELHO_INDIRETO: "bg-destructive text-destructive-foreground",
-    CARTAO_VERMELHO_DIRETO: "bg-destructive text-destructive-foreground",
-};
 
 /**
  * O elenco de uma equipe com uma coluna por acontecimento. Cada célula é um
@@ -37,6 +30,7 @@ export const TabelaDoElenco = ({
     pendente: string | null;
     aoTocar: (atleta: Atleta, tipo: TipoDeEvento) => void;
 }) => {
+    const publica = useVisaoPublica();
     const emOrdem = [...atletas].sort((a, b) => (a.numCamisa ?? 999) - (b.numCamisa ?? 999));
 
     return (
@@ -77,7 +71,9 @@ export const TabelaDoElenco = ({
                         {emOrdem.length === 0 && (
                             <tr>
                                 <td colSpan={2 + COLUNAS_DA_SUMULA.length} className="px-5 py-6 text-center text-muted-foreground">
-                                    Elenco vazio. Cadastre os atletas na página da equipe.
+                                    {publica
+                                        ? "Elenco não informado."
+                                        : "Elenco vazio. Cadastre os atletas na página da equipe."}
                                 </td>
                             </tr>
                         )}
@@ -115,7 +111,7 @@ export const TabelaDoElenco = ({
                                                     className={cn(
                                                         "numero-tabular inline-flex size-7 items-center justify-center rounded-lg font-mono text-xs transition-colors sm:size-8 sm:rounded-xl sm:text-sm",
                                                         quantos > 0
-                                                            ? (COR_DA_COLUNA[coluna.tipo] ?? "bg-muted text-foreground")
+                                                            ? (COR_DO_EVENTO[coluna.tipo] ?? "bg-muted text-foreground")
                                                             : "text-muted-foreground/40",
                                                         editavel && !inerte && (corrigindo ? "hover:ring-2 hover:ring-destructive/50" : "hover:bg-accent hover:text-accent-foreground"),
                                                         pendente === chave && "animate-pulse",

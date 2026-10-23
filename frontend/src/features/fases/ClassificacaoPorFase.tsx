@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Escolha } from "@/src/components/Escolha";
@@ -20,6 +20,7 @@ import {
     listarTabelaDaFase,
     temTabelaDePontos,
 } from "@/src/lib/api/fases";
+import { useAcesso, useVisaoPublica } from "@/src/lib/visao-publica";
 
 const porOrdem = (a: Fase, b: Fase) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.id - b.id;
 
@@ -32,7 +33,16 @@ const porOrdem = (a: Fase, b: Fase) => (a.ordem ?? 0) - (b.ordem ?? 0) || a.id -
  * Fase de pontos — grupos e pontos corridos — é tabela, um grupo por vez e
  * com todo mundo zerado desde o início. Eliminatória é chave.
  */
-export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number }) => {
+export const ClassificacaoPorFase = ({
+    idCompeticao,
+    versao = 0,
+}: {
+    idCompeticao: number;
+    /** Muda para buscar de novo sem desmontar: o acompanhamento ao vivo não pisca o esqueleto. */
+    versao?: number;
+}) => {
+    const publica = useVisaoPublica();
+    const acesso = useAcesso();
     const [fases, setFases] = useState<Fase[]>([]);
     const [escolhida, setEscolhida] = useState("");
     const [tabela, setTabela] = useState<LinhaDaTabela[]>([]);
@@ -48,7 +58,7 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
         if (!Number.isFinite(idCompeticao)) return;
         setCarregandoFases(true);
         setErro(null);
-        Promise.all([listarFasesDaCompeticao(idCompeticao), buscarEstrutura(idCompeticao)])
+        Promise.all([listarFasesDaCompeticao(idCompeticao, acesso), buscarEstrutura(idCompeticao, acesso)])
             .then(([lista, estrutura]) => {
                 setPartidasGeradas(estrutura.partidasGeradas);
                 const emOrdem = [...lista].sort(porOrdem);
@@ -63,7 +73,7 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
             })
             .catch(setErro)
             .finally(() => setCarregandoFases(false));
-    }, [idCompeticao]);
+    }, [idCompeticao, acesso]);
 
     useEffect(carregarFases, [carregarFases]);
 
@@ -76,18 +86,30 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
         setCarregandoFase(true);
         setErro(null);
         const busca = temTabelaDePontos(fase.formato)
-            ? listarTabelaDaFase(fase.id).then((linhas) => {
+            ? listarTabelaDaFase(fase.id, acesso).then((linhas) => {
                   setTabela(linhas);
                   setChave(null);
               })
-            : buscarChaveamento(fase.id).then((chaveDaFase) => {
+            : buscarChaveamento(fase.id, acesso).then((chaveDaFase) => {
                   setChave(chaveDaFase);
                   setTabela([]);
               });
         busca.catch(setErro).finally(() => setCarregandoFase(false));
-    }, [fase, partidasGeradas]);
+    }, [fase, partidasGeradas, acesso]);
 
     useEffect(carregarFase, [carregarFase]);
+
+    // Recarga silenciosa: só os dados da fase escolhida, sem voltar ao
+    // esqueleto nem trocar a fase que a pessoa está olhando.
+    const versaoCarregada = useRef(versao);
+    useEffect(() => {
+        if (versao === versaoCarregada.current || !fase || !partidasGeradas) return;
+        versaoCarregada.current = versao;
+        const busca = temTabelaDePontos(fase.formato)
+            ? listarTabelaDaFase(fase.id, acesso).then(setTabela)
+            : buscarChaveamento(fase.id, acesso).then(setChave);
+        busca.catch(() => undefined);
+    }, [versao, fase, partidasGeradas, acesso]);
 
     if (erro) return <Erro causa={erro} aoTentarDeNovo={fase ? carregarFase : carregarFases} />;
     if (carregandoFases) return <CarregandoTabela linhas={8} colunas={4} />;
@@ -97,15 +119,21 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
             <Vazio
                 conceito="fase"
                 titulo="A competição ainda não tem fases"
-                descricao="A classificação sai das fases: monte a estrutura — grupos, pontos corridos, eliminatória — e ela aparece aqui."
+                descricao={
+                    publica
+                        ? "A organização ainda está montando a competição. A classificação aparece aqui quando os jogos forem definidos."
+                        : "A classificação sai das fases: monte a estrutura — grupos, pontos corridos, eliminatória — e ela aparece aqui."
+                }
                 acao={
-                    <Button
-                        size="sm"
-                        nativeButton={false}
-                        render={<Link href={`/competicao/${idCompeticao}/estrutura`} />}
-                    >
-                        Ir para a Estrutura
-                    </Button>
+                    !publica && (
+                        <Button
+                            size="sm"
+                            nativeButton={false}
+                            render={<Link href={`/competicao/${idCompeticao}/estrutura`} />}
+                        >
+                            Ir para a Estrutura
+                        </Button>
+                    )
                 }
             />
         );
@@ -116,15 +144,21 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
             <Vazio
                 conceito="classificacao"
                 titulo="A classificação aparece quando as partidas forem geradas"
-                descricao="A estrutura está montada, mas as partidas ainda não existem. Elas são geradas todas de uma vez, depois de conferir que todas as fases fecham."
+                descricao={
+                    publica
+                        ? "Os confrontos ainda não foram sorteados. Volte mais perto do início da competição."
+                        : "A estrutura está montada, mas as partidas ainda não existem. Elas são geradas todas de uma vez, depois de conferir que todas as fases fecham."
+                }
                 acao={
-                    <Button
-                        size="sm"
-                        nativeButton={false}
-                        render={<Link href={`/competicao/${idCompeticao}/estrutura`} />}
-                    >
-                        Ir para a Estrutura
-                    </Button>
+                    !publica && (
+                        <Button
+                            size="sm"
+                            nativeButton={false}
+                            render={<Link href={`/competicao/${idCompeticao}/estrutura`} />}
+                        >
+                            Ir para a Estrutura
+                        </Button>
+                    )
                 }
             />
         );
@@ -197,7 +231,7 @@ export const ClassificacaoPorFase = ({ idCompeticao }: { idCompeticao: number })
                 <Vazio
                     conceito="chaveamento"
                     titulo="Essa quantidade não fecha uma chave"
-                    descricao={`${chave.participantes} equipes não chegam a ${chave.pararEm} eliminando metade a cada rodada. Ajuste a fase em Fases.`}
+                    descricao={`${chave.participantes} equipes não chegam a ${chave.pararEm} eliminando metade a cada rodada.${publica ? "" : " Ajuste a fase em Fases."}`}
                 />
             ) : (
                 aguardando

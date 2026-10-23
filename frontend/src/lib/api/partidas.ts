@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { apiFetch } from "./client";
+import { Acesso, apiFetch, rotaPara } from "./client";
 import { FaseNome, Partida } from "@/src/lib/types/partida";
 
 const equipeResumoSchema = z.object({ id: z.number(), nome: z.string() }).nullable();
@@ -61,9 +61,12 @@ export interface PartidaInput {
     local?: string;
 }
 
-export const listarPartidasDaCompeticao = async (idCompeticao: number): Promise<Partida[]> =>
+export const listarPartidasDaCompeticao = async (
+    idCompeticao: number,
+    acesso: Acesso = "gestao",
+): Promise<Partida[]> =>
     z.array(partidaResponseSchema)
-     .parse(await apiFetch<unknown>(`/partida/competicao/${idCompeticao}`))
+     .parse(await apiFetch<unknown>(rotaPara(acesso, `/partida/competicao/${idCompeticao}`)))
      .map(paraPartida);
 
 export const listarPartidasDaEquipe = async (idEquipe: number): Promise<Partida[]> =>
@@ -71,8 +74,8 @@ export const listarPartidasDaEquipe = async (idEquipe: number): Promise<Partida[
      .parse(await apiFetch<unknown>(`/partida/equipe/${idEquipe}`))
      .map(paraPartida);
 
-export const buscarPartida = async (id: number): Promise<Partida> =>
-    paraPartida(partidaResponseSchema.parse(await apiFetch<unknown>(`/partida/${id}`)));
+export const buscarPartida = async (id: number, acesso: Acesso = "gestao"): Promise<Partida> =>
+    paraPartida(partidaResponseSchema.parse(await apiFetch<unknown>(rotaPara(acesso, `/partida/${id}`))));
 
 export const criarPartida = async (entrada: PartidaInput): Promise<Partida> =>
     paraPartida(

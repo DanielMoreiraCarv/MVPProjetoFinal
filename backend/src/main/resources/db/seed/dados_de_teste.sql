@@ -10,6 +10,11 @@
 
 begin;
 
+delete from competicao_convite;
+delete from competicao_participante;
+delete from token_renovacao;
+delete from usuario_papel;
+delete from usuario;
 delete from evento_sumula;
 delete from sumula_ocorrencia;
 delete from sumula;
@@ -40,6 +45,10 @@ insert into competicao (id, nome, descricao, categoria, administracao_id, mata_m
 
 insert into competicao (id, nome, descricao, categoria, administracao_id, mata_mata, estado) values
     (7, 'Copa Laboratório - 32 equipes', '32 equipes de futebol de campo inscritas, sem fases nem partidas.', 'Masculino', 3, false, 'RASCUNHO');
+
+-- Duas abertas ao público, para o link de acompanhamento ter o que mostrar:
+-- uma de pontos corridos e uma de mata-mata.
+update competicao set publica = true where id in (1, 6);
 
 insert into modalidade (codigo, nome, atletas_em_quadra, ativo) values
     ('FUTEBOL_DE_CAMPO', 'Futebol de campo', 11, true),
@@ -887,3 +896,35 @@ begin
 end $$;
 
 commit;
+
+-- Acesso local. A senha dos três é torneio123 (hash BCrypt abaixo); só para
+-- o ambiente de desenvolvimento — em produção o primeiro administrador vem de
+-- ADMIN_EMAIL/ADMIN_SENHA e os demais são criados por ele.
+-- senha_alterada_em no passado: com o default now(), o relógio do banco (na
+-- VM do podman, às vezes segundos à frente) faria o token emitido logo depois
+-- da carga parecer mais velho que a senha, e o filtro o recusaria.
+insert into usuario (nome, email, senha_hash, senha_alterada_em) values
+    ('Organização Demo', 'organizador@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day'),
+    ('Administração Demo', 'admin@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day'),
+    ('Torcedor Demo', 'torcedor@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day'),
+    ('Parceiro Demo', 'parceiro@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day');
+
+insert into usuario_papel (usuario_id, papel_id)
+select u.id, p.id from usuario u join papel p on
+    (u.email = 'organizador@meutorneio.app' and p.codigo = 'ORGANIZADOR') or
+    (u.email = 'admin@meutorneio.app' and p.codigo = 'ADMINISTRADOR') or
+    (u.email = 'torcedor@meutorneio.app' and p.codigo = 'PUBLICO') or
+    (u.email = 'parceiro@meutorneio.app' and p.codigo = 'ORGANIZADOR');
+
+-- Tudo o que existe é da organização demo, que participa de todas as
+-- competições. O parceiro começa sem nada: é a conta para testar o
+-- compartilhamento.
+update administracao set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update federacao     set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update arbitro       set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update equipe        set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update atleta        set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+
+insert into competicao_participante (competicao_id, usuario_id)
+select c.id, u.id from competicao c cross join usuario u where u.email = 'organizador@meutorneio.app';
+
