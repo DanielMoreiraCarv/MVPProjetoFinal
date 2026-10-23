@@ -3,3 +3,4 @@ target
 .idea
 documentos
 *.md
+src/main/resources/application-local.properties
