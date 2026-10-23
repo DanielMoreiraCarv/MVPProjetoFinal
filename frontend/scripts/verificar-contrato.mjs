@@ -157,6 +157,16 @@ const casos = [
         z.array(atributoDeFase),
         "/fase/atributo?tipoFase=PONTOS_CORRIDOS",
     ],
+    [
+        "GET /competicao/1/pessoas",
+        z.object({
+            participantes: z.array(
+                z.object({ id: z.number(), nome: z.string(), email: z.string(), voce: z.boolean() }),
+            ),
+            convites: z.array(z.object({ id: z.number(), email: z.string(), criadoEm: z.string() })),
+        }),
+        "/competicao/1/pessoas",
+    ],
     // O acompanhamento por link lê pelas rotas públicas, com os mesmos
     // schemas. A competição 1 é aberta ao público no conjunto de teste.
     ["GET /publico/competicao", z.array(competicao.passthrough()), "/publico/competicao"],

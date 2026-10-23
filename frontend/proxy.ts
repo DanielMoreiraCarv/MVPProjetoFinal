@@ -15,10 +15,11 @@ import {
     usuarioDoCookie,
 } from "@/src/lib/sessao/sessao";
 
-/** O que qualquer pessoa abre sem entrar: a apresentação, a entrada e o acompanhamento. */
+/** O que qualquer pessoa abre sem entrar: a apresentação, a entrada, o cadastro e o acompanhamento. */
 const ehPublico = (caminho: string) =>
     caminho === "/" ||
     caminho === "/entrar" ||
+    caminho === "/criar-conta" ||
     caminho === "/acompanhar" ||
     caminho.startsWith("/acompanhar/");
 
@@ -57,7 +58,7 @@ export const proxy = async (requisicao: NextRequest) => {
     const naGestao = podeGerir(usuario);
 
     let resposta: NextResponse;
-    if (caminho === "/entrar" && naGestao) {
+    if ((caminho === "/entrar" || caminho === "/criar-conta") && naGestao) {
         // Já há sessão (talvez recém-renovada): segue para onde a pessoa ia.
         const destino = destinoSeguro(requisicao.nextUrl.searchParams.get("de"));
         resposta = NextResponse.redirect(new URL(destino, requisicao.nextUrl));
