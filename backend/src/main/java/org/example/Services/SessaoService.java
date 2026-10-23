@@ -91,7 +91,13 @@ public class SessaoService
             throw AutenticacaoException.sessaoInvalida();
         }
 
-        registro.setRevogadoEm(OffsetDateTime.now());
+        // Quem perde a corrida não ganha sessão, mas também não derruba as
+        // outras: o token não estava revogado quando chegou, então não é reuso.
+        if (tokenRenovacaoRepository.revogarSeAtivo(registro.getId(), OffsetDateTime.now()) == 0)
+        {
+            throw AutenticacaoException.sessaoInvalida();
+        }
+
         return abrir(usuario);
     }
 
