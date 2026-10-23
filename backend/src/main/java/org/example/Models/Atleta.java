@@ -3,6 +3,7 @@ package org.example.Models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,15 +15,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@EntityListeners(DonoAutomatico.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @Table(name = "atleta")
-public class Atleta {
+public class Atleta implements TemDono {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "dono_id")
+    private Long donoId;
 
     @Column(name = "nome")
     private String nome;

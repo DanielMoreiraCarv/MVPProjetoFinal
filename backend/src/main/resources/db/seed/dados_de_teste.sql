@@ -10,6 +10,8 @@
 
 begin;
 
+delete from competicao_convite;
+delete from competicao_participante;
 delete from token_renovacao;
 delete from usuario_papel;
 delete from usuario;
@@ -904,10 +906,25 @@ commit;
 insert into usuario (nome, email, senha_hash, senha_alterada_em) values
     ('Organização Demo', 'organizador@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day'),
     ('Administração Demo', 'admin@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day'),
-    ('Torcedor Demo', 'torcedor@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day');
+    ('Torcedor Demo', 'torcedor@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day'),
+    ('Parceiro Demo', 'parceiro@meutorneio.app', '$2y$10$AMCMeYNAKUWNgGYKz4t7/etqewdUtGo9LPFYJk7CTCq594mdW2VmG', now() - interval '1 day');
 
 insert into usuario_papel (usuario_id, papel_id)
 select u.id, p.id from usuario u join papel p on
     (u.email = 'organizador@meutorneio.app' and p.codigo = 'ORGANIZADOR') or
     (u.email = 'admin@meutorneio.app' and p.codigo = 'ADMINISTRADOR') or
-    (u.email = 'torcedor@meutorneio.app' and p.codigo = 'PUBLICO');
+    (u.email = 'torcedor@meutorneio.app' and p.codigo = 'PUBLICO') or
+    (u.email = 'parceiro@meutorneio.app' and p.codigo = 'ORGANIZADOR');
+
+-- Tudo o que existe é da organização demo, que participa de todas as
+-- competições. O parceiro começa sem nada: é a conta para testar o
+-- compartilhamento.
+update administracao set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update federacao     set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update arbitro       set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update equipe        set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+update atleta        set dono_id = (select id from usuario where email = 'organizador@meutorneio.app');
+
+insert into competicao_participante (competicao_id, usuario_id)
+select c.id, u.id from competicao c cross join usuario u where u.email = 'organizador@meutorneio.app';
+

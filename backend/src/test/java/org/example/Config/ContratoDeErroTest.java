@@ -26,7 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@WithMockUser(roles = "ORGANIZADOR")
+// Regra de domínio, não de acesso: roda como a plataforma, que vê tudo.
+// O isolamento entre contas é provado em IsolamentoEntreContasTest.
+@WithMockUser(roles = "ADMINISTRADOR")
 class ContratoDeErroTest
 {
     @Autowired
@@ -125,5 +127,13 @@ class ContratoDeErroTest
                 .andExpect(jsonPath("$.erro.codigo").exists())
                 .andExpect(jsonPath("$.erro.mensagem").exists())
                 .andExpect(jsonPath("$.erro.detalhes").isArray());
+    }
+
+    @Test
+    void rotaInexistenteEh404ComOEnvelope() throws Exception
+    {
+        mockMvc.perform(get("/api/v1/sumula/"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.erro.codigo").value("NAO_ENCONTRADO"));
     }
 }

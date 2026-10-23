@@ -38,7 +38,7 @@ Nenhuma credencial no repositório. A aplicação lê três variáveis:
 | `JWT_VALIDADE_MINUTOS` | `15` | validade do token de acesso |
 | `JWT_RENOVACAO_DIAS` | `7` | validade do token de renovação |
 | `AUTH_TENTATIVAS_ATE_BLOQUEAR` / `AUTH_BLOQUEIO_MINUTOS` | `5` / `15` | bloqueio de login por senha errada |
-| `AUTH_CADASTRO_ABERTO` | `false` | `false` — quem entra na gestão é criado pela administração; aberto, a conta nasce `PUBLICO` |
+| `AUTH_CADASTRO_ABERTO` | `true` | `true` — quem se cadastra vira `ORGANIZADOR` das próprias competições |
 | `AUTH_EXIGIR_LOGIN` | `true` | `true` — sem login só `/api/v1/publico/**` e as rotas de entrar; `false` abre a API inteira, só para diagnóstico |
 | `ADMIN_EMAIL` / `ADMIN_SENHA` / `ADMIN_NOME` | vazio | cria o primeiro ADMINISTRADOR no boot, se o e-mail não existir |
 
@@ -195,6 +195,25 @@ mesmo com várias chamadas simultâneas.
 Quem entra na gestão: `ADMINISTRADOR`, `ORGANIZADOR`, `MESARIO` e `ARBITRO`
 (os dois últimos só leem e preenchem a súmula). `PUBLICO` só acompanha.
 
-No ambiente local, `dados_de_teste.sql` cria `organizador@`, `admin@` e
-`torcedor@meutorneio.app`, todos com a senha `torneio123`.
+## Contas e compartilhamento
+
+Cada conta vê só o que é dela ou foi compartilhado com ela. A competição é a
+unidade de compartilhamento: quem participa pode tudo nela, sem níveis entre
+participantes, e pode convidar outras pessoas pelo e-mail. Convite para quem
+ainda não tem conta fica guardado e vira participação no cadastro com aquele
+e-mail — não há envio de e-mail.
+
+Administração, equipe, atleta, árbitro e federação têm dono (quem criou) e são
+vistos também por quem participa de uma competição em que aparecem. O
+`ADMINISTRADOR` da plataforma vê tudo.
+
+A conferência é central, em `Seguranca/`: `PortaDosRecursos` (ids do caminho e
+da query), `IdsNoCorpo` (ids do corpo), `FiltroDeListas` (listas devolvidas),
+todos pela tabela de `MapaDaPorta`. Um id sem regra derruba o pedido — falha
+fechada —, e `IsolamentoEntreContasTest` varre todas as rotas registradas como
+uma segunda conta.
+
+No ambiente local, `dados_de_teste.sql` cria `organizador@` (dono de tudo),
+`admin@`, `torcedor@` e `parceiro@meutorneio.app` (sem nada, para testar o
+compartilhamento), todos com a senha `torneio123`.
 

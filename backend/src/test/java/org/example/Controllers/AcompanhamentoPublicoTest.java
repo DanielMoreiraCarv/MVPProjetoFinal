@@ -230,9 +230,9 @@ class AcompanhamentoPublicoTest
         mockMvc.perform(get("/api/v1/publico/sumula/partida/{id}", partidaAberta.getId()))
                 .andExpect(status().isNotFound());
 
-        // Abrir a súmula é coisa da mesa; quem acompanha só lê.
+        // Abrir a súmula é coisa da gestão; quem acompanha só lê.
         mockMvc.perform(post("/api/v1/sumula")
-                        .with(user("mesa").roles("MESARIO"))
+                        .with(user("plataforma").roles("ADMINISTRADOR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"idPartida":%d}""".formatted(partidaAberta.getId())))
