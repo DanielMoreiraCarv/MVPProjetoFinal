@@ -1,7 +1,7 @@
 # Sistema completo em um pod: Postgres, API e front.
 #
-#   podman build -t tcc-api:dev   -f backend/Dockerfile.vercel  backend
-#   podman build -t tcc-front:dev -f frontend/Dockerfile.vercel frontend
+#   podman build -t tcc-api:dev   -f backend/Dockerfile  backend
+#   podman build -t tcc-front:dev -f frontend/Dockerfile frontend
 #   podman play kube deploy/desenvolvimento.yaml
 #
 #   front  http://localhost:3000
