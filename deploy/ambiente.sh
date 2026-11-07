@@ -114,10 +114,10 @@ verificar_portas () {
 
 construir () {
     verde "→ construindo imagem da API"
-    podman build -q -t tcc-api:dev -f "$RAIZ/backend/Dockerfile.vercel" "$RAIZ/backend" >/dev/null
+    podman build -q -t tcc-api:dev -f "$RAIZ/backend/Dockerfile" "$RAIZ/backend" >/dev/null
 
     verde "→ construindo imagem do front"
-    podman build -q -t tcc-front:dev -f "$RAIZ/frontend/Dockerfile.vercel" "$RAIZ/frontend" >/dev/null
+    podman build -q -t tcc-front:dev -f "$RAIZ/frontend/Dockerfile" "$RAIZ/frontend" >/dev/null
 }
 
 esperar () {
