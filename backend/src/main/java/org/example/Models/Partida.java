@@ -1,9 +1,7 @@
 package org.example.Models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.OffsetDateTime;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +11,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -82,9 +79,11 @@ public class Partida {
     @JoinColumn(name = "arbitro_id")
     private Arbitro arbitro;
 
-    @JsonIgnore
-    @OneToOne(mappedBy = "partida", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Sumula sumula;
+    // Sem o lado inverso da súmula aqui de propósito: um @OneToOne(mappedBy)
+    // é sempre carregado na hora, e cada partida listada custava uma consulta
+    // a mais ao banco (28 partidas, 28 idas ao Supabase). A súmula aponta para
+    // a partida; quem precisa dela usa SumulaRepository.findByPartidaId, e
+    // apagar a partida apaga a súmula pelo banco (on delete cascade, V16).
 
     public Long getIdEquipeMandante ()
     {
@@ -106,19 +105,7 @@ public class Partida {
         return fase == null ? null : fase.getId();
     }
 
-    public Long getIdSumula ()
-    {
-        return sumula == null ? null : sumula.getId();
-    }
 
-    public void vincularSumula ( Sumula sumula )
-    {
-        this.sumula = sumula;
-        if ( sumula != null )
-        {
-            sumula.setPartida( this );
-        }
-    }
 
     // CONSTRUTOR VAZIO
     public Partida () {

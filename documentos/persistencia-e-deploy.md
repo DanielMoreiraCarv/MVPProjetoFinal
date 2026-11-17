@@ -107,6 +107,13 @@ repositório. Ele pede `DB_URL`, `DB_USER`, `DB_PASSWORD`, `CORS_ORIGENS`,
   cerca de 1 minuto) e o banco com atividade, o que evita a pausa automática
   do Supabase gratuito após dias parado. Uma instância 24h cabe nas 750 horas
   mensais do plano gratuito do Render.
+- Região: o Render não tem região na América do Sul, e o Supabase está em
+  São Paulo (`sa-east-1`). Cada consulta ao banco é uma ida e volta de
+  ~120 ms (Virginia) a ~180 ms (Oregon, o padrão). Por isso o número de
+  consultas por requisição importa mais que o tempo de cada uma: o Hibernate
+  carrega relações em lotes (`default_batch_fetch_size`) e a partida não
+  carrega mais a súmula sozinha. Virginia também fica ao lado do front no
+  Vercel (`iad1`).
 - Memória: `JAVA_TOOL_OPTIONS` limita o heap a 60% dos 512 MB e fixa
   metaspace e code cache, para o processo inteiro caber; o Tomcat fica em 40
   threads. Se o painel mostrar *Ran out of memory*, é aqui que se ajusta.
