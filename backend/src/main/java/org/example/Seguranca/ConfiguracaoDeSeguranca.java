@@ -73,6 +73,9 @@ public class ConfiguracaoDeSeguranca
                 .authorizeHttpRequests(rotas -> {
                     rotas.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     rotas.requestMatchers("/error").permitAll();
+                    // Health check do Render e do monitor externo. Só o status
+                    // (UP/DOWN) é exposto, sem detalhes da infraestrutura.
+                    rotas.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll();
                     rotas.requestMatchers(HttpMethod.GET, "/api/v1/publico/**").permitAll();
                     rotas.requestMatchers(HttpMethod.POST,
                             "/api/v1/auth/login",

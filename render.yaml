@@ -12,7 +12,9 @@ services:
     dockerContext: .
     branch: main
     autoDeploy: true
-    healthCheckPath: /api/v1/publico/competicao
+    # Só o processo, sem o banco: uma oscilação do Supabase não faz o Render
+    # reiniciar a API. O banco é conferido por /actuator/health.
+    healthCheckPath: /actuator/health/liveness
     envVars:
       # Session pooler do Supabase (porta 5432): uma instância só, sempre
       # ligada, então a própria API aplica as migrações ao subir.
@@ -32,6 +34,10 @@ services:
         sync: false
       - key: ADMIN_SENHA
         sync: false
-      # Cabe nos 512 MB do plano gratuito.
+      # Cabe nos 512 MB do plano gratuito. Heap em 60% deixa espaço para
+      # metaspace, code cache e threads, que ficam fora do heap; com 75% o
+      # processo inteiro pode passar de 512 MB e o Render o mata (OOM).
+      # ExitOnOutOfMemoryError faz a JVM sair e o Render reiniciar limpo,
+      # em vez de ficar viva respondendo erro.
       - key: JAVA_TOOL_OPTIONS
-        value: "-XX:MaxRAMPercentage=75 -XX:+UseSerialGC -XX:TieredStopAtLevel=1"
+        value: "-XX:MaxRAMPercentage=60 -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=48m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError"
