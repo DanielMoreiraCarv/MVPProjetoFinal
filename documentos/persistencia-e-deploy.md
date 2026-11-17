@@ -97,7 +97,26 @@ repositório. Ele pede `DB_URL`, `DB_USER`, `DB_PASSWORD`, `CORS_ORIGENS`,
   migrações ao subir. Sem disputa entre instâncias, e se uma migração falhar a
   versão nova não entra no ar (o Render mantém a anterior até o health check
   passar).
-- Health check: `/api/v1/publico/competicao`, rota pública.
+- Health check do Render: `/actuator/health/liveness`, que só diz se o
+  processo está vivo. Ele não consulta o banco de propósito: se o Supabase
+  oscilar, o Render não entra num ciclo de reiniciar a API. O estado do banco
+  aparece em `/actuator/health` (`UP`, ou `DOWN` com 503 em até 10s), que é o
+  endereço para um monitor externo.
+- Monitor externo (UptimeRobot ou similar, grátis): `GET /actuator/health` a
+  cada 5 minutos. Isso mantém a instância do Render acordada (sem a espera de
+  cerca de 1 minuto) e o banco com atividade, o que evita a pausa automática
+  do Supabase gratuito após dias parado. Uma instância 24h cabe nas 750 horas
+  mensais do plano gratuito do Render.
+- Região: o Render não tem região na América do Sul, e o Supabase está em
+  São Paulo (`sa-east-1`). Cada consulta ao banco é uma ida e volta de
+  ~120 ms (Virginia) a ~180 ms (Oregon, o padrão). Por isso o número de
+  consultas por requisição importa mais que o tempo de cada uma: o Hibernate
+  carrega relações em lotes (`default_batch_fetch_size`) e a partida não
+  carrega mais a súmula sozinha. Virginia também fica ao lado do front no
+  Vercel (`iad1`).
+- Memória: `JAVA_TOOL_OPTIONS` limita o heap a 60% dos 512 MB e fixa
+  metaspace e code cache, para o processo inteiro caber; o Tomcat fica em 40
+  threads. Se o painel mostrar *Ran out of memory*, é aqui que se ajusta.
 - `PORT` é injetada pelo Render; `server.port=${PORT:8080}` já a lê.
 - O plano gratuito desliga a instância após 15 minutos sem tráfego; o acesso
   seguinte espera a subida (cerca de 1 minuto). Aqueça a API antes da banca.

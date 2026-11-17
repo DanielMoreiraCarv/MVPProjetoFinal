@@ -47,7 +47,7 @@ public class SumulaService {
         Partida partida = partidaRepository.findById(request.idPartida())
                 .orElseThrow(() -> NaoEncontradoException.de("Partida", request.idPartida()));
 
-        if (partida.getSumula() != null) {
+        if (sumulaRepository.findByPartidaId(partida.getId()).isPresent()) {
             throw new IllegalStateException(
                     "Esta partida já tem súmula. Abra a que existe em vez de criar outra.");
         }
@@ -67,7 +67,7 @@ public class SumulaService {
             sumula.setModo(modoDe(request.modo()));
         }
 
-        partida.vincularSumula(sumula);
+        sumula.setPartida(partida);
         return sumulaRepository.save(sumula);
     }
 
@@ -322,19 +322,8 @@ public class SumulaService {
                         "Modo de súmula \"" + codigo + "\" não existe. Use SIMPLIFICADA ou COMPLETA."));
     }
 
-    /**
-     * A partida segura a súmula com cascata: apagar só pelo repositório
-     * respondia 204, e no flush a cascata da partida — que ainda a
-     * referenciava — persistia a súmula de novo. Solta-se a partida antes.
-     */
     @Transactional
     public void deletarSumula(Long id) {
-        Sumula sumula = exigirPorId(id);
-        Partida partida = sumula.getPartida();
-        if (partida != null) {
-            partida.vincularSumula(null);
-            partidaRepository.save(partida);
-        }
-        sumulaRepository.delete(sumula);
+        sumulaRepository.delete(exigirPorId(id));
     }
 }
