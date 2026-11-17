@@ -4,7 +4,13 @@
 # ficam no repositório. Valores em documentos/persistencia-e-deploy.md.
 services:
   - type: web
-    name: tcc-api
+    # Virginia: o Render não tem região na América do Sul, e Virginia é a
+    # mais próxima do Supabase (sa-east-1) e fica ao lado do front no Vercel
+    # (iad1). O Render não muda a região de um serviço existente, por isso o
+    # nome novo: o Blueprint cria este serviço, e o antigo (tcc-api, Oregon)
+    # é apagado à mão depois que o front apontar para cá.
+    name: tcc-api-virginia
+    region: virginia
     runtime: docker
     plan: free
     rootDir: backend
